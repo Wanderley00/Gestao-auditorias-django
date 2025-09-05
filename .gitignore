@@ -1,0 +1,11 @@
+# Virtual Environment
+venv/
+*.env
+
+# Django-related files
+db.sqlite3
+.env
+.env.example
+
+# IDE-related files
+.vscode/

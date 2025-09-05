@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de Auditorias</title>
+</head>
+<body>
+    <h2>Auditorias Agendadas</h2>
+    <ul>
+        {% for auditoria in todas_auditorias %}
+            <li>{{ auditoria.ferramenta }} - {{ auditoria.descricao }}</li>
+        {% empty %}
+            <li>Nenhuma auditoria agendada.</li>
+        {% endfor %}
+    </ul>
+    <p><a href="{% url 'home' %}">Voltar para o Dashboard</a></p>
+</body>
+</html>

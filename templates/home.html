@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Bem-vindo, {{ user.get_full_name }}!</h2>
+    <p>Esta é a página inicial do seu sistema de auditorias.</p>
+
+    <h3>Resumo das Auditorias</h3>
+    <ul>
+        <li>Total de Auditorias Agendadas: {{ total_auditorias }}</li>
+        <li>Auditorias Futuras: {{ auditorias_agendadas }}</li>
+        <li>Auditorias Executadas: {{ auditorias_executadas }}</li>
+    </ul>
+
+    <p><a href="{% url 'auditorias:lista_auditorias' %}">Ver Todas as Auditorias</a></p>
+    <p><a href="{% url 'logout' %}">Sair</a></p>
+</body>
+</html>
