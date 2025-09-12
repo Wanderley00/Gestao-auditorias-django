@@ -1,0 +1,48 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição da Categoria</label>
+        <input type="text" 
+               id="descricao" 
+               name="descricao" 
+               class="form-control" 
+               value="{{ categoria.descricao|default:'' }}" 
+               required 
+               maxlength="255"
+               placeholder="Digite a descrição da categoria">
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="pilar" class="form-label">Pilar</label>
+        <select id="pilar" name="pilar" class="form-control form-select" required>
+            <option value="">Selecione um pilar...</option>
+            {% for pilar in pilares %}
+            <option value="{{ pilar.pk }}" {% if categoria.pilar.pk == pilar.pk %}selected{% endif %}>
+                {{ pilar.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" 
+                       name="ativo" 
+                       {% if categoria.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">
+                Categoria ativa no sistema
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

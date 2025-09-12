@@ -1,0 +1,37 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Ícone</th>
+    <th>Nome do Tipo</th>
+    <th>Descrição</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        {% if object.icone %}
+            <img src="{{ object.icone.url }}" alt="Ícone" style="width: 40px; height: 40px; border-radius: var(--radius-sm); object-fit: cover;">
+        {% else %}
+            <div style="width: 40px; height: 40px; background: var(--bg-secondary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                <i class="fas fa-image"></i>
+            </div>
+        {% endif %}
+    </td>
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.nome }}
+        </div>
+    </td>
+    <td>{{ object.descricao|truncatechars:80 }}</td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'auditorias:editar_tipo_questao' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Tipo de Questão">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Tipo de Questão"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_tipo_questao' object.pk %}', '{{ object.nome }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

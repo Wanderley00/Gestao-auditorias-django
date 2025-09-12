@@ -1,0 +1,297 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}Dashboard - Sistema de Auditorias{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2 class="content-title">Bem-vindo ao Sistema de Auditorias</h2>
+    <p class="content-subtitle">Gerencie suas auditorias, checklists e relatórios de forma eficiente</p>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        {{ total_auditorias }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Total de Auditorias</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                <span style="color: var(--success); font-size: 12px; font-weight: 600;">
+                    <i class="fas fa-arrow-up"></i> +12% este mês
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
+                        {{ total_modelos }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Modelos de Auditoria</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                <span style="color: var(--success); font-size: 12px; font-weight: 600;">
+                    <i class="fas fa-arrow-up"></i> +5% este mês
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">
+                        {{ total_checklists }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Checklists Ativos</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-list-check"></i>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                <span style="color: var(--warning); font-size: 12px; font-weight: 600;">
+                    <i class="fas fa-minus"></i> Estável
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--error); margin-bottom: 8px;">
+                        {{ instancias_pendentes }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Pendentes</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                <span style="color: var(--error); font-size: 12px; font-weight: 600;">
+                    <i class="fas fa-exclamation-triangle"></i> Requer atenção
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção Principal -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+    <!-- Auditorias Recentes -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 class="card-title">Auditorias Recentes</h3>
+                    <p class="card-subtitle">Últimas auditorias criadas no sistema</p>
+                </div>
+                <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-eye"></i>
+                    Ver Todas
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if auditorias_recentes %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Responsável</th>
+                                <th>Ferramenta</th>
+                                <th>Data Início</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for auditoria in auditorias_recentes %}
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
+                                            {{ auditoria.responsavel.first_name.0|default:auditoria.responsavel.username.0|upper }}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">
+                                                {{ auditoria.responsavel.get_full_name|default:auditoria.responsavel.username }}
+                                            </div>
+                                            <div style="font-size: 12px; color: var(--text-muted);">
+                                                {{ auditoria.responsavel.email }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">
+                                        {{ auditoria.ferramenta.nome|default:"N/A" }}
+                                    </span>
+                                </td>
+                                <td>{{ auditoria.data_inicio|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="badge badge-success">Ativa</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'auditorias:editar_auditoria' auditoria.pk %}" class="btn btn-secondary btn-icon" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'auditorias:deletar_auditoria' auditoria.pk %}" class="btn btn-danger btn-icon" title="Deletar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+                    <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                    <h4 style="margin-bottom: 8px;">Nenhuma auditoria encontrada</h4>
+                    <p>Crie sua primeira auditoria para começar</p>
+                    <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-plus"></i>
+                        Criar Auditoria
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Ações Rápidas</h3>
+            <p class="card-subtitle">Acesso rápido às principais funcionalidades</p>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary" style="justify-content: flex-start;">
+                    <i class="fas fa-plus"></i>
+                    Nova Auditoria
+                </a>
+                
+                <a href="{% url 'auditorias:criar_checklist' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-list-check"></i>
+                    Novo Checklist
+                </a>
+                
+                <a href="{% url 'auditorias:criar_modelo_auditoria' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-file-alt"></i>
+                    Novo Modelo
+                </a>
+                
+                <a href="{% url 'auditorias:criar_pilar' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-columns"></i>
+                    Novo Pilar
+                </a>
+                
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
+                
+                <a href="{% url 'auditorias:lista_tipos_questao' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-question-circle"></i>
+                    Tipos de Questão
+                </a>
+                
+                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-tools"></i>
+                    Ferramentas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Estatísticas Adicionais -->
+<div style="margin-top: 32px;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Visão Geral do Sistema</h3>
+            <p class="card-subtitle">Estatísticas e métricas importantes</p>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
+                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        {{ total_pilares }}
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Pilares Cadastrados</div>
+                </div>
+                
+                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
+                        85%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Taxa de Conformidade</div>
+                </div>
+                
+                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">
+                        12
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Não Conformidades</div>
+                </div>
+                
+                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        7
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Dias Médio Resolução</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Atualizar dados em tempo real (opcional)
+    function atualizarDashboard() {
+        // Implementar atualização via AJAX se necessário
+        console.log('Dashboard atualizado');
+    }
+
+    // Atualizar a cada 5 minutos
+    setInterval(atualizarDashboard, 300000);
+
+    // Animações para os cards de estatísticas
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
+

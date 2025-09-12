@@ -1,0 +1,87 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+    <div class="form-row">
+        <div class="form-group required">
+            <label for="codigo_interno" class="form-label">Código Interno</label>
+            <input type="text" id="codigo_interno" name="codigo_interno" class="form-control" value="{{ item.codigo_interno|default:'' }}" required maxlength="50" placeholder="Ex: ITM-001">
+        </div>
+        <div class="form-group">
+            <label for="codigo_alternativo" class="form-label">Código Alternativo</label>
+            <input type="text" id="codigo_alternativo" name="codigo_alternativo" class="form-control" value="{{ item.codigo_alternativo|default:'' }}" maxlength="50">
+        </div>
+    </div>
+    <div class="form-row single">
+        <div class="form-group required">
+            <label for="descricao" class="form-label">Descrição do Item</label>
+            <input type="text" id="descricao" name="descricao" class="form-control" value="{{ item.descricao|default:'' }}" required maxlength="255" placeholder="Digite uma descrição completa para o item">
+        </div>
+    </div>
+
+    <div class="form-row triple">
+        <div class="form-group">
+            <label for="unidade_medida" class="form-label">Unidade de Medida</label>
+            <select id="unidade_medida" name="unidade_medida" class="form-control form-select">
+                <option value="">Selecione...</option>
+                {% for um in unidades_medida %}
+                <option value="{{ um.pk }}" {% if item.unidade_medida.pk == um.pk %}selected{% endif %}>{{ um.nome }} ({{ um.simbolo }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="peso" class="form-label">Peso</label>
+            <input type="number" step="0.001" id="peso" name="peso" class="form-control" value="{{ item.peso|default:'' }}">
+        </div>
+        <div class="form-group">
+            <label for="valor" class="form-label">Valor (R$)</label>
+            <input type="number" step="0.01" id="valor" name="valor" class="form-control" value="{{ item.valor|default:'' }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="categoria_principal" class="form-label">Categoria</label>
+            <select id="categoria_principal" name="categoria_principal" class="form-control form-select">
+                <option value="">Selecione...</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.pk }}" {% if item.categoria_principal.pk == cat.pk %}selected{% endif %}>{{ cat.descricao }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="subcategoria_principal" class="form-label">Subcategoria</label>
+            <select id="subcategoria_principal" name="subcategoria_principal" class="form-control form-select">
+                <option value="">Selecione...</option>
+                {% for subcat in subcategorias %}
+                <option value="{{ subcat.pk }}" {% if item.subcategoria_principal.pk == subcat.pk %}selected{% endif %}>{{ subcat.descricao }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="form-row single">
+         <div class="form-group">
+            <label for="almoxarifado" class="form-label">Almoxarifado</label>
+            <select id="almoxarifado" name="almoxarifado" class="form-control form-select">
+                <option value="">Selecione...</option>
+                {% for almox in almoxarifados %}
+                <option value="{{ almox.pk }}" {% if item.almoxarifado.pk == almox.pk %}selected{% endif %}>{{ almox.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-row single">
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" name="ativo" {% if item.ativo|default:True %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Item ativo no sistema
+                </span>
+            </div>
+        </div>
+    </div>
+{% endblock %}

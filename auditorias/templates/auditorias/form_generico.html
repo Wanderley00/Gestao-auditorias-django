@@ -1,0 +1,511 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">{{ subtitle|default:"Preencha os campos abaixo" }}</p>
+        </div>
+        <a href="{{ back_url }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+    <!-- Formulário Principal -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ form_title|default:title }}</h3>
+            <p class="card-subtitle">{{ form_subtitle|default:"Campos obrigatórios são marcados com *" }}</p>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="mainForm" novalidate>
+                {% csrf_token %}
+                
+                {% block form_content %}
+                <!-- Conteúdo específico do formulário será definido nos templates filhos -->
+                {% endblock %}
+                
+                <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+                    <a href="{{ back_url }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" data-original-text="Salvar">
+                        <i class="fas fa-save"></i>
+                        {{ submit_text|default:"Salvar" }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <div>
+        <!-- Informações de Ajuda -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Ajuda
+                </h3>
+            </div>
+            <div class="card-body">
+                {% block help_content %}
+                <div style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+                    <p><strong>Dicas:</strong></p>
+                    <ul style="margin: 12px 0; padding-left: 20px;">
+                        <li>Campos marcados com * são obrigatórios</li>
+                        <li>Use nomes descritivos e únicos</li>
+                        <li>Verifique os dados antes de salvar</li>
+                    </ul>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-bolt"></i>
+                    Ações Rápidas
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% block quick_actions %}
+                    <button type="button" onclick="previewForm()" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i>
+                        Visualizar
+                    </button>
+                    <button type="button" onclick="resetForm()" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-undo"></i>
+                        Resetar
+                    </button>
+                    <button type="button" onclick="saveAsDraft()" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-save"></i>
+                        Salvar Rascunho
+                    </button>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Histórico (se editando) -->
+        {% if object %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history"></i>
+                    Histórico
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 14px; color: var(--text-secondary);">
+                    <div style="margin-bottom: 12px;">
+                        <strong>Criado em:</strong><br>
+                        {{ object.data_cadastro|date:"d/m/Y H:i" }}
+                    </div>
+                    {% if object.data_atualizacao != object.data_cadastro %}
+                    <div>
+                        <strong>Última atualização:</strong><br>
+                        {{ object.data_atualizacao|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Preview -->
+<div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: var(--radius-lg); padding: 32px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-xl);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h3>Preview dos Dados</h3>
+            <button onclick="closePreviewModal()" class="btn btn-secondary btn-icon">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="previewContent">
+            <!-- Conteúdo do preview será inserido aqui -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para formulários */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .form-row.single {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row.triple {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .form-group.required .form-label::after {
+        content: ' *';
+        color: var(--error);
+        font-weight: bold;
+    }
+
+    .form-control.error {
+        border-color: var(--error);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .form-control.success {
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .field-error {
+        color: var(--error);
+        font-size: 12px;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .field-help {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .file-upload-area {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius-md);
+        padding: 32px;
+        text-align: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.02);
+    }
+
+    .file-upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.05);
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border);
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--primary);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    /* Animações de validação */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .shake {
+        animation: shake 0.5s ease-in-out;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-row.triple {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Validação em tempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('mainForm');
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            input.addEventListener('blur', validateField);
+            input.addEventListener('input', clearFieldError);
+        });
+        
+        // Submissão do formulário
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                showFormErrors();
+            } else {
+                setButtonLoading('submitBtn', true);
+            }
+        });
+    });
+
+    // Validar campo individual
+    function validateField(e) {
+        const field = e.target;
+        const value = field.value.trim();
+        const isRequired = field.hasAttribute('required');
+        
+        clearFieldError(e);
+        
+        if (isRequired && !value) {
+            showFieldError(field, 'Este campo é obrigatório');
+            return false;
+        }
+        
+        // Validações específicas por tipo
+        if (field.type === 'email' && value && !isValidEmail(value)) {
+            showFieldError(field, 'Digite um email válido');
+            return false;
+        }
+        
+        if (field.type === 'url' && value && !isValidUrl(value)) {
+            showFieldError(field, 'Digite uma URL válida');
+            return false;
+        }
+        
+        // Campo válido
+        field.classList.add('success');
+        return true;
+    }
+
+    // Limpar erro do campo
+    function clearFieldError(e) {
+        const field = e.target;
+        field.classList.remove('error', 'success');
+        
+        const errorElement = field.parentNode.querySelector('.field-error');
+        if (errorElement) {
+            errorElement.remove();
+        }
+    }
+
+    // Mostrar erro do campo
+    function showFieldError(field, message) {
+        field.classList.add('error');
+        field.classList.remove('success');
+        
+        // Remover erro anterior se existir
+        const existingError = field.parentNode.querySelector('.field-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Adicionar novo erro
+        const errorElement = document.createElement('div');
+        errorElement.className = 'field-error';
+        errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        field.parentNode.appendChild(errorElement);
+        
+        // Animação de shake
+        field.classList.add('shake');
+        setTimeout(() => field.classList.remove('shake'), 500);
+    }
+
+    // Validar formulário completo
+    function validateForm() {
+        const form = document.getElementById('mainForm');
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                showFieldError(field, 'Este campo é obrigatório');
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+
+    // Mostrar erros do formulário
+    function showFormErrors() {
+        const firstError = document.querySelector('.form-control.error');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstError.focus();
+        }
+    }
+
+    // Utilitários de validação
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    function isValidUrl(url) {
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    // Funções de ação rápida
+    function previewForm() {
+        const formData = new FormData(document.getElementById('mainForm'));
+        let previewHtml = '<div style="font-size: 14px;">';
+        
+        for (let [key, value] of formData.entries()) {
+            if (key !== 'csrfmiddlewaretoken' && value) {
+                const label = document.querySelector(`label[for="${key}"]`)?.textContent || key;
+                previewHtml += `<div style="margin-bottom: 12px;"><strong>${label}:</strong> ${value}</div>`;
+            }
+        }
+        
+        previewHtml += '</div>';
+        document.getElementById('previewContent').innerHTML = previewHtml;
+        document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function closePreviewModal() {
+        document.getElementById('previewModal').style.display = 'none';
+    }
+
+    function resetForm() {
+        if (confirm('Tem certeza que deseja resetar o formulário? Todos os dados não salvos serão perdidos.')) {
+            document.getElementById('mainForm').reset();
+            
+            // Limpar erros e classes de validação
+            document.querySelectorAll('.form-control').forEach(field => {
+                field.classList.remove('error', 'success');
+            });
+            
+            document.querySelectorAll('.field-error').forEach(error => {
+                error.remove();
+            });
+        }
+    }
+
+    function saveAsDraft() {
+        // Implementar salvamento como rascunho
+        alert('Funcionalidade de rascunho será implementada');
+    }
+
+    // Auto-save (opcional)
+    let autoSaveTimeout;
+    function autoSave() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            // Implementar auto-save
+            console.log('Auto-save executado');
+        }, 30000); // 30 segundos
+    }
+
+    // Detectar mudanças no formulário
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('mainForm');
+        form.addEventListener('input', autoSave);
+        form.addEventListener('change', autoSave);
+    });
+
+    // Aviso antes de sair da página com dados não salvos
+    let formChanged = false;
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('mainForm');
+        form.addEventListener('input', () => formChanged = true);
+        form.addEventListener('change', () => formChanged = true);
+        
+        form.addEventListener('submit', () => formChanged = false);
+    });
+
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Fechar modal clicando fora
+    document.getElementById('previewModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closePreviewModal();
+        }
+    });
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S para salvar
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('submitBtn').click();
+        }
+        
+        // Ctrl/Cmd + R para resetar
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            resetForm();
+        }
+        
+        // Escape para fechar modal
+        if (e.key === 'Escape') {
+            closePreviewModal();
+        }
+    });
+</script>
+{% endblock %}
+

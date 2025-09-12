@@ -1,0 +1,28 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row">
+    <div class="form-group required">
+        <label for="nome" class="form-label">Nome do Tipo de Questão</label>
+        <input type="text" id="nome" name="nome" class="form-control" value="{{ tipo.nome|default:'' }}" required maxlength="100">
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição</label>
+        <textarea id="descricao" name="descricao" class="form-control" rows="4" required>{{ tipo.descricao|default:'' }}</textarea>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label for="icone" class="form-label">Ícone</label>
+        {% if tipo.icone %}
+            <p>Ícone atual: <a href="{{ tipo.icone.url }}" target="_blank">{{ tipo.icone.name }}</a></p>
+        {% endif %}
+        <input type="file" id="icone" name="icone" class="form-control">
+        <div class="field-help">Envie uma imagem para representar o tipo de questão.</div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição do Modelo</label>
+        <input type="text" id="descricao" name="descricao" class="form-control" value="{{ modelo.descricao|default:'' }}" required maxlength="255">
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label for="checklist" class="form-label">Checklist</label>
+        <select id="checklist" name="checklist" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for c in checklists %}
+            <option value="{{ c.pk }}" {% if modelo.checklist.pk == c.pk %}selected{% endif %}>{{ c.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="categoria" class="form-label">Categoria</label>
+        <select id="categoria" name="categoria" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.pk }}" {% if modelo.categoria.pk == cat.pk %}selected{% endif %}>{{ cat.descricao }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label for="ferramenta_causa_raiz" class="form-label">Ferramenta para Causa Raiz</label>
+        <select id="ferramenta_causa_raiz" name="ferramenta_causa_raiz" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for f in ferramentas_causa_raiz %}
+            <option value="{{ f.pk }}" {% if modelo.ferramenta_causa_raiz.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="ativo" {% if modelo.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">Modelo ativo</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Iniciar por QR Code</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="iniciar_por_codigo_qr" {% if modelo.iniciar_por_codigo_qr %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">Permitir iniciar via QR Code</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

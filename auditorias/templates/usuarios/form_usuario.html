@@ -1,0 +1,555 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<!-- Informações Básicas -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-user"></i>
+        Informações Básicas
+    </h4>
+    
+    <div class="form-row">
+        <div class="form-group required">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" 
+                   id="username" 
+                   name="username" 
+                   class="form-control" 
+                   value="{{ usuario.username|default:'' }}" 
+                   required 
+                   maxlength="150"
+                   placeholder="Digite o username">
+            <div class="field-help">Username único para login no sistema</div>
+        </div>
+        
+        <div class="form-group required">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" 
+                   id="email" 
+                   name="email" 
+                   class="form-control" 
+                   value="{{ usuario.email|default:'' }}" 
+                   required 
+                   placeholder="Digite o email">
+            <div class="field-help">Email único para comunicações</div>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="first_name" class="form-label">Nome</label>
+            <input type="text" 
+                   id="first_name" 
+                   name="first_name" 
+                   class="form-control" 
+                   value="{{ usuario.first_name|default:'' }}" 
+                   maxlength="150"
+                   placeholder="Digite o primeiro nome">
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name" class="form-label">Sobrenome</label>
+            <input type="text" 
+                   id="last_name" 
+                   name="last_name" 
+                   class="form-control" 
+                   value="{{ usuario.last_name|default:'' }}" 
+                   maxlength="150"
+                   placeholder="Digite o sobrenome">
+        </div>
+    </div>
+</div>
+
+<!-- Senha (apenas para criação) -->
+{% if not usuario %}
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-lock"></i>
+        Senha
+    </h4>
+    
+    <div class="form-row">
+        <div class="form-group required">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" 
+                   id="password" 
+                   name="password" 
+                   class="form-control" 
+                   required 
+                   minlength="8"
+                   placeholder="Digite a senha">
+            <div class="field-help">Mínimo de 8 caracteres</div>
+        </div>
+        
+        <div class="form-group required">
+            <label for="password_confirm" class="form-label">Confirmar Senha</label>
+            <input type="password" 
+                   id="password_confirm" 
+                   name="password_confirm" 
+                   class="form-control" 
+                   required 
+                   minlength="8"
+                   placeholder="Confirme a senha">
+            <div class="field-help">Digite a senha novamente</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Permissões -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-shield-alt"></i>
+        Permissões
+    </h4>
+    
+    <div class="form-row triple">
+        <div class="form-group">
+            <label class="form-label">Status Ativo</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_active" 
+                           {% if usuario.is_active|default:True %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Usuário pode fazer login
+                </span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Staff</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_staff" 
+                           {% if usuario.is_staff %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Acesso ao admin
+                </span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Superusuário</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_superuser" 
+                           {% if usuario.is_superuser %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Todas as permissões
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grupos -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-users"></i>
+        Grupos
+    </h4>
+    
+    <div class="form-group">
+        <label class="form-label">Grupos do Usuário</label>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px;">
+            {% if grupos %}
+                {% for grupo in grupos %}
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <input type="checkbox" 
+                           name="grupos" 
+                           value="{{ grupo.id }}" 
+                           id="grupo_{{ grupo.id }}"
+                           {% if usuario and grupo in usuario.groups.all %}checked{% endif %}>
+                    <label for="grupo_{{ grupo.id }}" style="margin: 0; cursor: pointer; flex: 1;">
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ grupo.name }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            {{ grupo.permissions.count }} permissão{{ grupo.permissions.count|pluralize:"ões" }}
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 24px;">
+                    <i class="fas fa-users" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <p>Nenhum grupo disponível</p>
+                    <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                        <i class="fas fa-plus"></i>
+                        Criar Grupo
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        <div class="field-help">Selecione os grupos aos quais o usuário pertence</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block help_content %}
+<div style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+    <p><strong>Sobre Usuários:</strong></p>
+    <ul style="margin: 12px 0; padding-left: 20px;">
+        <li><strong>Username:</strong> Identificador único para login</li>
+        <li><strong>Email:</strong> Deve ser único no sistema</li>
+        <li><strong>Staff:</strong> Permite acesso ao painel administrativo</li>
+        <li><strong>Superusuário:</strong> Tem todas as permissões</li>
+    </ul>
+    
+    <p><strong>Níveis de Permissão:</strong></p>
+    <ul style="margin: 12px 0; padding-left: 20px;">
+        <li><strong>Usuário comum:</strong> Acesso básico ao sistema</li>
+        <li><strong>Staff:</strong> Acesso ao admin + permissões específicas</li>
+        <li><strong>Superusuário:</strong> Acesso total ao sistema</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block quick_actions %}
+<button type="button" onclick="previewForm()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-eye"></i>
+    Visualizar
+</button>
+<button type="button" onclick="resetForm()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-undo"></i>
+    Resetar
+</button>
+<button type="button" onclick="generatePassword()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-key"></i>
+    Gerar Senha
+</button>
+<button type="button" onclick="validateUser()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-check"></i>
+    Validar
+</button>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .password-strength {
+        margin-top: 8px;
+        padding: 8px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .password-strength.weak {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--error);
+    }
+    
+    .password-strength.medium {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+    
+    .password-strength.strong {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+    
+    .password-requirements {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .password-requirements li {
+        margin-bottom: 4px;
+        transition: color 0.3s ease;
+    }
+    
+    .password-requirements li.valid {
+        color: var(--success);
+    }
+    
+    .password-requirements li.invalid {
+        color: var(--error);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Validação específica para usuários
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameField = document.getElementById('username');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirm');
+        
+        // Validação de username em tempo real
+        if (usernameField) {
+            let usernameTimeout;
+            usernameField.addEventListener('input', function() {
+                clearTimeout(usernameTimeout);
+                usernameTimeout = setTimeout(() => {
+                    validateUsername(this.value);
+                }, 500);
+            });
+        }
+        
+        // Validação de email em tempo real
+        if (emailField) {
+            let emailTimeout;
+            emailField.addEventListener('input', function() {
+                clearTimeout(emailTimeout);
+                emailTimeout = setTimeout(() => {
+                    validateEmail(this.value);
+                }, 500);
+            });
+        }
+        
+        // Validação de senha
+        if (passwordField) {
+            passwordField.addEventListener('input', function() {
+                validatePassword(this.value);
+                checkPasswordMatch();
+            });
+            
+            // Adicionar indicador de força da senha
+            const strengthIndicator = document.createElement('div');
+            strengthIndicator.className = 'password-strength';
+            passwordField.parentNode.appendChild(strengthIndicator);
+            
+            // Adicionar lista de requisitos
+            const requirements = document.createElement('ul');
+            requirements.className = 'password-requirements';
+            requirements.innerHTML = `
+                <li id="req-length">Pelo menos 8 caracteres</li>
+                <li id="req-uppercase">Pelo menos 1 letra maiúscula</li>
+                <li id="req-lowercase">Pelo menos 1 letra minúscula</li>
+                <li id="req-number">Pelo menos 1 número</li>
+                <li id="req-special">Pelo menos 1 caractere especial</li>
+            `;
+            passwordField.parentNode.appendChild(requirements);
+        }
+        
+        // Confirmação de senha
+        if (passwordConfirmField) {
+            passwordConfirmField.addEventListener('input', checkPasswordMatch);
+        }
+    });
+
+    // Validar username via AJAX
+    function validateUsername(username) {
+        if (!username || username.length < 3) return;
+        
+        const userId = '{{ usuario.id|default:"" }}';
+        const url = `{% url 'usuarios:verificar_username' %}?username=${encodeURIComponent(username)}&user_id=${userId}`;
+        
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const field = document.getElementById('username');
+            if (data.available) {
+                showFieldSuccess(field, data.message);
+            } else {
+                showFieldError(field, data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao validar username:', error);
+        });
+    }
+
+    // Validar email via AJAX
+    function validateEmail(email) {
+        if (!email || !isValidEmail(email)) return;
+        
+        const userId = '{{ usuario.id|default:"" }}';
+        const url = `{% url 'usuarios:verificar_email' %}?email=${encodeURIComponent(email)}&user_id=${userId}`;
+        
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const field = document.getElementById('email');
+            if (data.available) {
+                showFieldSuccess(field, data.message);
+            } else {
+                showFieldError(field, data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao validar email:', error);
+        });
+    }
+
+    // Validar força da senha
+    function validatePassword(password) {
+        const strengthIndicator = document.querySelector('.password-strength');
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /\d/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+        };
+        
+        // Atualizar indicadores visuais dos requisitos
+        Object.keys(requirements).forEach(req => {
+            const element = document.getElementById(`req-${req}`);
+            if (element) {
+                element.className = requirements[req] ? 'valid' : 'invalid';
+            }
+        });
+        
+        // Calcular força da senha
+        const validCount = Object.values(requirements).filter(Boolean).length;
+        let strength = 'weak';
+        let message = 'Senha fraca';
+        
+        if (validCount >= 4) {
+            strength = 'strong';
+            message = 'Senha forte';
+        } else if (validCount >= 3) {
+            strength = 'medium';
+            message = 'Senha média';
+        }
+        
+        strengthIndicator.className = `password-strength ${strength}`;
+        strengthIndicator.textContent = message;
+    }
+
+    // Verificar se as senhas coincidem
+    function checkPasswordMatch() {
+        const password = document.getElementById('password')?.value;
+        const passwordConfirm = document.getElementById('password_confirm')?.value;
+        
+        if (passwordConfirm && password !== passwordConfirm) {
+            showFieldError(document.getElementById('password_confirm'), 'As senhas não coincidem');
+        } else if (passwordConfirm) {
+            showFieldSuccess(document.getElementById('password_confirm'), 'Senhas coincidem');
+        }
+    }
+
+    // Gerar senha aleatória
+    function generatePassword() {
+        const length = 12;
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let password = '';
+        
+        // Garantir pelo menos um caractere de cada tipo
+        password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+        password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+        password += '0123456789'[Math.floor(Math.random() * 10)];
+        password += '!@#$%^&*'[Math.floor(Math.random() * 8)];
+        
+        // Preencher o resto aleatoriamente
+        for (let i = password.length; i < length; i++) {
+            password += charset[Math.floor(Math.random() * charset.length)];
+        }
+        
+        // Embaralhar a senha
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        
+        // Definir nos campos
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirm');
+        
+        if (passwordField) {
+            passwordField.value = password;
+            passwordField.dispatchEvent(new Event('input'));
+        }
+        
+        if (passwordConfirmField) {
+            passwordConfirmField.value = password;
+            passwordConfirmField.dispatchEvent(new Event('input'));
+        }
+        
+        // Mostrar a senha gerada
+        alert(`Senha gerada: ${password}\n\nCopie esta senha e guarde em local seguro.`);
+    }
+
+    // Validar usuário completo
+    function validateUser() {
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        
+        if (!username) {
+            alert('Digite um username para validar');
+            return;
+        }
+        
+        if (!email) {
+            alert('Digite um email para validar');
+            return;
+        }
+        
+        // Validar ambos
+        Promise.all([
+            validateUsername(username),
+            validateEmail(email)
+        ]).then(() => {
+            alert('Validação concluída! Verifique os campos para ver os resultados.');
+        });
+    }
+
+    // Validação customizada do formulário
+    function validateForm() {
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password')?.value;
+        const passwordConfirm = document.getElementById('password_confirm')?.value;
+        let isValid = true;
+        
+        // Validar campos obrigatórios
+        if (!username) {
+            showFieldError(document.getElementById('username'), 'Username é obrigatório');
+            isValid = false;
+        }
+        
+        if (!email) {
+            showFieldError(document.getElementById('email'), 'Email é obrigatório');
+            isValid = false;
+        } else if (!isValidEmail(email)) {
+            showFieldError(document.getElementById('email'), 'Digite um email válido');
+            isValid = false;
+        }
+        
+        // Validar senha (apenas na criação)
+        if (password !== undefined) {
+            if (!password) {
+                showFieldError(document.getElementById('password'), 'Senha é obrigatória');
+                isValid = false;
+            } else if (password.length < 8) {
+                showFieldError(document.getElementById('password'), 'Senha deve ter pelo menos 8 caracteres');
+                isValid = false;
+            }
+            
+            if (password !== passwordConfirm) {
+                showFieldError(document.getElementById('password_confirm'), 'As senhas não coincidem');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+
+    // Atalhos específicos para usuários
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + G para gerar senha
+        if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+            e.preventDefault();
+            generatePassword();
+        }
+        
+        // Ctrl/Cmd + T para validar usuário
+        if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+            e.preventDefault();
+            validateUser();
+        }
+    });
+</script>
+{% endblock %}
+

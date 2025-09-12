@@ -1,0 +1,37 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Responsável</th>
+    <th>Local</th>
+    <th>Ferramenta</th>
+    <th>Data de Início</th>
+    <th>Data de Fim</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.responsavel.get_full_name|default:object.responsavel.username }}
+        </div>
+    </td>
+    <td>
+        {{ object.get_nivel_organizacional_display }}
+    </td>
+    <td>
+        <span class="badge badge-info">{{ object.ferramenta.nome|default:"—" }}</span>
+    </td>
+    <td>{{ object.data_inicio|date:"d/m/Y" }}</td>
+    <td>{{ object.data_fim|date:"d/m/Y"|default:"-" }}</td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'auditorias:editar_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Auditoria">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Auditoria"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_auditoria' object.pk %}', 'Auditoria de {{ object.data_inicio|date:"d/m/Y" }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

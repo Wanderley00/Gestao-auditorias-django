@@ -1,0 +1,37 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Descrição do Modelo</th>
+    <th>Checklist Associado</th>
+    <th>Categoria</th>
+    <th>Status</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.descricao }}
+        </div>
+    </td>
+    <td>{{ object.checklist.nome|default:"—" }}</td>
+    <td>{{ object.categoria.descricao|default:"—" }}</td>
+    <td>
+        {% if object.ativo %}
+            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
+        {% else %}
+            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'auditorias:editar_modelo_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Modelo">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Modelo"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_modelo_auditoria' object.pk %}', '{{ object.descricao }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

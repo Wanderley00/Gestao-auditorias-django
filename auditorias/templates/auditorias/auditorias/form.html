@@ -1,0 +1,210 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+
+<h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+    1. Informações Gerais
+</h4>
+<div class="form-row">
+    <div class="form-group required">
+        <label for="ferramenta" class="form-label">Ferramenta Digital</label>
+        <select id="ferramenta" name="ferramenta" class="form-control form-select" required>
+            <option value="">Selecione...</option>
+            {% for f in ferramentas %}
+            <option value="{{ f.pk }}" {% if auditoria.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group required">
+        <label for="responsavel" class="form-label">Responsável</label>
+        <select id="responsavel" name="responsavel" class="form-control form-select" required>
+            <option value="">Selecione...</option>
+            {% for u in usuarios %}
+            <option value="{{ u.pk }}" {% if auditoria.responsavel.pk == u.pk %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<h4 style="color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+    2. Local, Modelo e Ativo
+</h4>
+<div class="form-row">
+    <div class="form-group required">
+        <label for="nivel_organizacional" class="form-label">Nível Organizacional</label>
+        <select id="nivel_organizacional" name="nivel_organizacional" class="form-control form-select" required>
+            <option value="">Selecione...</option>
+            <option value="EMPRESA" {% if auditoria.nivel_organizacional == 'EMPRESA' %}selected{% endif %}>Empresa</option>
+            <option value="AREA" {% if auditoria.nivel_organizacional == 'AREA' %}selected{% endif %}>Área</option>
+            <option value="SETOR" {% if auditoria.nivel_organizacional == 'SETOR' %}selected{% endif %}>Setor</option>
+            <option value="SUBSETOR" {% if auditoria.nivel_organizacional == 'SUBSETOR' %}selected{% endif %}>Subsetor</option>
+        </select>
+    </div>
+    <div class="form-group required">
+        <label for="categoria_auditoria" class="form-label">Categoria</label>
+        <select id="categoria_auditoria" name="categoria_auditoria" class="form-control form-select" required>
+            <option value="APP" {% if auditoria.categoria_auditoria == 'APP' %}selected{% endif %}>App</option>
+            <option value="WEB" {% if auditoria.categoria_auditoria == 'WEB' %}selected{% endif %}>Web</option>
+        </select>
+    </div>
+</div>
+<div class="form-row">
+    <div class="form-group" id="container-empresa">
+        <label for="local_empresa" class="form-label">Empresa</label>
+        <select id="local_empresa" name="local_empresa" class="form-control form-select">
+            <option value="">Selecione uma empresa...</option>
+            {% for e in empresas %}<option value="{{ e.pk }}" {% if auditoria.local_empresa.pk == e.pk %}selected{% endif %}>{{ e.nome }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="form-group" id="container-area" style="display:none;">
+        <label for="local_area" class="form-label">Área</label>
+        <select id="local_area" name="local_area" class="form-control form-select"></select>
+    </div>
+</div>
+<div class="form-row">
+    <div class="form-group" id="container-setor" style="display:none;">
+        <label for="local_setor" class="form-label">Setor</label>
+        <select id="local_setor" name="local_setor" class="form-control form-select"></select>
+    </div>
+    <div class="form-group" id="container-subsetor" style="display:none;">
+        <label for="local_subsetor" class="form-label">Subsetor</label>
+        <select id="local_subsetor" name="local_subsetor" class="form-control form-select"></select>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label for="modelos" class="form-label">Modelos de Auditoria</label>
+        <select id="modelos" name="modelos" class="form-control form-select" multiple size="8">
+            {% for m in modelos %}<option value="{{ m.pk }}" {% if m in auditoria.modelos.all %}selected{% endif %}>{{ m.descricao }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="ativos_auditados" class="form-label">Ativos Auditados</label>
+        <select id="ativos_auditados" name="ativos_auditados" class="form-control form-select" multiple size="8">
+            {% if auditoria %}{% for a in auditoria.ativos_auditados.all %}<option value="{{ a.pk }}" selected>{{ a.tag }} - {{ a.descricao }}</option>{% endfor %}{% endif %}
+        </select>
+    </div>
+</div>
+
+<h4 style="color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+    3. Programação
+</h4>
+<div class="form-row">
+    <div class="form-group required">
+        <label for="data_inicio" class="form-label">Data de Início</label>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ auditoria.data_inicio|date:'Y-m-d' }}" required>
+    </div>
+    <div class="form-group">
+        <label for="data_fim" class="form-label">Data de Fim</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ auditoria.data_fim|date:'Y-m-d' }}">
+    </div>
+</div>
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Turnos</label>
+        <select name="turnos" class="form-control form-select" multiple size="5">
+            {% for t in turnos %}<option value="{{ t.pk }}" {% if t in auditoria.turnos.all %}selected{% endif %}>{{ t.descricao }}</option>{% endfor %}
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Referências aos elementos do DOM
+    const nivelSelect = document.getElementById('nivel_organizacional');
+    const empresaSelect = document.getElementById('local_empresa');
+    const areaSelect = document.getElementById('local_area');
+    const setorSelect = document.getElementById('local_setor');
+    const subsetorSelect = document.getElementById('local_subsetor');
+    const ativosSelect = document.getElementById('ativos_auditados');
+
+    const containers = {
+        'EMPRESA': document.getElementById('container-empresa'),
+        'AREA': document.getElementById('container-area'),
+        'SETOR': document.getElementById('container-setor'),
+        'SUBSETOR': document.getElementById('container-subsetor')
+    };
+
+    // Função para atualizar a visibilidade dos containers
+    function atualizarVisibilidade() {
+        const nivel = nivelSelect.value;
+        Object.values(containers).forEach(c => c.style.display = 'none');
+        if (nivel === 'EMPRESA') {
+            containers.EMPRESA.style.display = 'block';
+        } else if (nivel === 'AREA') {
+            containers.EMPRESA.style.display = 'block';
+            containers.AREA.style.display = 'block';
+        } else if (nivel === 'SETOR') {
+            containers.EMPRESA.style.display = 'block';
+            containers.AREA.style.display = 'block';
+            containers.SETOR.style.display = 'block';
+        } else if (nivel === 'SUBSETOR') {
+            Object.values(containers).forEach(c => c.style.display = 'block');
+        }
+        carregarAtivos();
+    }
+
+    // Função genérica para popular um select via AJAX
+    function popularSelect(selectElement, url, placeholder) {
+        selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    const option = new Option(item.nome, item.id);
+                    selectElement.add(option);
+                });
+            });
+    }
+
+    // Carregar ativos com base na seleção
+    function carregarAtivos() {
+        const nivel = nivelSelect.value;
+        let local_id = null;
+        if (nivel === 'SUBSETOR' && subsetorSelect.value) local_id = subsetorSelect.value;
+        else if (nivel === 'SETOR' && setorSelect.value) local_id = setorSelect.value;
+        else if (nivel === 'AREA' && areaSelect.value) local_id = areaSelect.value;
+        else if (nivel === 'EMPRESA' && empresaSelect.value) local_id = empresaSelect.value;
+
+        ativosSelect.innerHTML = '<option value="">Carregando...</option>';
+        if (nivel && local_id) {
+            const url = `{% url 'auditorias:get_ativos_por_local' %}?nivel=${nivel}&local_id=${local_id}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    ativosSelect.innerHTML = '';
+                    data.forEach(ativo => {
+                        const option = new Option(`${ativo.tag} - ${ativo.descricao}`, ativo.id);
+                        ativosSelect.add(option);
+                    });
+                });
+        } else {
+             ativosSelect.innerHTML = '<option value="">Selecione um local para ver os ativos</option>';
+        }
+    }
+
+    // Event Listeners
+    nivelSelect.addEventListener('change', atualizarVisibilidade);
+    empresaSelect.addEventListener('change', () => {
+        popularSelect(areaSelect, `{% url 'auditorias:get_areas_por_empresa' %}?empresa_id=${empresaSelect.value}`, 'Selecione uma área...');
+        carregarAtivos();
+    });
+    areaSelect.addEventListener('change', () => {
+        popularSelect(setorSelect, `{% url 'auditorias:get_setores_por_area' %}?area_id=${areaSelect.value}`, 'Selecione um setor...');
+        carregarAtivos();
+    });
+    setorSelect.addEventListener('change', () => {
+        popularSelect(subsetorSelect, `{% url 'auditorias:get_subsetores_por_setor' %}?setor_id=${setorSelect.value}`, 'Selecione um subsetor...');
+        carregarAtivos();
+    });
+    subsetorSelect.addEventListener('change', carregarAtivos);
+
+    // Inicializar o formulário
+    atualizarVisibilidade();
+});
+</script>
+{% endblock %}

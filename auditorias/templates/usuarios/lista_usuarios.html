@@ -1,0 +1,576 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}Usuários - Sistema de Auditorias{% endblock %}
+{% block page_title %}Usuários{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">Gerenciamento de Usuários</h2>
+            <p class="content-subtitle">Gerencie usuários, permissões e grupos do sistema</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary">
+                <i class="fas fa-users-cog"></i>
+                Grupos
+            </a>
+            <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i>
+                Novo Usuário
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-body">
+        <form method="get" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 16px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Buscar</label>
+                <div class="search-container">
+                    <input type="text" name="search" value="{{ search }}" placeholder="Nome, username ou email..." class="form-control search-input">
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control form-select">
+                    <option value="">Todos</option>
+                    <option value="ativo" {% if status == 'ativo' %}selected{% endif %}>Ativos</option>
+                    <option value="inativo" {% if status == 'inativo' %}selected{% endif %}>Inativos</option>
+                    <option value="staff" {% if status == 'staff' %}selected{% endif %}>Staff</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Grupo</label>
+                <select name="grupo" class="form-control form-select">
+                    <option value="">Todos</option>
+                    {% for g in grupos %}
+                    <option value="{{ g.id }}" {% if grupo == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-search"></i>
+                Buscar
+            </button>
+            
+            {% if search or status or grupo %}
+            <a href="?" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                Limpar
+            </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Usuários -->
+<div class="card">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 class="card-title">Lista de Usuários</h3>
+                <p class="card-subtitle">
+                    {% if page_obj.paginator.count %}
+                        {{ page_obj.paginator.count }} usuário{{ page_obj.paginator.count|pluralize:",s" }} encontrado{{ page_obj.paginator.count|pluralize:",s" }}
+                    {% else %}
+                        Nenhum usuário encontrado
+                    {% endif %}
+                </p>
+            </div>
+            {% if page_obj.paginator.count > 0 %}
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="exportarUsuarios()">
+                    <i class="fas fa-download"></i>
+                    Exportar
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="imprimirTabela()">
+                    <i class="fas fa-print"></i>
+                    Imprimir
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if page_obj.object_list %}
+            <div class="table-container">
+                <table class="table" id="usuariosTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>Usuário</th>
+                            <th>Email</th>
+                            <th>Grupos</th>
+                            <th>Status</th>
+                            <th>Último Login</th>
+                            <th style="width: 140px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in page_obj %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_users" value="{{ usuario.pk }}" class="user-checkbox">
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px;">
+                                        {{ usuario.first_name.0|default:usuario.username.0|upper }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
+                                            {{ usuario.get_full_name|default:usuario.username }}
+                                            {% if usuario.is_superuser %}
+                                                <span class="badge badge-error" style="font-size: 10px; margin-left: 8px;">SUPER</span>
+                                            {% elif usuario.is_staff %}
+                                                <span class="badge badge-warning" style="font-size: 10px; margin-left: 8px;">STAFF</span>
+                                            {% endif %}
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-muted);">
+                                            @{{ usuario.username }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="color: var(--text-secondary);">
+                                    {{ usuario.email|default:"—" }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if usuario.groups.all %}
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        {% for grupo in usuario.groups.all %}
+                                        <span class="badge badge-info" style="font-size: 10px;">
+                                            {{ grupo.name }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-size: 12px;">Nenhum grupo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    {% if usuario.is_active %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i>
+                                            Ativo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-error">
+                                            <i class="fas fa-times-circle"></i>
+                                            Inativo
+                                        </span>
+                                    {% endif %}
+                                    
+                                    {% if usuario != request.user %}
+                                    <button onclick="toggleUserStatus({{ usuario.pk }})" 
+                                            class="btn btn-secondary btn-icon btn-sm" 
+                                            title="{% if usuario.is_active %}Desativar{% else %}Ativar{% endif %} usuário"
+                                            id="toggleBtn{{ usuario.pk }}">
+                                        <i class="fas fa-{% if usuario.is_active %}pause{% else %}play{% endif %}"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if usuario.last_login %}
+                                    <div style="color: var(--text-secondary); font-size: 14px;">
+                                        {{ usuario.last_login|date:"d/m/Y" }}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-muted);">
+                                        {{ usuario.last_login|date:"H:i" }}
+                                    </div>
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-size: 12px;">Nunca</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'usuarios:editar_usuario' usuario.pk %}" 
+                                       class="btn btn-secondary btn-icon" 
+                                       title="Editar usuário">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'usuarios:alterar_senha_usuario' usuario.pk %}" 
+                                       class="btn btn-warning btn-icon" 
+                                       title="Alterar senha">
+                                        <i class="fas fa-key"></i>
+                                    </a>
+                                    {% if usuario != request.user %}
+                                    <form method="POST" action="{% url 'usuarios:deletar_usuario' usuario.pk %}" id="delete-form-{{ usuario.pk }}" style="display: none;">
+                                            {% csrf_token %}
+                                        </form>
+
+                                        <button type="button"
+                                                class="js-confirm-delete-user"
+                                                data-form-id="delete-form-{{ usuario.pk }}"
+                                                data-user-name="{{ usuario.get_full_name|default:usuario.username }}">
+                                            Deletar Usuário
+                                        </button>
+
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if grupo %}&grupo={{ grupo }}{% endif %}" title="Primeira página">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if grupo %}&grupo={{ grupo }}{% endif %}" title="Página anterior">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if grupo %}&grupo={{ grupo }}{% endif %}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if grupo %}&grupo={{ grupo }}{% endif %}" title="Próxima página">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if grupo %}&grupo={{ grupo }}{% endif %}" title="Última página">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <!-- Estado Vazio -->
+            <div style="text-align: center; padding: 64px 24px; color: var(--text-muted);">
+                <i class="fas fa-users" style="font-size: 64px; margin-bottom: 24px; opacity: 0.3;"></i>
+                <h3 style="margin-bottom: 12px; color: var(--text-secondary);">
+                    {% if search or status or grupo %}
+                        Nenhum usuário encontrado
+                    {% else %}
+                        Nenhum usuário cadastrado
+                    {% endif %}
+                </h3>
+                <p style="margin-bottom: 24px;">
+                    {% if search or status or grupo %}
+                        Tente ajustar os filtros de busca.
+                    {% else %}
+                        Comece criando o primeiro usuário do sistema.
+                    {% endif %}
+                </p>
+                {% if not search and not status and not grupo %}
+                <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Criar Usuário
+                </a>
+                {% else %}
+                <a href="?" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Limpar Filtros
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmação para Exclusão -->
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: var(--radius-lg); padding: 32px; max-width: 400px; width: 90%; box-shadow: var(--shadow-xl);">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--warning); margin-bottom: 16px;"></i>
+            <h3 style="margin-bottom: 8px;">Confirmar Exclusão</h3>
+            <p style="color: var(--text-secondary);">Esta ação não pode ser desfeita.</p>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancelar</button>
+            <a id="confirmDeleteBtn" href="#" class="btn btn-danger">Excluir</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para confirmar exclusão
+    function confirmDelete(url, userName) {
+        document.getElementById('confirmDeleteBtn').href = url;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Fechar modal clicando fora
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    // Função para alternar status do usuário
+    function toggleUserStatus(userId) {
+        const btn = document.getElementById(`toggleBtn${userId}`);
+        const originalHtml = btn.innerHTML;
+        
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled = true;
+        
+        fetch(`{% url 'usuarios:toggle_usuario_status' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recarregar a página para atualizar o status
+                location.reload();
+            } else {
+                alert(data.message);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao alterar status do usuário');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    }
+
+    // Função para selecionar/deselecionar todos os usuários
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateBulkActions();
+    }
+
+    // Atualizar ações em lote
+    function updateBulkActions() {
+        const selectedUsers = document.querySelectorAll('.user-checkbox:checked');
+        const bulkActions = document.getElementById('bulkActions');
+        
+        if (selectedUsers.length > 0) {
+            if (!bulkActions) {
+                createBulkActionsBar(selectedUsers.length);
+            } else {
+                updateBulkActionsCount(selectedUsers.length);
+            }
+        } else {
+            removeBulkActionsBar();
+        }
+    }
+
+    // Criar barra de ações em lote
+    function createBulkActionsBar(count) {
+        const bulkActionsHtml = `
+            <div id="bulkActions" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 16px 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 16px; z-index: 1000;">
+                <span id="bulkCount">${count} usuário${count > 1 ? 's' : ''} selecionado${count > 1 ? 's' : ''}</span>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="bulkAction('activate')" class="btn btn-success btn-sm">
+                        <i class="fas fa-check"></i>
+                        Ativar
+                    </button>
+                    <button onclick="bulkAction('deactivate')" class="btn btn-warning btn-sm">
+                        <i class="fas fa-pause"></i>
+                        Desativar
+                    </button>
+                    <button onclick="bulkAction('delete')" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash"></i>
+                        Excluir
+                    </button>
+                    <button onclick="clearSelection()" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', bulkActionsHtml);
+    }
+
+    // Atualizar contador de ações em lote
+    function updateBulkActionsCount(count) {
+        const bulkCount = document.getElementById('bulkCount');
+        if (bulkCount) {
+            bulkCount.textContent = `${count} usuário${count > 1 ? 's' : ''} selecionado${count > 1 ? 's' : ''}`;
+        }
+    }
+
+    // Remover barra de ações em lote
+    function removeBulkActionsBar() {
+        const bulkActions = document.getElementById('bulkActions');
+        if (bulkActions) {
+            bulkActions.remove();
+        }
+    }
+
+    // Limpar seleção
+    function clearSelection() {
+        document.getElementById('selectAll').checked = false;
+        document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+        removeBulkActionsBar();
+    }
+
+    // Executar ação em lote
+    function bulkAction(action) {
+        const selectedIds = getSelectedUserIds();
+        
+        if (selectedIds.length === 0) {
+            alert('Nenhum usuário selecionado');
+            return;
+        }
+        
+        let confirmMessage = '';
+        switch(action) {
+            case 'activate':
+                confirmMessage = `Ativar ${selectedIds.length} usuário(s)?`;
+                break;
+            case 'deactivate':
+                confirmMessage = `Desativar ${selectedIds.length} usuário(s)?`;
+                break;
+            case 'delete':
+                confirmMessage = `Excluir ${selectedIds.length} usuário(s)? Esta ação não pode ser desfeita.`;
+                break;
+        }
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', action);
+        selectedIds.forEach(id => formData.append('user_ids', id));
+        
+        fetch('{% url "usuarios:bulk_action_usuarios" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao executar ação em lote');
+        });
+    }
+
+    // Obter IDs dos usuários selecionados
+    function getSelectedUserIds() {
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        return Array.from(selectedCheckboxes).map(cb => cb.value);
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar listeners para checkboxes individuais
+        document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateBulkActions);
+        });
+        
+        // Busca em tempo real
+        const searchInput = document.querySelector('input[name="search"]');
+        let searchTimeout;
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (this.value.length >= 3 || this.value.length === 0) {
+                        this.form.submit();
+                    }
+                }, 500);
+            });
+        }
+    });
+
+    // Função para exportar usuários
+    function exportarUsuarios() {
+        alert('Funcionalidade de exportação será implementada');
+    }
+
+    // Função para imprimir tabela
+    function imprimirTabela() {
+        const printContent = document.getElementById('usuariosTable').outerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Lista de Usuários - Impressão</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f5f5f5; }
+                        .btn, .user-checkbox, #selectAll { display: none; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Lista de Usuários</h1>
+                    ${printContent}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + A para selecionar todos
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.target.matches('input[type="text"], textarea')) {
+            e.preventDefault();
+            document.getElementById('selectAll').checked = true;
+            toggleSelectAll();
+        }
+        
+        // Delete para excluir selecionados
+        if (e.key === 'Delete') {
+            const selectedIds = getSelectedUserIds();
+            if (selectedIds.length > 0) {
+                bulkAction('delete');
+            }
+        }
+    });
+</script>
+{% endblock %}
+
