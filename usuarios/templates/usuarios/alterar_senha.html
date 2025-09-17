@@ -1,0 +1,38 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-group">
+    <div style="background: rgba(37, 99, 235, 0.1); padding: 16px; border-radius: var(--radius-md); margin-bottom: 24px; border-left: 4px solid var(--primary);">
+        <p style="margin: 0; color: var(--text-primary);">
+            <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+            Alterando senha para: <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>
+        </p>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group required">
+        <label for="password" class="form-label">Nova Senha</label>
+        <input type="password" 
+               id="password" 
+               name="password" 
+               class="form-control" 
+               required 
+               minlength="8"
+               placeholder="Digite a nova senha">
+        <div class="field-help">Mínimo de 8 caracteres</div>
+    </div>
+    
+    <div class="form-group required">
+        <label for="password_confirm" class="form-label">Confirmar Nova Senha</label>
+        <input type="password" 
+               id="password_confirm" 
+               name="password_confirm" 
+               class="form-control" 
+               required 
+               minlength="8"
+               placeholder="Confirme a nova senha">
+        <div class="field-help">Digite a senha novamente</div>
+    </div>
+</div>
+{% endblock %}

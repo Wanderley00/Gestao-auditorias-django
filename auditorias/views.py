@@ -62,10 +62,14 @@ def lista_pilares(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Pilares',
-        'create_url': 'auditorias:criar_pilar'
+        'singular': 'Pilar',
+        'button_text': 'Novo Pilar',
+        'create_url': 'auditorias:criar_pilar',
+        'artigo': 'o',
+        'empty_message': 'Nenhum pilar cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro pilar.'
     }
     return render(request, 'auditorias/pilares/lista.html', context)
-
 
 @login_required
 def criar_pilar(request):
@@ -89,8 +93,11 @@ def criar_pilar(request):
         else:
             messages.error(request, 'Nome é obrigatório!')
     
-    return render(request, 'auditorias/pilares/form.html', {'title': 'Criar Pilar'})
-
+    context = {
+        'title': 'Criar Pilar',
+        'back_url': 'auditorias:lista_pilares'  # SEMPRE ADICIONAR ISSO
+    }
+    return render(request, 'auditorias/pilares/form.html', context)
 
 @login_required
 def editar_pilar(request, pk):
@@ -111,10 +118,10 @@ def editar_pilar(request, pk):
     
     context = {
         'pilar': pilar,
-        'title': 'Editar Pilar'
+        'title': 'Editar Pilar',
+        'back_url': 'auditorias:lista_pilares'  # SEMPRE ADICIONAR ISSO
     }
     return render(request, 'auditorias/pilares/form.html', context)
-
 
 @login_required
 def deletar_pilar(request, pk):
@@ -159,7 +166,12 @@ def lista_categorias_auditoria(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Categorias de Auditoria',
-        'create_url': 'auditorias:criar_categoria_auditoria'
+        'singular': 'Categoria de Auditoria',
+        'button_text': 'Nova Categoria de Auditoria',
+        'create_url': 'auditorias:criar_categoria_auditoria',
+        'artigo': 'a',
+        'empty_message': 'Nenhuma categoria de auditoria cadastrada',
+        'empty_subtitle': 'Comece criando a primeira categoria de auditoria.'
     }
     return render(request, 'auditorias/categorias/lista.html', context)
 
@@ -189,10 +201,10 @@ def criar_categoria_auditoria(request):
     
     context = {
         'pilares': Pilar.objects.filter(ativo=True),
-        'title': 'Criar Categoria de Auditoria'
+        'title': 'Criar Categoria de Auditoria',
+        'back_url': 'auditorias:lista_categorias_auditoria'  # ADICIONADO
     }
     return render(request, 'auditorias/categorias/form.html', context)
-
 
 @login_required
 def editar_categoria_auditoria(request, pk):
@@ -217,10 +229,10 @@ def editar_categoria_auditoria(request, pk):
     context = {
         'categoria': categoria,
         'pilares': Pilar.objects.filter(ativo=True),
-        'title': 'Editar Categoria de Auditoria'
+        'title': 'Editar Categoria de Auditoria',
+        'back_url': 'auditorias:lista_categorias_auditoria'  # ADICIONADO
     }
     return render(request, 'auditorias/categorias/form.html', context)
-
 
 @login_required
 def deletar_categoria_auditoria(request, pk):
@@ -265,10 +277,14 @@ def lista_normas(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Normas',
-        'create_url': 'auditorias:criar_norma'
+        'singular': 'Norma',
+        'button_text': 'Nova Norma',
+        'create_url': 'auditorias:criar_norma',
+        'artigo': 'a',
+        'empty_message': 'Nenhuma norma cadastrada',
+        'empty_subtitle': 'Comece criando a primeira norma.'
     }
     return render(request, 'auditorias/normas/lista.html', context)
-
 
 @login_required
 def criar_norma(request):
@@ -292,8 +308,11 @@ def criar_norma(request):
         else:
             messages.error(request, 'Descrição e revisão são obrigatórios!')
     
-    return render(request, 'auditorias/normas/form.html', {'title': 'Criar Norma'})
-
+    context = {
+        'title': 'Criar Norma',
+        'back_url': 'auditorias:lista_normas'  # ADICIONADO
+    }
+    return render(request, 'auditorias/normas/form.html', context)
 
 @login_required
 def editar_norma(request, pk):
@@ -314,10 +333,10 @@ def editar_norma(request, pk):
     
     context = {
         'norma': norma,
-        'title': 'Editar Norma'
+        'title': 'Editar Norma',
+        'back_url': 'auditorias:lista_normas'  # ADICIONADO
     }
     return render(request, 'auditorias/normas/form.html', context)
-
 
 @login_required
 def deletar_norma(request, pk):
@@ -360,10 +379,14 @@ def lista_ferramentas_digitais(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Ferramentas Digitais',
-        'create_url': 'auditorias:criar_ferramenta_digital'
+        'singular': 'Ferramenta Digital',
+        'button_text': 'Nova Ferramenta Digital',
+        'create_url': 'auditorias:criar_ferramenta_digital',
+        'artigo': 'a',
+        'empty_message': 'Nenhuma ferramenta digital cadastrada',
+        'empty_subtitle': 'Comece criando a primeira ferramenta digital.'
     }
     return render(request, 'auditorias/ferramentas_digitais/lista.html', context)
-
 
 @login_required
 def criar_ferramenta_digital(request):
@@ -381,8 +404,11 @@ def criar_ferramenta_digital(request):
         else:
             messages.error(request, 'Nome é obrigatório!')
     
-    return render(request, 'auditorias/ferramentas_digitais/form.html', {'title': 'Criar Ferramenta Digital'})
-
+    context = {
+        'title': 'Criar Ferramenta Digital',
+        'back_url': 'auditorias:lista_ferramentas_digitais'  # ADICIONADO
+    }
+    return render(request, 'auditorias/ferramentas_digitais/form.html', context)
 
 @login_required
 def editar_ferramenta_digital(request, pk):
@@ -401,7 +427,8 @@ def editar_ferramenta_digital(request, pk):
     
     context = {
         'ferramenta': ferramenta,
-        'title': 'Editar Ferramenta Digital'
+        'title': 'Editar Ferramenta Digital',
+        'back_url': 'auditorias:lista_ferramentas_digitais'  # ADICIONADO
     }
     return render(request, 'auditorias/ferramentas_digitais/form.html', context)
 
@@ -449,10 +476,14 @@ def lista_tipos_questao(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Tipos de Questão',
-        'create_url': 'auditorias:criar_tipo_questao'
+        'singular': 'Tipo de Questão',
+        'button_text': 'Novo Tipo de Questão',
+        'create_url': 'auditorias:criar_tipo_questao',
+        'artigo': 'o',
+        'empty_message': 'Nenhum tipo de questão cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro tipo de questão.'
     }
     return render(request, 'auditorias/tipos_questao/lista.html', context)
-
 
 @login_required
 def criar_tipo_questao(request):
@@ -476,8 +507,11 @@ def criar_tipo_questao(request):
         else:
             messages.error(request, 'Nome e descrição são obrigatórios!')
     
-    return render(request, 'auditorias/tipos_questao/form.html', {'title': 'Criar Tipo de Questão'})
-
+    context = {
+        'title': 'Criar Tipo de Questão',
+        'back_url': 'auditorias:lista_tipos_questao'  # ADICIONADO
+    }
+    return render(request, 'auditorias/tipos_questao/form.html', context)
 
 @login_required
 def editar_tipo_questao(request, pk):
@@ -500,7 +534,8 @@ def editar_tipo_questao(request, pk):
     
     context = {
         'tipo': tipo,
-        'title': 'Editar Tipo de Questão'
+        'title': 'Editar Tipo de Questão',
+        'back_url': 'auditorias:lista_tipos_questao'  # ADICIONADO
     }
     return render(request, 'auditorias/tipos_questao/form.html', context)
 
@@ -530,28 +565,30 @@ def deletar_tipo_questao(request, pk):
 # ============================================================================
 
 @login_required
-def lista_modelos_avaliacao(request):
-    """Lista todos os modelos de avaliação"""
+def lista_checklists(request):
+    """Lista todos os checklists"""
     search = request.GET.get('search', '')
-    modelos = ModeloAvaliacao.objects.prefetch_related('tipos_questao_suportados').all()
+    checklists = Checklist.objects.select_related('ferramenta', 'modelo_avaliacao').all()
     
     if search:
-        modelos = modelos.filter(
-            Q(nome__icontains=search) | Q(descricao__icontains=search)
-        )
+        checklists = checklists.filter(nome__icontains=search)
     
-    paginator = Paginator(modelos, 10)
+    paginator = Paginator(checklists, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Modelos de Avaliação',
-        'create_url': 'auditorias:criar_modelo_avaliacao'
+        'title': 'Checklists',
+        'singular': 'Checklist',
+        'button_text': 'Novo Checklist',
+        'create_url': 'auditorias:criar_checklist',
+        'artigo': 'o',
+        'empty_message': 'Nenhum checklist cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro checklist.'
     }
-    return render(request, 'auditorias/modelos_avaliacao/lista.html', context)
-
+    return render(request, 'auditorias/checklists/lista.html', context)
 
 @login_required
 def criar_modelo_avaliacao(request):
@@ -579,10 +616,10 @@ def criar_modelo_avaliacao(request):
     
     context = {
         'tipos_questao': TipoQuestao.objects.all(),
-        'title': 'Criar Modelo de Avaliação'
+        'title': 'Criar Modelo de Avaliação',
+        'back_url': 'auditorias:lista_modelos_avaliacao'  # ADICIONADO
     }
     return render(request, 'auditorias/modelos_avaliacao/form.html', context)
-
 
 @login_required
 def editar_modelo_avaliacao(request, pk):
@@ -605,10 +642,10 @@ def editar_modelo_avaliacao(request, pk):
     context = {
         'modelo': modelo,
         'tipos_questao': TipoQuestao.objects.all(),
-        'title': 'Editar Modelo de Avaliação'
+        'title': 'Editar Modelo de Avaliação',
+        'back_url': 'auditorias:lista_modelos_avaliacao'  # ADICIONADO
     }
     return render(request, 'auditorias/modelos_avaliacao/form.html', context)
-
 
 @login_required
 def deletar_modelo_avaliacao(request, pk):
@@ -688,10 +725,10 @@ def criar_checklist(request):
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
         'modelos_avaliacao': ModeloAvaliacao.objects.all(),
-        'title': 'Criar Checklist'
+        'title': 'Criar Checklist',
+        'back_url': 'auditorias:lista_checklists'  # ADICIONADO
     }
     return render(request, 'auditorias/checklists/form.html', context)
-
 
 @login_required
 def editar_checklist(request, pk):
@@ -726,10 +763,10 @@ def editar_checklist(request, pk):
         'checklist': checklist,
         'ferramentas': FerramentaDigital.objects.all(),
         'modelos_avaliacao': ModeloAvaliacao.objects.all(),
-        'title': 'Editar Checklist'
+        'title': 'Editar Checklist',
+        'back_url': 'auditorias:lista_checklists'  # ADICIONADO
     }
     return render(request, 'auditorias/checklists/form.html', context)
-
 
 @login_required
 def deletar_checklist(request, pk):
@@ -771,10 +808,14 @@ def lista_modelos_auditoria(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Modelos de Auditoria',
-        'create_url': 'auditorias:criar_modelo_auditoria'
+        'singular': 'Modelo de Auditoria',
+        'button_text': 'Novo Modelo de Auditoria',
+        'create_url': 'auditorias:criar_modelo_auditoria',
+        'artigo': 'o',
+        'empty_message': 'Nenhum modelo de auditoria cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.'
     }
     return render(request, 'auditorias/modelos_auditoria/lista.html', context)
-
 
 @login_required
 def criar_modelo_auditoria(request):
@@ -814,10 +855,10 @@ def criar_modelo_auditoria(request):
         'checklists': Checklist.objects.filter(ativo=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
-        'title': 'Criar Modelo de Auditoria'
+        'title': 'Criar Modelo de Auditoria',
+        'back_url': 'auditorias:lista_modelos_auditoria'  # ADICIONADO
     }
     return render(request, 'auditorias/modelos_auditoria/form.html', context)
-
 
 @login_required
 def editar_modelo_auditoria(request, pk):
@@ -860,7 +901,8 @@ def editar_modelo_auditoria(request, pk):
         'checklists': Checklist.objects.filter(ativo=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
-        'title': 'Editar Modelo de Auditoria'
+        'title': 'Editar Modelo de Auditoria',
+        'back_url': 'auditorias:lista_modelos_auditoria'  # ADICIONADO
     }
     return render(request, 'auditorias/modelos_auditoria/form.html', context)
 
@@ -910,10 +952,14 @@ def lista_auditorias(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Auditorias Agendadas',
-        'create_url': 'auditorias:criar_auditoria'
+        'singular': 'Auditoria',
+        'button_text': 'Nova Auditoria',
+        'create_url': 'auditorias:criar_auditoria',
+        'artigo': 'a',
+        'empty_message': 'Nenhuma auditoria agendada',
+        'empty_subtitle': 'Comece criando a primeira auditoria.'
     }
     return render(request, 'auditorias/auditorias/lista.html', context)
-
 
 @login_required
 def criar_auditoria(request):
@@ -1002,7 +1048,8 @@ def criar_auditoria(request):
         'modelos': ModeloAuditoria.objects.filter(ativo=True),
         'ativos': Ativo.objects.filter(ativo=True),
         'turnos': Turno.objects.filter(ativo=True),
-        'title': 'Criar Auditoria'
+        'title': 'Criar Auditoria',
+        'back_url': 'auditorias:lista_auditorias'  # ADICIONADO
     }
     return render(request, 'auditorias/auditorias/form.html', context)
 
@@ -1075,7 +1122,8 @@ def editar_auditoria(request, pk):
         'modelos': ModeloAuditoria.objects.filter(ativo=True),
         'ativos': Ativo.objects.filter(ativo=True),
         'turnos': Turno.objects.filter(ativo=True),
-        'title': 'Editar Auditoria'
+        'title': 'Editar Auditoria',
+        'back_url': 'auditorias:lista_auditorias'  # ADICIONADO
     }
     return render(request, 'auditorias/auditorias/form.html', context)
 
@@ -1148,3 +1196,30 @@ def get_ativos_por_local(request):
     ativos_data = ativos.values('id', 'tag', 'descricao')
     return JsonResponse(list(ativos_data), safe=False)
 
+@login_required
+def lista_modelos_avaliacao(request):
+    """Lista todos os modelos de avaliação"""
+    search = request.GET.get('search', '')
+    modelos = ModeloAvaliacao.objects.prefetch_related('tipos_questao_suportados').all()
+    
+    if search:
+        modelos = modelos.filter(
+            Q(nome__icontains=search) | Q(descricao__icontains=search)
+        )
+    
+    paginator = Paginator(modelos, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'title': 'Modelos de Avaliação',
+        'singular': 'Modelo de Avaliação',
+        'button_text': 'Novo Modelo de Avaliação',
+        'create_url': 'auditorias:criar_modelo_avaliacao',
+        'artigo': 'o',
+        'empty_message': 'Nenhum modelo de avaliação cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro modelo de avaliação.'
+    }
+    return render(request, 'auditorias/modelos_avaliacao/lista.html', context)

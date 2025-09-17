@@ -1,0 +1,190 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<!-- Informações Básicas -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-user"></i>
+        Informações Básicas
+    </h4>
+    
+    <div class="form-row">
+        <div class="form-group required">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" 
+                   id="username" 
+                   name="username" 
+                   class="form-control" 
+                   value="{{ usuario.username|default:'' }}" 
+                   required 
+                   maxlength="150"
+                   placeholder="Digite o username">
+            <div class="field-help">Username único para login no sistema</div>
+        </div>
+        
+        <div class="form-group required">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" 
+                   id="email" 
+                   name="email" 
+                   class="form-control" 
+                   value="{{ usuario.email|default:'' }}" 
+                   required 
+                   placeholder="Digite o email">
+            <div class="field-help">Email único para comunicações</div>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="first_name" class="form-label">Nome</label>
+            <input type="text" 
+                   id="first_name" 
+                   name="first_name" 
+                   class="form-control" 
+                   value="{{ usuario.first_name|default:'' }}" 
+                   maxlength="150"
+                   placeholder="Digite o primeiro nome">
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name" class="form-label">Sobrenome</label>
+            <input type="text" 
+                   id="last_name" 
+                   name="last_name" 
+                   class="form-control" 
+                   value="{{ usuario.last_name|default:'' }}" 
+                   maxlength="150"
+                   placeholder="Digite o sobrenome">
+        </div>
+    </div>
+</div>
+
+<!-- Senha (apenas para criação) -->
+{% if not usuario %}
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-lock"></i>
+        Senha
+    </h4>
+    
+    <div class="form-row">
+        <div class="form-group required">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" 
+                   id="password" 
+                   name="password" 
+                   class="form-control" 
+                   required 
+                   minlength="8"
+                   placeholder="Digite a senha">
+            <div class="field-help">Mínimo de 8 caracteres</div>
+        </div>
+        
+        <div class="form-group required">
+            <label for="password_confirm" class="form-label">Confirmar Senha</label>
+            <input type="password" 
+                   id="password_confirm" 
+                   name="password_confirm" 
+                   class="form-control" 
+                   required 
+                   minlength="8"
+                   placeholder="Confirme a senha">
+            <div class="field-help">Digite a senha novamente</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Permissões -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-shield-alt"></i>
+        Permissões
+    </h4>
+    
+    <div class="form-row triple">
+        <div class="form-group">
+            <label class="form-label">Status Ativo</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_active" 
+                           {% if usuario.is_active|default:True %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Usuário pode fazer login
+                </span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Staff</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_staff" 
+                           {% if usuario.is_staff %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Acesso ao admin
+                </span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Superusuário</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" 
+                           name="is_superuser" 
+                           {% if usuario.is_superuser %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="color: var(--text-secondary); font-size: 14px;">
+                    Todas as permissões
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grupos -->
+<div style="margin-bottom: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        <i class="fas fa-users"></i>
+        Grupos
+    </h4>
+    
+    <div class="form-group">
+        <label class="form-label">Grupos do Usuário</label>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px;">
+            {% if grupos %}
+                {% for grupo in grupos %}
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <input type="checkbox" 
+                           name="grupos" 
+                           value="{{ grupo.id }}" 
+                           id="grupo_{{ grupo.id }}"
+                           {% if usuario and grupo in usuario.groups.all %}checked{% endif %}>
+                    <label for="grupo_{{ grupo.id }}" style="margin: 0; cursor: pointer; flex: 1;">
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ grupo.name }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            {{ grupo.permissions.count }} permissão{{ grupo.permissions.count|pluralize:"ões" }}
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 24px;">
+                    <i class="fas fa-users" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <p>Nenhum grupo disponível</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="field-help">Selecione os grupos aos quais o usuário pertence</div>
+    </div>
+</div>
+{% endblock %}

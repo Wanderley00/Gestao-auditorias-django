@@ -33,9 +33,14 @@ def lista_itens(request):
 
     context = {
         'title': 'Itens',
+        'singular': 'Item',
+        'button_text': 'Novo Item',
         'page_obj': page_obj,
         'search': search,
         'create_url': 'itens:criar_item',
+        'artigo': 'o',
+        'empty_message': 'Nenhum item cadastrado',
+        'empty_subtitle': 'Comece criando o primeiro item.'
     }
     return render(request, 'itens/lista_itens.html', context)
 

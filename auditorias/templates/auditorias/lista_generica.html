@@ -12,7 +12,7 @@
         </div>
         <a href="{% url create_url %}" class="btn btn-primary">
             <i class="fas fa-plus"></i>
-            Adicionar {{ title|slice:"-1" }}
+            {% if button_text %}{{ button_text }}{% else %}Nova {{ singular|default:title|slice:":-1" }}{% endif %}
         </a>
     </div>
 </div>
@@ -131,20 +131,20 @@
                     {% if search %}
                         Nenhum resultado encontrado
                     {% else %}
-                        Nenhum {{ title|slice:"-1"|lower }} cadastrado
+                        {% if empty_message %}{{ empty_message }}{% else %}Nenhum {{ singular|default:title|slice:":-1"|lower }} cadastrado{% endif %}
                     {% endif %}
                 </h3>
                 <p style="margin-bottom: 24px;">
                     {% if search %}
                         Tente ajustar os termos de busca ou limpar os filtros.
                     {% else %}
-                        Comece criando seu primeiro {{ title|slice:"-1"|lower }}.
+                        {% if empty_subtitle %}{{ empty_subtitle }}{% else %}Comece criando {{ artigo|default:'o' }} primeiro {{ singular|default:title|slice:":-1"|lower }}.{% endif %}
                     {% endif %}
                 </p>
                 {% if not search %}
-                <a href="{{ create_url }}" class="btn btn-primary">
+                <a href="{% url create_url %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
-                    Criar {{ title|slice:"-1" }}
+                    {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
                 </a>
                 {% else %}
                 <a href="?" class="btn btn-secondary">
@@ -270,4 +270,3 @@
     });
 </script>
 {% endblock %}
-

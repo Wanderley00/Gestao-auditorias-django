@@ -1,0 +1,118 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+    Identificação do Ativo
+</h4>
+<div class="form-row">
+    <div class="form-group required">
+        <label for="tag" class="form-label">TAG do Ativo</label>
+        <input type="text" id="tag" name="tag" class="form-control" value="{{ ativo.tag|default:'' }}" required maxlength="50">
+    </div>
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição</label>
+        <input type="text" id="descricao" name="descricao" class="form-control" value="{{ ativo.descricao|default:'' }}" required maxlength="255">
+    </div>
+</div>
+<div class="form-row">
+    <div class="form-group">
+        <label for="custo" class="form-label">Custo (R$)</label>
+        <input type="number" step="0.01" id="custo" name="custo" class="form-control" value="{{ ativo.custo|default:'' }}">
+    </div>
+    <div class="form-group">
+        <label for="codigo_fabricante" class="form-label">Código do Fabricante</label>
+        <input type="text" id="codigo_fabricante" name="codigo_fabricante" class="form-control" value="{{ ativo.codigo_fabricante|default:'' }}" maxlength="100">
+    </div>
+</div>
+<div class="form-group">
+    <label for="imagem_ativo" class="form-label">Imagem do Ativo</label>
+    {% if ativo.imagem_ativo %}
+    <p>Imagem atual: <a href="{{ ativo.imagem_ativo.url }}" target="_blank">{{ ativo.imagem_ativo.name }}</a></p>
+    {% endif %}
+    <input type="file" id="imagem_ativo" name="imagem_ativo" class="form-control">
+</div>
+
+<h4 style="color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+    Classificação e Localização
+</h4>
+<div class="form-row triple">
+    <div class="form-group">
+        <label for="categoria" class="form-label">Categoria</label>
+        <select id="categoria" name="categoria" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for cat in categorias %}<option value="{{ cat.pk }}" {% if ativo.categoria.pk == cat.pk %}selected{% endif %}>{{ cat.nome }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="marca" class="form-label">Marca</label>
+        <select id="marca" name="marca" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for marca in marcas %}<option value="{{ marca.pk }}" {% if ativo.marca.pk == marca.pk %}selected{% endif %}>{{ marca.nome }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="modelo" class="form-label">Modelo</label>
+        <select id="modelo" name="modelo" class="form-control form-select">
+            <option value="">Selecione uma marca primeiro</option>
+            {% if ativo.modelo %}
+                <option value="{{ ativo.modelo.pk }}" selected>{{ ativo.modelo.nome }}</option>
+            {% endif %}
+        </select>
+    </div>
+</div>
+<div class="form-row">
+     <div class="form-group">
+        <label for="estrutura_organizacional" class="form-label">Local (Subsetor)</label>
+        <select id="estrutura_organizacional" name="estrutura_organizacional" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for subsetor in subsetores %}<option value="{{ subsetor.pk }}" {% if ativo.estrutura_organizacional.pk == subsetor.pk %}selected{% endif %}>{{ subsetor }}</option>{% endfor %}
+        </select>
+    </div>
+</div>
+<div class="form-group">
+    <label class="form-label">Status</label>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <label class="toggle-switch">
+            <input type="checkbox" name="ativo" {% if ativo.ativo|default:True %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+        </label>
+        <span style="color: var(--text-secondary); font-size: 14px;">Ativo no sistema</span>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const marcaSelect = document.getElementById('marca');
+    const modeloSelect = document.getElementById('modelo');
+
+    marcaSelect.addEventListener('change', function() {
+        const marcaId = this.value;
+        modeloSelect.innerHTML = '<option value="">Carregando...</option>';
+
+        if (marcaId) {
+            fetch(`{% url 'ativos:get_modelos_por_marca' %}?marca_id=${marcaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    modeloSelect.innerHTML = '<option value="">Selecione um modelo</option>';
+                    data.forEach(modelo => {
+                        const option = document.createElement('option');
+                        option.value = modelo.id;
+                        option.textContent = modelo.nome;
+                        modeloSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar modelos:', error);
+                    modeloSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                });
+        } else {
+            modeloSelect.innerHTML = '<option value="">Selecione uma marca primeiro</option>';
+        }
+    });
+});
+</script>
+{% endblock %}

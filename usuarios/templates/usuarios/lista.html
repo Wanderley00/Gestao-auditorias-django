@@ -1,0 +1,106 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th style="width: 40px;">
+        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+    </th>
+    <th>Usuário</th>
+    <th>Email</th>
+    <th>Grupos</th>
+    <th>Status</th>
+    <th>Último Login</th>
+    <th style="width: 140px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <input type="checkbox" name="selected_users" value="{{ object.pk }}" class="user-checkbox">
+    </td>
+    <td>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px;">
+                {{ object.first_name.0|default:object.username.0|upper }}
+            </div>
+            <div>
+                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
+                    {{ object.get_full_name|default:object.username }}
+                    {% if object.is_superuser %}
+                        <span class="badge badge-error" style="font-size: 10px; margin-left: 8px;">SUPER</span>
+                    {% elif object.is_staff %}
+                        <span class="badge badge-warning" style="font-size: 10px; margin-left: 8px;">STAFF</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                    @{{ object.username }}
+                </div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div style="color: var(--text-secondary);">
+            {{ object.email|default:"—" }}
+        </div>
+    </td>
+    <td>
+        {% if object.groups.all %}
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                {% for grupo in object.groups.all %}
+                <span class="badge badge-info" style="font-size: 10px;">
+                    {{ grupo.name }}
+                </span>
+                {% endfor %}
+            </div>
+        {% else %}
+            <span style="color: var(--text-muted); font-size: 12px;">Nenhum grupo</span>
+        {% endif %}
+    </td>
+    <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            {% if object.is_active %}
+                <span class="badge badge-success">
+                    <i class="fas fa-check-circle"></i>
+                    Ativo
+                </span>
+            {% else %}
+                <span class="badge badge-error">
+                    <i class="fas fa-times-circle"></i>
+                    Inativo
+                </span>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        {% if object.last_login %}
+            <div style="color: var(--text-secondary); font-size: 14px;">
+                {{ object.last_login|date:"d/m/Y" }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+                {{ object.last_login|date:"H:i" }}
+            </div>
+        {% else %}
+            <span style="color: var(--text-muted); font-size: 12px;">Nunca</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'usuarios:editar_usuario' object.pk %}" 
+               class="btn btn-secondary btn-icon" 
+               title="Editar usuário">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'usuarios:alterar_senha_usuario' object.pk %}" 
+               class="btn btn-warning btn-icon" 
+               title="Alterar senha">
+                <i class="fas fa-key"></i>
+            </a>
+            {% if object != request.user %}
+            <button type="button" 
+                    class="btn btn-danger btn-icon" 
+                    title="Deletar usuário"
+                    onclick="confirmDelete('{% url 'usuarios:deletar_usuario' object.pk %}', '{{ object.get_full_name|default:object.username }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+{% endblock %}

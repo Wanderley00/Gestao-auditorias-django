@@ -1,0 +1,258 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição da Norma</label>
+        <input type="text" id="descricao" name="descricao" class="form-control" value="{{ norma.descricao|default:'' }}" required maxlength="255" placeholder="Ex: ISO 9001, NBR 14001">
+        <div class="field-help">Nome completo da norma ou padrão</div>
+    </div>
+    <div class="form-group required">
+        <label for="revisao" class="form-label">Revisão</label>
+        <input type="text" id="revisao" name="revisao" class="form-control" value="{{ norma.revisao|default:'' }}" required maxlength="100" placeholder="Ex: 2015, Rev. 3.0">
+        <div class="field-help">Versão ou revisão da norma</div>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="ativo" {% if norma.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">Norma ativa no sistema</span>
+        </div>
+        <div class="field-help">Normas inativas não aparecerão nas listagens de seleção</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block help_content %}
+<div style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+    <p><strong>Sobre Normas:</strong></p>
+    <ul style="margin: 12px 0; padding-left: 20px;">
+        <li>Normas são padrões técnicos ou regulamentações</li>
+        <li>Cada norma pode ter múltiplos requisitos associados</li>
+        <li>A combinação descrição + revisão deve ser única</li>
+        <li>Use descrições claras e revisões precisas</li>
+    </ul>
+    
+    <p><strong>Exemplos de Normas:</strong></p>
+    <ul style="margin: 12px 0; padding-left: 20px;">
+        <li>ISO 9001 - Sistemas de gestão da qualidade</li>
+        <li>ISO 14001 - Sistemas de gestão ambiental</li>
+        <li>OHSAS 18001 - Segurança e saúde ocupacional</li>
+        <li>NBR 5410 - Instalações elétricas</li>
+        <li>NR-12 - Segurança no trabalho em máquinas</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block quick_actions %}
+<button type="button" onclick="previewForm()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-eye"></i>
+    Visualizar
+</button>
+<button type="button" onclick="resetForm()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-undo"></i>
+    Resetar
+</button>
+<button type="button" onclick="generateNormaSuggestions()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-lightbulb"></i>
+    Sugestões
+</button>
+<button type="button" onclick="validateNorma()" class="btn btn-secondary btn-sm">
+    <i class="fas fa-check"></i>
+    Verificar Norma
+</button>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Validação específica para normas
+    document.addEventListener('DOMContentLoaded', function() {
+        const descricaoField = document.getElementById('descricao');
+        const revisaoField = document.getElementById('revisao');
+        
+        // Validação em tempo real da descrição
+        descricaoField.addEventListener('input', function() {
+            const value = this.value.trim();
+            
+            if (value.length > 0 && value.length < 3) {
+                showFieldError(this, 'Descrição deve ter pelo menos 3 caracteres');
+            } else if (value.length > 255) {
+                showFieldError(this, 'Descrição não pode ter mais de 255 caracteres');
+            }
+        });
+        
+        // Validação em tempo real da revisão
+        revisaoField.addEventListener('input', function() {
+            const value = this.value.trim();
+            
+            if (value.length > 100) {
+                showFieldError(this, 'Revisão não pode ter mais de 100 caracteres');
+            }
+        });
+        
+        // Auto-formatação da descrição
+        descricaoField.addEventListener('blur', function() {
+            let value = this.value.trim();
+            if (value) {
+                // Capitaliza apenas a primeira letra
+                this.value = value.charAt(0).toUpperCase() + value.slice(1);
+            }
+        });
+    });
+
+    // Função para gerar sugestões de normas
+    function generateNormaSuggestions() {
+        const suggestions = [
+            { descricao: 'ISO 9001', revisao: '2015' },
+            { descricao: 'ISO 14001', revisao: '2015' },
+            { descricao: 'ISO 45001', revisao: '2018' },
+            { descricao: 'OHSAS 18001', revisao: '2007' },
+            { descricao: 'NBR 5410', revisao: '2004' },
+            { descricao: 'NR-12', revisao: '2019' },
+            { descricao: 'NR-10', revisao: '2019' },
+            { descricao: 'ISO 27001', revisao: '2013' },
+            { descricao: 'ISO 22000', revisao: '2018' },
+            { descricao: 'IATF 16949', revisao: '2016' }
+        ];
+        
+        let suggestionsHtml = '<div style="margin-bottom: 16px;"><strong>Sugestões de Normas:</strong></div>';
+        suggestionsHtml += '<div style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">';
+        
+        suggestions.forEach(suggestion => {
+            suggestionsHtml += `
+                <button type="button" 
+                        onclick="applyNormaSuggestion('${suggestion.descricao}', '${suggestion.revisao}')" 
+                        class="btn btn-secondary btn-sm"
+                        style="justify-content: flex-start; text-align: left;">
+                    <strong>${suggestion.descricao}</strong> - Rev. ${suggestion.revisao}
+                </button>
+            `;
+        });
+        
+        suggestionsHtml += '</div>';
+        
+        document.getElementById('previewContent').innerHTML = suggestionsHtml;
+        document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    // Aplicar sugestão de norma
+    function applyNormaSuggestion(descricao, revisao) {
+        document.getElementById('descricao').value = descricao;
+        document.getElementById('revisao').value = revisao;
+        
+        closePreviewModal();
+        
+        // Trigger validation
+        document.getElementById('descricao').dispatchEvent(new Event('input'));
+        document.getElementById('revisao').dispatchEvent(new Event('input'));
+    }
+
+    // Validar norma
+    function validateNorma() {
+        const descricao = document.getElementById('descricao').value.trim();
+        const revisao = document.getElementById('revisao').value.trim();
+        
+        if (!descricao) {
+            alert('Digite uma descrição para validar');
+            return;
+        }
+        
+        if (!revisao) {
+            alert('Digite uma revisão para validar');
+            return;
+        }
+        
+        // Simular validação via AJAX
+        setButtonLoading('submitBtn', true);
+        
+        setTimeout(() => {
+            setButtonLoading('submitBtn', false);
+            
+            // Simular resultado da validação
+            const isUnique = Math.random() > 0.2; // 80% chance de ser único
+            
+            if (isUnique) {
+                showFieldSuccess(document.getElementById('descricao'), 'Combinação norma + revisão disponível');
+                showFieldSuccess(document.getElementById('revisao'), 'Revisão válida');
+            } else {
+                showFieldError(document.getElementById('descricao'), 'Esta combinação de norma e revisão já existe');
+            }
+        }, 1000);
+    }
+
+    // Mostrar sucesso no campo
+    function showFieldSuccess(field, message) {
+        field.classList.add('success');
+        field.classList.remove('error');
+        
+        // Remover mensagem anterior
+        const existingMessage = field.parentNode.querySelector('.field-error, .field-success');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Adicionar mensagem de sucesso
+        const successElement = document.createElement('div');
+        successElement.className = 'field-success';
+        successElement.style.color = 'var(--success)';
+        successElement.style.fontSize = '12px';
+        successElement.style.marginTop = '4px';
+        successElement.style.display = 'flex';
+        successElement.style.alignItems = 'center';
+        successElement.style.gap = '4px';
+        successElement.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+        field.parentNode.appendChild(successElement);
+        
+        // Remover após 3 segundos
+        setTimeout(() => {
+            if (successElement.parentNode) {
+                successElement.remove();
+            }
+        }, 3000);
+    }
+
+    // Validação customizada do formulário
+    function validateForm() {
+        const descricao = document.getElementById('descricao').value.trim();
+        const revisao = document.getElementById('revisao').value.trim();
+        let isValid = true;
+        
+        if (!descricao) {
+            showFieldError(document.getElementById('descricao'), 'Descrição é obrigatória');
+            isValid = false;
+        } else if (descricao.length < 3) {
+            showFieldError(document.getElementById('descricao'), 'Descrição deve ter pelo menos 3 caracteres');
+            isValid = false;
+        }
+        
+        if (!revisao) {
+            showFieldError(document.getElementById('revisao'), 'Revisão é obrigatória');
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+
+    // Atalhos específicos para normas
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + G para gerar sugestões
+        if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+            e.preventDefault();
+            generateNormaSuggestions();
+        }
+        
+        // Ctrl/Cmd + T para validar norma
+        if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+            e.preventDefault();
+            validateNorma();
+        }
+    });
+</script>
+{% endblock %}

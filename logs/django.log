@@ -1449,3 +1449,1288 @@ INFO 2025-09-11 16:52:55,203 basehttp 12204 26104 "GET /auditorias/pilares/ HTTP
 INFO 2025-09-11 16:52:56,026 basehttp 12204 26104 "GET /itens/ HTTP/1.1" 200 31971
 INFO 2025-09-11 16:52:56,586 basehttp 12204 26104 "GET /auditorias/auditorias/ HTTP/1.1" 200 32162
 INFO 2025-09-11 16:52:57,209 basehttp 12204 26104 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 07:44:57,077 autoreload 1648 21752 Watching for file changes with StatReloader
+INFO 2025-09-15 07:45:05,116 basehttp 1648 15048 "GET / HTTP/1.1" 302 0
+INFO 2025-09-15 07:45:05,121 basehttp 1648 15048 "GET /auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-15 07:45:05,158 basehttp 1648 15048 "GET /login/?next=/auditorias/dashboard/ HTTP/1.1" 200 3431
+INFO 2025-09-15 07:45:05,187 basehttp 1648 15048 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 07:45:05,201 basehttp 1648 15048 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-15 07:45:05,203 basehttp 1648 12568 "GET /static/img/imagem2.png HTTP/1.1" 304 0
+WARNING 2025-09-15 07:45:05,295 log 1648 12568 Not Found: /favicon.ico
+WARNING 2025-09-15 07:45:05,296 basehttp 1648 12568 "GET /favicon.ico HTTP/1.1" 404 3484
+INFO 2025-09-15 07:46:09,755 basehttp 1648 12568 "POST /login/?next=/auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-15 07:46:09,882 basehttp 1648 12568 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:46:03,737 autoreload 25464 13084 Watching for file changes with StatReloader
+INFO 2025-09-15 11:46:10,216 basehttp 25464 32096 "GET / HTTP/1.1" 302 0
+INFO 2025-09-15 11:46:10,315 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+WARNING 2025-09-15 11:46:10,454 log 25464 32096 Not Found: /favicon.ico
+WARNING 2025-09-15 11:46:10,455 basehttp 25464 32096 "GET /favicon.ico HTTP/1.1" 404 3484
+INFO 2025-09-15 11:46:13,729 basehttp 25464 32096 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 48734
+INFO 2025-09-15 11:46:20,124 basehttp 25464 32096 "GET /itens/ HTTP/1.1" 200 31963
+INFO 2025-09-15 11:46:22,965 basehttp 25464 32096 "GET /auditorias/auditorias/ HTTP/1.1" 200 32160
+INFO 2025-09-15 11:46:24,432 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:46:25,727 basehttp 25464 32096 "GET /auditorias/auditorias/ HTTP/1.1" 200 32160
+INFO 2025-09-15 11:46:28,236 basehttp 25464 32096 "GET /itens/ HTTP/1.1" 200 31963
+INFO 2025-09-15 11:46:29,720 basehttp 25464 32096 "GET /auditorias/pilares/ HTTP/1.1" 200 37534
+INFO 2025-09-15 11:46:30,401 basehttp 25464 32096 "GET /auditorias/categorias/ HTTP/1.1" 200 32193
+INFO 2025-09-15 11:46:31,737 basehttp 25464 32096 "GET /auditorias/pilares/ HTTP/1.1" 200 37534
+INFO 2025-09-15 11:46:32,495 basehttp 25464 32096 "GET /auditorias/categorias/ HTTP/1.1" 200 32193
+INFO 2025-09-15 11:46:33,122 basehttp 25464 32096 "GET /auditorias/normas/ HTTP/1.1" 200 31998
+INFO 2025-09-15 11:46:33,618 basehttp 25464 32096 "GET /auditorias/normas/ HTTP/1.1" 200 31998
+INFO 2025-09-15 11:46:34,246 basehttp 25464 32096 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 32174
+INFO 2025-09-15 11:46:35,243 basehttp 25464 32096 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 32127
+INFO 2025-09-15 11:46:35,971 basehttp 25464 32096 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 32190
+INFO 2025-09-15 11:46:37,791 basehttp 25464 32096 "GET /auditorias/checklists/ HTTP/1.1" 200 32050
+INFO 2025-09-15 11:46:38,246 basehttp 25464 32096 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 32168
+INFO 2025-09-15 11:46:44,596 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:46:51,554 basehttp 25464 32096 "GET /auditorias/auditorias/ HTTP/1.1" 200 32160
+INFO 2025-09-15 11:46:54,116 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:46:56,264 basehttp 25464 32096 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 32127
+INFO 2025-09-15 11:46:57,458 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:47:01,813 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:47:04,370 basehttp 25464 32096 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 32174
+INFO 2025-09-15 11:47:06,662 basehttp 25464 32096 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 11:49:19,823 basehttp 25464 32096 "GET /auditorias/categorias/ HTTP/1.1" 200 32193
+INFO 2025-09-15 14:16:52,081 autoreload 25464 13084 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:16:53,045 autoreload 33400 36536 Watching for file changes with StatReloader
+INFO 2025-09-15 14:17:11,362 autoreload 33400 36536 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:17:12,287 autoreload 30152 30272 Watching for file changes with StatReloader
+INFO 2025-09-15 14:17:28,582 autoreload 30152 30272 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:17:29,492 autoreload 24924 36064 Watching for file changes with StatReloader
+INFO 2025-09-15 14:17:43,797 autoreload 24924 36064 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:17:44,665 autoreload 28536 36060 Watching for file changes with StatReloader
+INFO 2025-09-15 14:18:03,007 autoreload 28536 36060 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:18:03,808 autoreload 27776 31748 Watching for file changes with StatReloader
+INFO 2025-09-15 14:18:15,880 autoreload 27776 31748 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:18:16,735 autoreload 33120 6948 Watching for file changes with StatReloader
+INFO 2025-09-15 14:18:26,724 autoreload 33120 6948 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:18:27,680 autoreload 32856 27344 Watching for file changes with StatReloader
+INFO 2025-09-15 14:18:40,553 autoreload 32856 27344 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:18:41,394 autoreload 18976 22412 Watching for file changes with StatReloader
+INFO 2025-09-15 14:18:55,112 autoreload 18976 22412 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:18:55,947 autoreload 21876 11080 Watching for file changes with StatReloader
+INFO 2025-09-15 14:19:34,905 autoreload 10608 20712 Watching for file changes with StatReloader
+INFO 2025-09-15 14:22:49,239 autoreload 10608 20712 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:22:50,110 autoreload 36836 22500 Watching for file changes with StatReloader
+INFO 2025-09-15 14:26:58,335 basehttp 36836 36580 "GET /auditorias/categorias/ HTTP/1.1" 200 32191
+INFO 2025-09-15 14:27:00,944 basehttp 36836 36580 "GET /auditorias/normas/ HTTP/1.1" 200 31996
+INFO 2025-09-15 14:27:01,704 basehttp 36836 36580 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 32168
+INFO 2025-09-15 14:27:02,499 basehttp 36836 36580 "GET /auditorias/normas/ HTTP/1.1" 200 31996
+INFO 2025-09-15 14:27:02,902 basehttp 36836 36580 "GET /auditorias/pilares/ HTTP/1.1" 200 37527
+INFO 2025-09-15 14:27:04,667 basehttp 36836 36580 "GET /itens/ HTTP/1.1" 200 31960
+INFO 2025-09-15 14:27:05,330 basehttp 36836 36580 "GET /auditorias/auditorias/ HTTP/1.1" 200 32116
+INFO 2025-09-15 14:27:06,066 basehttp 36836 36580 "GET /auditorias/auditorias/ HTTP/1.1" 200 32116
+INFO 2025-09-15 14:27:06,671 basehttp 36836 36580 "GET /auditorias/dashboard/ HTTP/1.1" 200 36742
+INFO 2025-09-15 14:27:07,156 basehttp 36836 36580 "GET /auditorias/auditorias/ HTTP/1.1" 200 32116
+INFO 2025-09-15 14:27:21,041 basehttp 36836 36580 "GET /auditorias/categorias/ HTTP/1.1" 200 32191
+INFO 2025-09-15 14:27:21,482 basehttp 36836 36580 "GET /auditorias/normas/ HTTP/1.1" 200 31996
+INFO 2025-09-15 14:27:21,883 basehttp 36836 36580 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 32168
+INFO 2025-09-15 14:27:22,417 basehttp 36836 36580 "GET /auditorias/normas/ HTTP/1.1" 200 31996
+INFO 2025-09-15 14:27:43,173 basehttp 36836 36580 "GET /auditorias/pilares/ HTTP/1.1" 200 37527
+INFO 2025-09-15 14:27:44,991 basehttp 36836 36580 "GET /auditorias/pilares/criar/ HTTP/1.1" 200 49456
+INFO 2025-09-15 14:28:08,106 basehttp 36836 36580 "POST /auditorias/pilares/criar/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:28:08,159 basehttp 36836 36580 "GET /auditorias/pilares/ HTTP/1.1" 200 39946
+INFO 2025-09-15 14:28:15,074 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:17,474 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,025 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,225 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,391 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,585 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,780 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:19,957 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:20,144 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:20,337 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:20,510 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:20,697 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:21,378 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:22,178 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:22,541 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:23,113 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:23,574 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:24,050 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:24,296 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:25,152 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:26,176 basehttp 36836 36580 "POST /auditorias/pilares/1/editar/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:28:26,191 basehttp 36836 36580 "GET /auditorias/pilares/ HTTP/1.1" 200 39950
+INFO 2025-09-15 14:28:28,339 basehttp 36836 36580 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49494
+INFO 2025-09-15 14:28:37,318 basehttp 36836 36580 "GET /auditorias/auditorias/ HTTP/1.1" 200 32116
+INFO 2025-09-15 14:28:38,518 basehttp 36836 36580 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 48734
+INFO 2025-09-15 14:28:41,150 basehttp 36836 36580 "GET /auditorias/categorias/ HTTP/1.1" 200 32191
+INFO 2025-09-15 14:28:42,848 basehttp 36836 36580 "GET /auditorias/categorias/criar/ HTTP/1.1" 200 41565
+INFO 2025-09-15 14:28:52,437 basehttp 36836 36580 "POST /auditorias/categorias/criar/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:28:52,452 basehttp 36836 36580 "GET /auditorias/categorias/ HTTP/1.1" 200 33548
+INFO 2025-09-15 14:28:54,055 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:55,234 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:55,695 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:55,884 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:56,640 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:56,837 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:57,014 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:57,206 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:57,392 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:57,552 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:58,505 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:28:58,689 basehttp 36836 36580 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41582
+INFO 2025-09-15 14:34:28,802 autoreload 36836 22500 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:34:29,822 autoreload 36568 29004 Watching for file changes with StatReloader
+INFO 2025-09-15 14:34:43,002 autoreload 36568 29004 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:34:43,780 autoreload 25344 28400 Watching for file changes with StatReloader
+INFO 2025-09-15 14:35:00,105 autoreload 25344 28400 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:35:01,041 autoreload 3484 11960 Watching for file changes with StatReloader
+INFO 2025-09-15 14:35:15,293 autoreload 3484 11960 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:35:16,078 autoreload 8548 27352 Watching for file changes with StatReloader
+INFO 2025-09-15 14:37:49,159 autoreload 8548 27352 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:37:49,986 autoreload 33728 1688 Watching for file changes with StatReloader
+INFO 2025-09-15 14:38:06,319 autoreload 33728 1688 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:38:07,282 autoreload 7460 18104 Watching for file changes with StatReloader
+INFO 2025-09-15 14:38:22,520 autoreload 7460 18104 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:38:23,429 autoreload 32720 34908 Watching for file changes with StatReloader
+INFO 2025-09-15 14:38:38,624 autoreload 32720 34908 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:38:39,428 autoreload 33712 35760 Watching for file changes with StatReloader
+INFO 2025-09-15 14:38:54,670 autoreload 33712 35760 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:38:55,588 autoreload 14704 24092 Watching for file changes with StatReloader
+INFO 2025-09-15 14:39:12,868 autoreload 14704 24092 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:39:13,797 autoreload 35188 14244 Watching for file changes with StatReloader
+INFO 2025-09-15 14:39:31,040 autoreload 35188 14244 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:39:31,937 autoreload 21068 8760 Watching for file changes with StatReloader
+INFO 2025-09-15 14:39:50,273 autoreload 21068 8760 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:39:51,080 autoreload 36760 20676 Watching for file changes with StatReloader
+INFO 2025-09-15 14:40:01,444 basehttp 36760 18624 "GET /auditorias/categorias/1/editar/ HTTP/1.1" 200 41656
+INFO 2025-09-15 14:40:06,321 basehttp 36760 18624 "GET /auditorias/pilares/ HTTP/1.1" 200 39680
+INFO 2025-09-15 14:40:07,709 basehttp 36760 18624 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49542
+INFO 2025-09-15 14:40:12,144 basehttp 36760 18624 "POST /auditorias/pilares/1/editar/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:40:12,162 basehttp 36760 18624 "GET /auditorias/pilares/ HTTP/1.1" 200 39950
+INFO 2025-09-15 14:40:13,863 basehttp 36760 18624 "GET /auditorias/pilares/1/editar/ HTTP/1.1" 200 49542
+INFO 2025-09-15 14:40:16,159 basehttp 36760 18624 "GET /auditorias/auditorias/ HTTP/1.1" 200 32116
+INFO 2025-09-15 14:40:18,579 basehttp 36760 18624 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 48788
+INFO 2025-09-15 14:43:44,607 autoreload 36760 20676 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\urls.py changed, reloading.
+INFO 2025-09-15 14:43:45,774 autoreload 35144 2992 Watching for file changes with StatReloader
+INFO 2025-09-15 14:43:52,875 autoreload 35144 2992 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\urls.py changed, reloading.
+INFO 2025-09-15 14:43:53,783 autoreload 21096 4320 Watching for file changes with StatReloader
+INFO 2025-09-15 14:44:29,935 autoreload 21096 4320 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-15 14:44:30,982 autoreload 27512 36060 Watching for file changes with StatReloader
+INFO 2025-09-15 14:48:02,158 autoreload 2884 11340 Watching for file changes with StatReloader
+INFO 2025-09-15 14:48:03,906 basehttp 2884 36336 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 46014
+INFO 2025-09-15 14:48:06,298 basehttp 2884 36336 "GET /auditorias/auditorias/ HTTP/1.1" 200 33123
+INFO 2025-09-15 14:48:07,778 basehttp 2884 36336 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 46014
+INFO 2025-09-15 14:48:08,986 basehttp 2884 36336 "GET /auditorias/auditorias/ HTTP/1.1" 200 33123
+INFO 2025-09-15 14:48:11,100 basehttp 2884 36336 "GET /itens/ HTTP/1.1" 200 32967
+INFO 2025-09-15 14:48:12,426 basehttp 2884 36336 "GET /itens/criar/ HTTP/1.1" 200 36464
+INFO 2025-09-15 14:48:24,165 basehttp 2884 36336 "GET /itens/ HTTP/1.1" 200 32967
+INFO 2025-09-15 14:48:25,231 basehttp 2884 36336 "GET /itens/criar/ HTTP/1.1" 200 36464
+INFO 2025-09-15 14:48:26,285 basehttp 2884 36336 "GET /itens/ HTTP/1.1" 200 32967
+INFO 2025-09-15 14:48:28,945 basehttp 2884 36336 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 33172
+INFO 2025-09-15 14:48:30,243 basehttp 2884 36336 "GET /auditorias/modelos-auditoria/criar/ HTTP/1.1" 200 35426
+INFO 2025-09-15 14:48:38,721 basehttp 2884 36336 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 33172
+WARNING 2025-09-15 14:48:41,553 log 2884 36336 Method Not Allowed (GET): /logout/
+WARNING 2025-09-15 14:48:41,565 basehttp 2884 36336 "GET /logout/ HTTP/1.1" 405 0
+WARNING 2025-09-15 14:49:53,147 log 2884 36336 Method Not Allowed (GET): /logout/
+WARNING 2025-09-15 14:49:53,160 basehttp 2884 36336 "GET /logout/ HTTP/1.1" 405 0
+INFO 2025-09-15 14:51:00,856 autoreload 2884 11340 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\urls.py changed, reloading.
+INFO 2025-09-15 14:51:01,619 autoreload 36536 23276 Watching for file changes with StatReloader
+INFO 2025-09-15 14:51:57,703 basehttp 36536 20904 "GET /logout/ HTTP/1.1" 200 2847
+INFO 2025-09-15 14:53:08,756 basehttp 36536 20904 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 14:53:11,394 basehttp 36536 20904 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:53:11,398 basehttp 36536 20904 "GET /login/ HTTP/1.1" 200 3431
+INFO 2025-09-15 14:53:19,803 basehttp 36536 20904 "POST /login/ HTTP/1.1" 302 0
+WARNING 2025-09-15 14:53:19,838 log 36536 20904 Not Found: /auditorias/
+WARNING 2025-09-15 14:53:19,838 basehttp 36536 20904 "GET /auditorias/ HTTP/1.1" 404 15525
+INFO 2025-09-15 14:53:36,088 basehttp 36536 20904 "GET /login/ HTTP/1.1" 200 3431
+INFO 2025-09-15 14:54:35,228 autoreload 36536 23276 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\settings.py changed, reloading.
+INFO 2025-09-15 14:54:36,218 autoreload 36688 29004 Watching for file changes with StatReloader
+INFO 2025-09-15 14:54:40,928 basehttp 36688 24836 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:54:40,947 basehttp 36688 24836 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 14:54:40,987 basehttp 36688 25848 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 14:54:44,074 basehttp 36688 25848 "GET /auditorias/auditorias/ HTTP/1.1" 200 33453
+INFO 2025-09-15 14:54:46,472 basehttp 36688 25848 "GET /itens/ HTTP/1.1" 200 33297
+INFO 2025-09-15 14:54:47,178 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 41017
+INFO 2025-09-15 14:54:48,801 basehttp 36688 25848 "GET /auditorias/categorias/ HTTP/1.1" 200 34615
+INFO 2025-09-15 14:54:49,446 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:54:50,175 basehttp 36688 25848 "GET /auditorias/categorias/ HTTP/1.1" 200 34615
+INFO 2025-09-15 14:54:50,825 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 41017
+INFO 2025-09-15 14:54:51,490 basehttp 36688 25848 "GET /auditorias/categorias/ HTTP/1.1" 200 34615
+INFO 2025-09-15 14:54:52,040 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 41017
+INFO 2025-09-15 14:54:52,642 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 41017
+INFO 2025-09-15 14:54:53,129 basehttp 36688 25848 "GET /auditorias/categorias/ HTTP/1.1" 200 34615
+INFO 2025-09-15 14:54:53,661 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:54:54,219 basehttp 36688 25848 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 33505
+INFO 2025-09-15 14:54:57,023 basehttp 36688 25848 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 33461
+INFO 2025-09-15 14:54:57,731 basehttp 36688 25848 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 33524
+INFO 2025-09-15 14:54:58,235 basehttp 36688 25848 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 33524
+INFO 2025-09-15 14:54:58,772 basehttp 36688 25848 "GET /auditorias/checklists/ HTTP/1.1" 200 33385
+INFO 2025-09-15 14:54:59,382 basehttp 36688 25848 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 33502
+INFO 2025-09-15 14:59:06,680 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:59:07,742 basehttp 36688 25848 "GET /auditorias/normas/criar/ HTTP/1.1" 200 49588
+INFO 2025-09-15 14:59:14,437 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:59:23,617 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:59:26,865 basehttp 36688 25848 "GET /auditorias/normas/criar/ HTTP/1.1" 200 49588
+INFO 2025-09-15 14:59:30,483 basehttp 36688 25848 "GET /auditorias/normas/ HTTP/1.1" 200 33333
+INFO 2025-09-15 14:59:52,121 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 41017
+INFO 2025-09-15 14:59:53,519 basehttp 36688 25848 "GET /auditorias/pilares/criar/ HTTP/1.1" 200 35043
+INFO 2025-09-15 14:59:59,377 basehttp 36688 25848 "POST /auditorias/pilares/criar/ HTTP/1.1" 302 0
+INFO 2025-09-15 14:59:59,392 basehttp 36688 25848 "GET /auditorias/pilares/ HTTP/1.1" 200 43128
+INFO 2025-09-15 15:03:40,643 basehttp 36688 25848 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:03:40,664 basehttp 36688 25848 "GET /login/ HTTP/1.1" 200 3815
+INFO 2025-09-15 15:03:46,898 basehttp 36688 25848 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:03:46,916 basehttp 36688 25848 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 15:03:46,938 basehttp 36688 29876 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 15:03:49,764 basehttp 36688 29876 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:03:49,767 basehttp 36688 29876 "GET /login/ HTTP/1.1" 200 3815
+INFO 2025-09-15 15:03:54,721 basehttp 36688 29876 "POST /login/ HTTP/1.1" 200 5111
+INFO 2025-09-15 15:07:42,252 basehttp 36688 26712 "GET /login/ HTTP/1.1" 200 3816
+INFO 2025-09-15 15:07:47,276 basehttp 36688 26712 "POST /login/ HTTP/1.1" 200 6165
+INFO 2025-09-15 15:12:48,465 basehttp 36688 36496 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-15 15:12:53,227 basehttp 36688 36496 "POST /login/ HTTP/1.1" 200 5171
+INFO 2025-09-15 15:17:09,204 basehttp 36688 36496 "POST /login/ HTTP/1.1" 200 5171
+INFO 2025-09-15 15:17:09,407 basehttp 36688 33120 "GET /static/js/login.js HTTP/1.1" 200 13870
+INFO 2025-09-15 15:17:09,429 basehttp 36688 36800 "GET /static/img/imagem2.png HTTP/1.1" 200 153024
+INFO 2025-09-15 15:17:09,431 basehttp 36688 36496 "GET /static/css/login.css HTTP/1.1" 200 23163
+WARNING 2025-09-15 15:17:10,720 log 36688 36496 Not Found: /favicon.ico
+WARNING 2025-09-15 15:17:10,720 basehttp 36688 36496 "GET /favicon.ico HTTP/1.1" 404 3484
+INFO 2025-09-15 15:17:18,679 basehttp 36688 36496 "POST /login/ HTTP/1.1" 200 5171
+INFO 2025-09-15 15:17:18,691 basehttp 36688 36496 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 15:17:31,857 basehttp 36688 36496 "POST /login/ HTTP/1.1" 200 5173
+INFO 2025-09-15 15:17:31,869 basehttp 36688 36496 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 15:17:40,538 basehttp 36688 36496 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:17:40,556 basehttp 36688 36496 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 15:17:40,577 basehttp 36688 36800 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 15:17:43,796 basehttp 36688 36800 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:17:43,799 basehttp 36688 36800 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-15 15:17:43,815 basehttp 36688 33120 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-15 15:17:43,815 basehttp 36688 36800 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 15:17:51,167 basehttp 36688 33120 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:17:51,185 basehttp 36688 33120 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 15:17:51,206 basehttp 36688 36800 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 15:17:53,254 basehttp 36688 36800 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:17:53,257 basehttp 36688 36800 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-15 15:17:53,271 basehttp 36688 36800 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 15:17:58,888 basehttp 36688 36800 "POST /login/ HTTP/1.1" 200 5171
+INFO 2025-09-15 15:19:19,178 basehttp 36688 36800 "POST /login/ HTTP/1.1" 200 5171
+INFO 2025-09-15 15:19:19,191 basehttp 36688 36800 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 15:19:19,192 basehttp 36688 24984 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-15 15:19:29,296 basehttp 36688 24984 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:19:29,316 basehttp 36688 24984 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 15:19:29,337 basehttp 36688 36800 "GET /auditorias/dashboard/ HTTP/1.1" 200 38079
+INFO 2025-09-15 15:29:37,029 autoreload 36688 29004 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:29:38,179 autoreload 24016 33384 Watching for file changes with StatReloader
+INFO 2025-09-15 15:29:55,266 autoreload 24016 33384 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:29:56,101 autoreload 29404 32568 Watching for file changes with StatReloader
+INFO 2025-09-15 15:30:09,788 autoreload 29404 32568 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:30:10,527 autoreload 21248 33908 Watching for file changes with StatReloader
+INFO 2025-09-15 15:30:27,257 autoreload 21248 33908 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:30:28,092 autoreload 25500 23764 Watching for file changes with StatReloader
+INFO 2025-09-15 15:31:07,564 autoreload 25500 23764 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:31:08,410 autoreload 12496 33372 Watching for file changes with StatReloader
+INFO 2025-09-15 15:34:13,242 autoreload 36004 9228 Watching for file changes with StatReloader
+INFO 2025-09-15 15:41:21,304 autoreload 36004 9228 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:41:22,422 autoreload 29292 4892 Watching for file changes with StatReloader
+INFO 2025-09-15 15:41:25,632 basehttp 29292 6832 "GET /auditorias/dashboard/ HTTP/1.1" 200 39914
+ERROR 2025-09-15 15:41:29,279 log 29292 6832 Internal Server Error: /usuarios/usuarios/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py", line 115, in lista_usuarios
+    return render(request, 'usuarios/lista.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for '' not found. '' is not a valid view function or pattern name.
+ERROR 2025-09-15 15:41:29,287 basehttp 29292 6832 "GET /usuarios/usuarios/ HTTP/1.1" 500 223370
+INFO 2025-09-15 15:42:20,085 autoreload 29292 4892 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\usuarios\views.py changed, reloading.
+INFO 2025-09-15 15:42:20,981 autoreload 26124 33516 Watching for file changes with StatReloader
+INFO 2025-09-15 15:42:25,070 basehttp 26124 10788 "GET /usuarios/usuarios/ HTTP/1.1" 200 37701
+INFO 2025-09-15 15:42:27,737 basehttp 26124 10788 "GET /usuarios/usuarios/1/editar/ HTTP/1.1" 200 40219
+INFO 2025-09-15 15:42:53,602 basehttp 26124 10788 "POST /usuarios/usuarios/1/editar/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:42:53,619 basehttp 26124 10788 "GET /usuarios/usuarios/ HTTP/1.1" 200 37992
+INFO 2025-09-15 15:42:55,327 basehttp 26124 10788 "GET /usuarios/usuarios/1/alterar-senha/ HTTP/1.1" 200 36386
+INFO 2025-09-15 15:43:05,524 basehttp 26124 10788 "GET /usuarios/usuarios/criar/ HTTP/1.1" 200 41405
+INFO 2025-09-15 15:43:31,658 basehttp 26124 10788 "POST /usuarios/usuarios/criar/ HTTP/1.1" 302 0
+INFO 2025-09-15 15:43:31,677 basehttp 26124 10788 "GET /usuarios/usuarios/ HTTP/1.1" 200 40347
+INFO 2025-09-15 16:32:12,589 basehttp 26124 2124 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 35346
+INFO 2025-09-15 16:32:13,136 basehttp 26124 2124 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:32:13,671 basehttp 26124 2124 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 35368
+INFO 2025-09-15 16:33:58,914 basehttp 26124 2124 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-15 16:33:58,939 basehttp 26124 2124 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-15 16:33:58,958 basehttp 26124 2124 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-15 16:33:58,959 basehttp 26124 18016 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-15 16:34:03,553 basehttp 26124 18016 "POST /login/ HTTP/1.1" 200 5172
+INFO 2025-09-15 16:34:14,213 basehttp 26124 18016 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-15 16:34:14,246 basehttp 26124 18016 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-15 16:34:14,288 basehttp 26124 2124 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-15 16:42:58,065 basehttp 26124 6024 "GET /auditorias/auditorias/ HTTP/1.1" 200 35297
+INFO 2025-09-15 16:42:58,811 basehttp 26124 6024 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-15 16:42:59,429 basehttp 26124 6024 "GET /auditorias/auditorias/ HTTP/1.1" 200 35297
+INFO 2025-09-15 16:42:59,938 basehttp 26124 6024 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-15 16:43:03,085 basehttp 26124 6024 "GET /itens/ HTTP/1.1" 200 35141
+INFO 2025-09-15 16:43:03,829 basehttp 26124 6024 "GET /auditorias/pilares/ HTTP/1.1" 200 44706
+INFO 2025-09-15 16:43:04,969 basehttp 26124 6024 "GET /auditorias/categorias/ HTTP/1.1" 200 36459
+INFO 2025-09-15 16:43:05,563 basehttp 26124 6024 "GET /auditorias/normas/ HTTP/1.1" 200 35177
+INFO 2025-09-15 16:43:06,202 basehttp 26124 6024 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 35349
+INFO 2025-09-15 16:43:07,200 basehttp 26124 6024 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 35305
+INFO 2025-09-15 16:43:07,730 basehttp 26124 6024 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 35368
+INFO 2025-09-15 16:43:08,365 basehttp 26124 6024 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:43:08,840 basehttp 26124 6024 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 35346
+INFO 2025-09-15 16:43:09,595 basehttp 26124 6024 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:43:10,089 basehttp 26124 6024 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:43:10,939 basehttp 26124 6024 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 35346
+INFO 2025-09-15 16:43:11,526 basehttp 26124 6024 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:43:12,008 basehttp 26124 6024 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 35346
+INFO 2025-09-15 16:43:14,938 basehttp 26124 6024 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-15 16:43:15,882 basehttp 26124 6024 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 35346
+INFO 2025-09-15 16:43:16,875 basehttp 26124 6024 "GET /usuarios/usuarios/ HTTP/1.1" 200 40078
+INFO 2025-09-17 10:55:53,620 autoreload 38256 38220 Watching for file changes with StatReloader
+INFO 2025-09-17 10:56:04,405 basehttp 38256 23320 "GET / HTTP/1.1" 302 0
+INFO 2025-09-17 10:56:04,419 basehttp 38256 23320 "GET /auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-17 10:56:04,465 basehttp 38256 23320 "GET /login/?next=/auditorias/dashboard/ HTTP/1.1" 200 3748
+INFO 2025-09-17 10:56:04,484 basehttp 38256 23320 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-17 10:56:04,486 basehttp 38256 34652 "GET /static/img/imagem2.png HTTP/1.1" 304 0
+INFO 2025-09-17 10:56:04,487 basehttp 38256 10480 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-17 10:56:21,082 basehttp 38256 10480 "POST /login/?next=/auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-17 10:56:21,222 basehttp 38256 10480 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-17 10:56:27,403 basehttp 38256 10480 "GET /auditorias/auditorias/ HTTP/1.1" 200 35297
+INFO 2025-09-17 10:56:29,125 basehttp 38256 10480 "GET /itens/ HTTP/1.1" 200 35141
+INFO 2025-09-17 10:56:30,167 basehttp 38256 10480 "GET /auditorias/pilares/ HTTP/1.1" 200 44706
+INFO 2025-09-17 10:56:30,984 basehttp 38256 10480 "GET /auditorias/categorias/ HTTP/1.1" 200 36459
+INFO 2025-09-17 10:57:08,936 basehttp 38256 10480 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 35305
+INFO 2025-09-17 10:57:10,854 basehttp 38256 10480 "GET /auditorias/tipos-questao/criar/ HTTP/1.1" 200 36170
+INFO 2025-09-17 10:58:15,134 basehttp 38256 10480 "POST /auditorias/tipos-questao/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 10:58:15,154 basehttp 38256 10480 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 36811
+INFO 2025-09-17 10:58:20,713 basehttp 38256 10480 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 35368
+INFO 2025-09-17 10:58:21,830 basehttp 38256 10480 "GET /auditorias/modelos-avaliacao/criar/ HTTP/1.1" 200 36434
+INFO 2025-09-17 10:58:47,311 basehttp 38256 10480 "POST /auditorias/modelos-avaliacao/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 10:58:47,329 basehttp 38256 10480 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 36714
+INFO 2025-09-17 10:58:51,277 basehttp 38256 10480 "GET /auditorias/checklists/ HTTP/1.1" 200 35229
+INFO 2025-09-17 10:58:52,392 basehttp 38256 10480 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 36735
+INFO 2025-09-17 10:59:25,321 basehttp 38256 10480 "GET /usuarios/usuarios/ HTTP/1.1" 200 40078
+INFO 2025-09-17 10:59:27,919 basehttp 38256 10480 "GET /usuarios/usuarios/2/editar/ HTTP/1.1" 200 40239
+INFO 2025-09-17 11:00:00,682 basehttp 38256 10480 "GET /admin/ HTTP/1.1" 200 34084
+INFO 2025-09-17 11:00:00,786 basehttp 38256 10480 "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 200 392
+ERROR 2025-09-17 11:17:02,253 log 38256 19468 Internal Server Error: /auditorias/auditorias/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\engine.py", line 163, in find_template
+    raise TemplateDoesNotExist(name, tried=tried)
+django.template.exceptions.TemplateDoesNotExist: auditorias/base.html
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py", line 962, in lista_auditorias
+    return render(request, 'auditorias/auditorias/lista.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 109, in render
+    reraise(exc, self.backend)
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 130, in reraise
+    raise new from exc
+django.template.exceptions.TemplateDoesNotExist: auditorias/base.html
+ERROR 2025-09-17 11:17:02,263 basehttp 38256 19468 "GET /auditorias/auditorias/ HTTP/1.1" 500 246991
+ERROR 2025-09-17 11:17:09,979 log 38256 19468 Internal Server Error: /auditorias/dashboard/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\engine.py", line 163, in find_template
+    raise TemplateDoesNotExist(name, tried=tried)
+django.template.exceptions.TemplateDoesNotExist: auditorias/base.html
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py", line 39, in dashboard_auditorias
+    return render(request, 'auditorias/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 109, in render
+    reraise(exc, self.backend)
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 130, in reraise
+    raise new from exc
+django.template.exceptions.TemplateDoesNotExist: auditorias/base.html
+ERROR 2025-09-17 11:17:09,983 basehttp 38256 19468 "GET /auditorias/dashboard/ HTTP/1.1" 500 208322
+INFO 2025-09-17 11:17:50,923 basehttp 38256 19468 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-17 11:21:32,451 basehttp 38256 19468 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-17 11:21:33,666 basehttp 38256 19468 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+INFO 2025-09-17 11:21:37,064 basehttp 38256 19468 "GET /auditorias/auditorias/ HTTP/1.1" 200 35297
+INFO 2025-09-17 11:21:39,682 basehttp 38256 19468 "GET /auditorias/auditorias/criar/ HTTP/1.1" 200 48260
+INFO 2025-09-17 11:21:53,061 basehttp 38256 19468 "GET /auditorias/auditorias/ HTTP/1.1" 200 35297
+INFO 2025-09-17 11:21:54,253 basehttp 38256 19468 "GET /auditorias/dashboard/ HTTP/1.1" 200 39923
+WARNING 2025-09-17 11:21:59,894 log 38256 19468 Not Found: /ativos
+WARNING 2025-09-17 11:21:59,895 basehttp 38256 19468 "GET /ativos HTTP/1.1" 404 3469
+INFO 2025-09-17 11:29:55,134 autoreload 16772 36888 Watching for file changes with StatReloader
+INFO 2025-09-17 11:30:01,385 basehttp 16772 23964 "GET /auditorias/dashboard/ HTTP/1.1" 200 40128
+ERROR 2025-09-17 11:30:02,737 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:02,740 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99727
+ERROR 2025-09-17 11:30:36,884 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:36,888 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:30:37,809 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:37,810 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:30:38,571 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:38,572 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:30:50,629 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:50,630 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:30:51,320 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:30:51,322 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:03,274 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:03,275 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:04,467 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:04,469 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:05,351 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:05,353 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:06,020 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:06,022 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:06,807 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:06,810 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:07,027 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:07,028 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:07,253 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:07,254 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:07,457 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:07,459 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:07,644 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:07,646 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:07,823 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:07,824 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:08,017 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:08,019 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:08,227 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:08,228 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99692
+ERROR 2025-09-17 11:32:33,053 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:33,055 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+ERROR 2025-09-17 11:32:33,979 log 16772 23964 Internal Server Error: /ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 31, in dashboard_ativos
+    return render(request, 'ativos/dashboard.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/dashboard.html
+ERROR 2025-09-17 11:32:33,980 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 500 99555
+INFO 2025-09-17 11:33:17,516 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+ERROR 2025-09-17 11:33:20,727 log 16772 23964 Internal Server Error: /ativos/categorias/criar/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 95, in criar_categoria
+    return render(request, 'ativos/categorias/form.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/categorias/form.html
+ERROR 2025-09-17 11:33:20,729 basehttp 16772 23964 "GET /ativos/categorias/criar/ HTTP/1.1" 500 99630
+INFO 2025-09-17 11:33:41,966 basehttp 16772 23964 "GET /ativos/categorias/criar/ HTTP/1.1" 200 36511
+INFO 2025-09-17 11:33:44,358 basehttp 16772 23964 "GET /ativos/categorias/ HTTP/1.1" 200 35502
+INFO 2025-09-17 11:33:47,342 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:33:48,784 basehttp 16772 23964 "GET /ativos/categorias/criar/ HTTP/1.1" 200 36511
+INFO 2025-09-17 11:33:50,148 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:34:06,826 basehttp 16772 23964 "GET /auditorias/dashboard/ HTTP/1.1" 200 40128
+INFO 2025-09-17 11:34:08,560 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:38:39,063 basehttp 16772 23964 "GET /auditorias/dashboard/ HTTP/1.1" 200 40128
+INFO 2025-09-17 11:38:41,337 basehttp 16772 23964 "GET /auditorias/auditorias/ HTTP/1.1" 200 35502
+INFO 2025-09-17 11:38:42,353 basehttp 16772 23964 "GET /itens/ HTTP/1.1" 200 35346
+INFO 2025-09-17 11:38:43,286 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:39:23,024 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:39:23,974 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:39:24,780 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 32379
+INFO 2025-09-17 11:42:44,662 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:42:47,189 basehttp 16772 23964 "GET /ativos/ HTTP/1.1" 200 33138
+ERROR 2025-09-17 11:42:48,038 log 16772 23964 Internal Server Error: /ativos/ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 422, in lista_ativos
+    return render(request, 'ativos/ativos/lista.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/ativos/lista.html
+ERROR 2025-09-17 11:42:48,040 basehttp 16772 23964 "GET /ativos/ativos/ HTTP/1.1" 500 102281
+INFO 2025-09-17 11:42:54,605 basehttp 16772 23964 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:42:55,703 basehttp 16772 23964 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:42:56,322 basehttp 16772 23964 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:42:56,902 basehttp 16772 23964 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:42:57,366 basehttp 16772 23964 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:42:58,015 basehttp 16772 23964 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:42:58,430 basehttp 16772 23964 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:42:58,938 basehttp 16772 23964 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:42:59,402 basehttp 16772 23964 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+ERROR 2025-09-17 11:43:02,312 log 16772 23964 Internal Server Error: /ativos/ativos/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py", line 422, in lista_ativos
+    return render(request, 'ativos/ativos/lista.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: ativos/ativos/lista.html
+ERROR 2025-09-17 11:43:02,314 basehttp 16772 23964 "GET /ativos/ativos/ HTTP/1.1" 500 102292
+INFO 2025-09-17 11:44:32,066 autoreload 16772 36888 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\ativos\views.py changed, reloading.
+INFO 2025-09-17 11:44:33,154 autoreload 29816 34072 Watching for file changes with StatReloader
+INFO 2025-09-17 11:44:41,418 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:44:42,872 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:44:43,498 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:44:44,172 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:44:44,799 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:44:45,308 basehttp 29816 31544 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:44:45,830 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:44:46,234 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:44:46,675 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:44:47,144 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:44:48,049 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:44:48,612 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:44:50,558 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:44:51,480 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:44:52,545 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:44:53,398 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:45:24,493 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:45:25,584 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:45:26,163 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:45:26,613 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:45:27,067 basehttp 29816 31544 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:45:27,646 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:45:28,136 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:45:28,683 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:45:29,020 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:45:29,841 basehttp 29816 31544 "GET /itens/ HTTP/1.1" 200 36117
+INFO 2025-09-17 11:45:31,780 basehttp 29816 31544 "GET /itens/criar/ HTTP/1.1" 200 39614
+INFO 2025-09-17 11:45:40,322 basehttp 29816 31544 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 11:45:41,132 basehttp 29816 31544 "GET /auditorias/auditorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:45:41,859 basehttp 29816 31544 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 11:45:43,823 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:45:58,119 basehttp 29816 31544 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 11:45:59,358 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:45:59,881 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:46:00,408 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:46:01,922 basehttp 29816 31544 "GET /ativos/categorias/criar/ HTTP/1.1" 200 37282
+INFO 2025-09-17 11:46:03,944 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 11:46:05,673 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:46:06,240 basehttp 29816 31544 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:46:06,841 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:46:08,140 basehttp 29816 31544 "GET /ativos/marcas/criar/ HTTP/1.1" 200 36998
+INFO 2025-09-17 11:46:12,007 basehttp 29816 31544 "POST /ativos/marcas/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 11:46:12,028 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 37463
+INFO 2025-09-17 11:46:20,293 basehttp 29816 31544 "GET /ativos/marcas/1/deletar/ HTTP/1.1" 200 30727
+INFO 2025-09-17 11:46:21,727 basehttp 29816 31544 "POST /ativos/marcas/1/deletar/ HTTP/1.1" 302 0
+INFO 2025-09-17 11:46:21,771 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36413
+INFO 2025-09-17 11:47:18,494 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:47:19,760 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 11:47:48,406 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:47:48,901 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:47:49,396 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 11:47:49,893 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:47:50,343 basehttp 29816 31544 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 11:47:50,831 basehttp 29816 31544 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 11:47:51,282 basehttp 29816 31544 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 11:47:52,231 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:47:52,719 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:47:53,218 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 11:47:54,004 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 11:48:05,897 basehttp 29816 31544 "GET /usuarios/usuarios/ HTTP/1.1" 200 41054
+INFO 2025-09-17 11:48:07,686 basehttp 29816 31544 "GET /usuarios/usuarios/2/editar/ HTTP/1.1" 200 41215

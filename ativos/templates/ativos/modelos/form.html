@@ -1,0 +1,43 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row">
+    <div class="form-group required">
+        <label for="marca" class="form-label">Marca</label>
+        <select id="marca" name="marca" class="form-control form-select" required>
+            <option value="">Selecione uma marca...</option>
+            {% for marca in marcas %}
+            <option value="{{ marca.pk }}" {% if modelo.marca.pk == marca.pk %}selected{% endif %}>
+                {{ marca.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group required">
+        <label for="nome" class="form-label">Nome do Modelo</label>
+        <input type="text" id="nome" name="nome" class="form-control" value="{{ modelo.nome|default:'' }}" required maxlength="100">
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label for="descricao" class="form-label">Descrição</label>
+        <textarea id="descricao" name="descricao" class="form-control" rows="4">{{ modelo.descricao|default:'' }}</textarea>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="ativo" {% if modelo.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">
+                Modelo ativo no sistema
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

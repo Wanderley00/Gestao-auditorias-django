@@ -28,16 +28,47 @@ def admin_required(user):
 @login_required
 @user_passes_test(admin_required)
 def dashboard_usuarios(request):
-    """Dashboard principal do módulo de usuários"""
+    """Dashboard principal do módulo de usuários."""
     context = {
         'total_usuarios': Usuario.objects.count(),
         'usuarios_ativos': Usuario.objects.filter(is_active=True).count(),
         'usuarios_staff': Usuario.objects.filter(is_staff=True).count(),
         'total_grupos': Group.objects.count(),
         'usuarios_recentes': Usuario.objects.order_by('-date_joined')[:5],
+        'title': 'Dashboard de Usuários'
     }
     return render(request, 'usuarios/dashboard.html', context)
 
+@login_required
+@user_passes_test(admin_required)
+def alterar_senha_usuario(request, pk):
+    """Altera a senha de um usuário específico"""
+    usuario = get_object_or_404(Usuario, pk=pk)
+    
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        if not password:
+            messages.error(request, 'A senha é obrigatória!')
+        elif password != password_confirm:
+            messages.error(request, 'As senhas não coincidem!')
+        elif len(password) < 8:
+            messages.error(request, 'A senha deve ter pelo menos 8 caracteres!')
+        else:
+            try:
+                usuario.set_password(password)
+                usuario.save()
+                messages.success(request, 'Senha alterada com sucesso!')
+                return redirect('usuarios:lista_usuarios')
+            except Exception as e:
+                messages.error(request, f'Erro ao alterar senha: {str(e)}')
+    
+    context = {
+        'usuario': usuario,
+        'title': f'Alterar Senha - {usuario.get_full_name() or usuario.username}'
+    }
+    return render(request, 'usuarios/alterar_senha.html', context)
 
 @login_required
 @user_passes_test(admin_required)
@@ -79,7 +110,11 @@ def lista_usuarios(request):
         'status': status,
         'grupo': grupo,
         'grupos': Group.objects.all(),
-        'title': 'Usuários'
+        'title': 'Usuários',
+        'singular': 'Usuário',
+        'button_text': 'Novo Usuário',
+        'create_url': 'usuarios:criar_usuario', # <-- Chave que faltava
+        'artigo': 'o'
     }
     return render(request, 'usuarios/lista.html', context)
 
@@ -363,12 +398,11 @@ def deletar_grupo(request, pk):
 # VIEWS AJAX E UTILITÁRIAS
 # ============================================================================
 
-@login_required
-@user_passes_test(admin_required)
+@require_http_methods(["GET"])
 def verificar_username(request):
-    """Verifica se um username está disponível via AJAX"""
-    username = request.GET.get('username', '')
-    user_id = request.GET.get('user_id', '')
+    """Verifica se um username está disponível"""
+    username = request.GET.get('username')
+    user_id = request.GET.get('user_id')
     
     if not username:
         return JsonResponse({'available': False, 'message': 'Username é obrigatório'})
@@ -377,18 +411,16 @@ def verificar_username(request):
     if user_id:
         query = query.exclude(pk=user_id)
     
-    available = not query.exists()
-    message = 'Username disponível' if available else 'Username já está em uso'
+    if query.exists():
+        return JsonResponse({'available': False, 'message': 'Este username já está em uso'})
     
-    return JsonResponse({'available': available, 'message': message})
+    return JsonResponse({'available': True, 'message': 'Username disponível'})
 
-
-@login_required
-@user_passes_test(admin_required)
+@require_http_methods(["GET"])
 def verificar_email(request):
-    """Verifica se um email está disponível via AJAX"""
-    email = request.GET.get('email', '')
-    user_id = request.GET.get('user_id', '')
+    """Verifica se um email está disponível"""
+    email = request.GET.get('email')
+    user_id = request.GET.get('user_id')
     
     if not email:
         return JsonResponse({'available': False, 'message': 'Email é obrigatório'})
@@ -397,94 +429,61 @@ def verificar_email(request):
     if user_id:
         query = query.exclude(pk=user_id)
     
-    available = not query.exists()
-    message = 'Email disponível' if available else 'Email já está em uso'
+    if query.exists():
+        return JsonResponse({'available': False, 'message': 'Este email já está em uso'})
     
-    return JsonResponse({'available': available, 'message': message})
+    return JsonResponse({'available': True, 'message': 'Email disponível'})
 
 
-@login_required
-@user_passes_test(admin_required)
+@require_http_methods(["POST"])
 def toggle_usuario_status(request, pk):
-    """Ativa/desativa um usuário via AJAX"""
-    if request.method == 'POST':
-        usuario = get_object_or_404(Usuario, pk=pk)
-        
-        # Não permitir desativar o próprio usuário
-        if usuario == request.user:
-            return JsonResponse({
-                'success': False, 
-                'message': 'Você não pode desativar sua própria conta!'
-            })
-        
-        try:
-            usuario.is_active = not usuario.is_active
-            usuario.save()
-            
-            status = 'ativado' if usuario.is_active else 'desativado'
-            return JsonResponse({
-                'success': True,
-                'message': f'Usuário {status} com sucesso!',
-                'is_active': usuario.is_active
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'Erro ao alterar status: {str(e)}'
-            })
+    """Alterna o status ativo/inativo de um usuário"""
+    usuario = get_object_or_404(Usuario, pk=pk)
     
-    return JsonResponse({'success': False, 'message': 'Método não permitido'})
+    if usuario == request.user:
+        return JsonResponse({'success': False, 'message': 'Você não pode desativar sua própria conta'})
+    
+    try:
+        usuario.is_active = not usuario.is_active
+        usuario.save()
+        
+        status_text = 'ativado' if usuario.is_active else 'desativado'
+        return JsonResponse({
+            'success': True, 
+            'message': f'Usuário {status_text} com sucesso',
+            'new_status': usuario.is_active
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
-
-@login_required
-@user_passes_test(admin_required)
+@require_http_methods(["POST"])
 def bulk_action_usuarios(request):
     """Executa ações em lote nos usuários"""
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        user_ids = request.POST.getlist('user_ids')
-        
-        if not user_ids:
-            return JsonResponse({
-                'success': False,
-                'message': 'Nenhum usuário selecionado'
-            })
-        
-        # Remover o usuário atual da lista para evitar auto-modificação
-        user_ids = [uid for uid in user_ids if int(uid) != request.user.id]
-        
-        try:
-            usuarios = Usuario.objects.filter(id__in=user_ids)
-            count = usuarios.count()
-            
-            if action == 'activate':
-                usuarios.update(is_active=True)
-                message = f'{count} usuário(s) ativado(s) com sucesso!'
-            elif action == 'deactivate':
-                usuarios.update(is_active=False)
-                message = f'{count} usuário(s) desativado(s) com sucesso!'
-            elif action == 'delete':
-                usuarios.delete()
-                message = f'{count} usuário(s) deletado(s) com sucesso!'
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Ação inválida'
-                })
-            
-            return JsonResponse({
-                'success': True,
-                'message': message
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'Erro ao executar ação: {str(e)}'
-            })
+    action = request.POST.get('action')
+    user_ids = request.POST.getlist('user_ids')
     
-    return JsonResponse({'success': False, 'message': 'Método não permitido'})
-
+    if not action or not user_ids:
+        return JsonResponse({'success': False, 'message': 'Ação ou usuários não especificados'})
+    
+    try:
+        usuarios = Usuario.objects.filter(id__in=user_ids).exclude(pk=request.user.pk)
+        count = usuarios.count()
+        
+        if action == 'activate':
+            usuarios.update(is_active=True)
+            message = f'{count} usuário(s) ativado(s) com sucesso'
+        elif action == 'deactivate':
+            usuarios.update(is_active=False)
+            message = f'{count} usuário(s) desativado(s) com sucesso'
+        elif action == 'delete':
+            usuarios.delete()
+            message = f'{count} usuário(s) excluído(s) com sucesso'
+        else:
+            return JsonResponse({'success': False, 'message': 'Ação inválida'})
+        
+        return JsonResponse({'success': True, 'message': message})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
 # ============================================================================
 # VIEWS PARA PERFIL DO USUÁRIO

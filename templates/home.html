@@ -1,20 +1,80 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard</title>
-</head>
-<body>
-    <h2>Bem-vindo, {{ user.get_full_name }}!</h2>
-    <p>Esta é a página inicial do seu sistema de auditorias.</p>
+{% extends 'auditorias/base.html' %}
 
-    <h3>Resumo das Auditorias</h3>
-    <ul>
-        <li>Total de Auditorias Agendadas: {{ total_auditorias }}</li>
-        <li>Auditorias Futuras: {{ auditorias_agendadas }}</li>
-        <li>Auditorias Executadas: {{ auditorias_executadas }}</li>
-    </ul>
+{% block title %}Dashboard - Sistema de Auditorias{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-    <p><a href="{% url 'auditorias:lista_auditorias' %}">Ver Todas as Auditorias</a></p>
-    <p><a href="{% url 'logout' %}">Sair</a></p>
-</body>
-</html>
+{% block content %}
+<div class="content-header">
+    <h2 class="content-title">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h2>
+    <p class="content-subtitle">Esta é a página inicial do sistema de auditorias.</p>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        {{ total_auditorias }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Total de Auditorias</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
+                        {{ auditorias_agendadas }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Auditorias Futuras</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--error); margin-bottom: 8px;">
+                        {{ auditorias_executadas }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Executadas</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 32px;">
+    <div class="card-header">
+        <h3 class="card-title">Acesso rápido</h3>
+        <p class="card-subtitle">Vá direto para os principais módulos</p>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i> Ver Todas as Auditorias
+            </a>
+            <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-secondary">
+                <i class="fas fa-plus"></i> Nova Auditoria
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

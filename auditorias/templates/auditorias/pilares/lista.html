@@ -64,11 +64,9 @@
             <i class="fas fa-edit"></i>
         </a>
         <button type="button" 
-        class="js-delete-button"
-        data-url="{% url 'auditorias:deletar_pilar' object.pk %}"
-        data-nome="{{ object.nome }}">
-            Deletar
-        </button>
+                class="btn btn-danger btn-icon" 
+                title="Deletar pilar"
+                onclick="confirmDelete('{% url 'auditorias:deletar_pilar' object.pk %}', '{{ object.nome }}')">
             <i class="fas fa-trash"></i>
         </button>
     </div>
@@ -219,4 +217,3 @@
     });
 </script>
 {% endblock %}
-

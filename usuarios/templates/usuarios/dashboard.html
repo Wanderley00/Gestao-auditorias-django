@@ -1,0 +1,182 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}Dashboard Usuários - Sistema de Auditorias{% endblock %}
+{% block page_title %}Gestão de Usuários{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2 class="content-title">Dashboard de Usuários</h2>
+    <p class="content-subtitle">Gerencie usuários, permissões e grupos do sistema</p>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        {{ total_usuarios }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Total de Usuários</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
+                        {{ usuarios_ativos }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Usuários Ativos</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">
+                        {{ usuarios_staff }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Administradores</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--error); margin-bottom: 8px;">
+                        {{ total_grupos }}
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Grupos de Permissão</p>
+                </div>
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+    <!-- Usuários Recentes -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 class="card-title">Usuários Recentes</h3>
+                    <p class="card-subtitle">Últimos usuários cadastrados no sistema</p>
+                </div>
+                <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-eye"></i>
+                    Ver Todos
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if usuarios_recentes %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Email</th>
+                                <th>Data Cadastro</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios_recentes %}
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
+                                            {{ usuario.first_name.0|default:usuario.username.0|upper }}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">
+                                                {{ usuario.get_full_name|default:usuario.username }}
+                                            </div>
+                                            <div style="font-size: 12px; color: var(--text-muted);">
+                                                @{{ usuario.username }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ usuario.email|default:"—" }}</td>
+                                <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if usuario.is_active %}
+                                        <span class="badge badge-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge badge-error">Inativo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+                    <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                    <h4 style="margin-bottom: 8px;">Nenhum usuário encontrado</h4>
+                    <p>Crie o primeiro usuário para começar</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Ações Rápidas</h3>
+            <p class="card-subtitle">Acesso rápido às principais funcionalidades</p>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary" style="justify-content: flex-start;">
+                    <i class="fas fa-user-plus"></i>
+                    Novo Usuário
+                </a>
+                
+                <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-users-cog"></i>
+                    Novo Grupo
+                </a>
+                
+                <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-list"></i>
+                    Ver Grupos
+                </a>
+                
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
+                
+                <a href="{% url 'usuarios:meu_perfil' %}" class="btn btn-secondary" style="justify-content: flex-start;">
+                    <i class="fas fa-user-edit"></i>
+                    Meu Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
