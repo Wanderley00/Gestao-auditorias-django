@@ -2734,3 +2734,651 @@ INFO 2025-09-17 11:47:53,218 basehttp 29816 31544 "GET /ativos/ HTTP/1.1" 200 33
 INFO 2025-09-17 11:47:54,004 basehttp 29816 31544 "GET /ativos/ativos/ HTTP/1.1" 200 36144
 INFO 2025-09-17 11:48:05,897 basehttp 29816 31544 "GET /usuarios/usuarios/ HTTP/1.1" 200 41054
 INFO 2025-09-17 11:48:07,686 basehttp 29816 31544 "GET /usuarios/usuarios/2/editar/ HTTP/1.1" 200 41215
+INFO 2025-09-17 15:09:55,279 basehttp 29816 9092 "GET / HTTP/1.1" 302 0
+INFO 2025-09-17 15:09:55,347 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:10:03,671 basehttp 29816 9092 "GET /auditorias/auditorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 15:10:04,953 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:10:05,681 basehttp 29816 9092 "GET /auditorias/auditorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 15:10:06,306 basehttp 29816 9092 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 15:10:07,269 basehttp 29816 9092 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 15:10:08,335 basehttp 29816 9092 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 15:10:09,527 basehttp 29816 9092 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 15:10:10,328 basehttp 29816 9092 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 15:10:10,822 basehttp 29816 9092 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 15:10:11,380 basehttp 29816 9092 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 15:10:13,446 basehttp 29816 9092 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 15:10:15,754 basehttp 29816 9092 "GET /ativos/modelos/criar/ HTTP/1.1" 200 37526
+INFO 2025-09-17 15:10:20,724 basehttp 29816 9092 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 15:10:21,921 basehttp 29816 9092 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 15:10:23,416 basehttp 29816 9092 "GET /ativos/marcas/criar/ HTTP/1.1" 200 36998
+INFO 2025-09-17 15:10:25,031 basehttp 29816 9092 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 15:10:26,015 basehttp 29816 9092 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 15:10:26,852 basehttp 29816 9092 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 15:10:27,935 basehttp 29816 9092 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 15:10:29,108 basehttp 29816 9092 "GET /auditorias/auditorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 15:10:29,788 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:10:31,028 basehttp 29816 9092 "GET /itens/ HTTP/1.1" 200 36117
+INFO 2025-09-17 15:10:32,037 basehttp 29816 9092 "GET /auditorias/pilares/ HTTP/1.1" 200 45682
+INFO 2025-09-17 15:10:33,076 basehttp 29816 9092 "GET /auditorias/categorias/ HTTP/1.1" 200 37435
+INFO 2025-09-17 15:10:33,819 basehttp 29816 9092 "GET /auditorias/normas/ HTTP/1.1" 200 36153
+INFO 2025-09-17 15:10:35,605 basehttp 29816 9092 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 36325
+INFO 2025-09-17 15:10:46,031 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:10:47,959 basehttp 29816 9092 "GET /auditorias/auditorias/ HTTP/1.1" 200 36273
+INFO 2025-09-17 15:10:48,447 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:10:49,527 basehttp 29816 9092 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 15:10:50,036 basehttp 29816 9092 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 15:10:53,847 basehttp 29816 9092 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 15:10:54,269 basehttp 29816 9092 "GET /ativos/modelos/ HTTP/1.1" 200 36157
+INFO 2025-09-17 15:10:54,773 basehttp 29816 9092 "GET /ativos/marcas/ HTTP/1.1" 200 36145
+INFO 2025-09-17 15:10:55,315 basehttp 29816 9092 "GET /ativos/categorias/ HTTP/1.1" 200 36267
+INFO 2025-09-17 15:10:55,662 basehttp 29816 9092 "GET /ativos/ativos/ HTTP/1.1" 200 36144
+INFO 2025-09-17 15:10:56,113 basehttp 29816 9092 "GET /ativos/ HTTP/1.1" 200 33138
+INFO 2025-09-17 15:11:47,509 basehttp 29816 9092 "GET /admin/ HTTP/1.1" 200 34084
+INFO 2025-09-17 15:12:11,137 basehttp 29816 9092 "GET /itens/ HTTP/1.1" 200 36117
+INFO 2025-09-17 15:12:13,099 basehttp 29816 9092 "GET /itens/criar/ HTTP/1.1" 200 39614
+INFO 2025-09-17 15:12:23,765 basehttp 29816 9092 "GET /admin/itens/almoxarifado/ HTTP/1.1" 200 28346
+INFO 2025-09-17 15:12:23,838 basehttp 29816 9092 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
+INFO 2025-09-17 15:13:00,545 basehttp 29816 9092 "GET /auditorias/dashboard/ HTTP/1.1" 200 40899
+INFO 2025-09-17 15:16:38,278 basehttp 29816 9092 "GET /usuarios/usuarios/ HTTP/1.1" 200 41054
+INFO 2025-09-17 15:19:15,030 autoreload 29816 34072 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\itens\views.py changed, reloading.
+INFO 2025-09-17 15:19:16,241 autoreload 36552 21108 Watching for file changes with StatReloader
+INFO 2025-09-17 15:19:29,433 autoreload 36552 21108 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\itens\urls.py changed, reloading.
+INFO 2025-09-17 15:19:30,270 autoreload 31168 29360 Watching for file changes with StatReloader
+INFO 2025-09-17 15:23:28,494 basehttp 31168 36096 "GET /usuarios/usuarios/ HTTP/1.1" 200 41938
+INFO 2025-09-17 15:23:29,324 basehttp 31168 36096 "GET /usuarios/usuarios/ HTTP/1.1" 200 41938
+INFO 2025-09-17 15:23:37,402 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:23:41,479 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:23:49,956 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 37151
+INFO 2025-09-17 15:23:51,282 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:23:52,214 basehttp 31168 36096 "GET /itens/almoxarifados/ HTTP/1.1" 200 37118
+INFO 2025-09-17 15:23:53,038 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:23:53,548 basehttp 31168 36096 "GET /itens/almoxarifados/ HTTP/1.1" 200 37118
+INFO 2025-09-17 15:23:54,521 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:23:54,896 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 37151
+INFO 2025-09-17 15:23:55,268 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:23:55,665 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:23:56,214 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:23:58,237 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:24:00,166 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 37151
+INFO 2025-09-17 15:24:01,312 basehttp 31168 36096 "GET /itens/categorias/criar/ HTTP/1.1" 200 37975
+INFO 2025-09-17 15:24:09,684 basehttp 31168 36096 "POST /itens/categorias/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 15:24:09,701 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 38526
+INFO 2025-09-17 15:24:11,916 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:24:12,685 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:24:15,730 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:24:16,476 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 38248
+INFO 2025-09-17 15:24:17,133 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:24:18,553 basehttp 31168 36096 "GET /itens/almoxarifados/ HTTP/1.1" 200 37118
+INFO 2025-09-17 15:24:19,233 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:24:33,944 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:24:34,921 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:24:36,453 basehttp 31168 36096 "GET /itens/almoxarifados/ HTTP/1.1" 200 37118
+INFO 2025-09-17 15:24:37,781 basehttp 31168 36096 "GET /itens/almoxarifados/criar/ HTTP/1.1" 200 38203
+INFO 2025-09-17 15:24:41,466 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:24:42,258 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:24:43,033 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 38248
+INFO 2025-09-17 15:24:43,509 basehttp 31168 36096 "GET /itens/ HTTP/1.1" 200 36995
+INFO 2025-09-17 15:24:44,564 basehttp 31168 36096 "GET /itens/dashboard/ HTTP/1.1" 200 34037
+INFO 2025-09-17 15:24:48,996 basehttp 31168 36096 "GET /itens/categorias/ HTTP/1.1" 200 38248
+INFO 2025-09-17 15:24:51,558 basehttp 31168 36096 "GET /itens/subcategorias/ HTTP/1.1" 200 37196
+INFO 2025-09-17 15:24:52,511 basehttp 31168 31696 "GET /itens/almoxarifados/ HTTP/1.1" 200 37118
+INFO 2025-09-17 15:29:31,703 basehttp 31168 31696 "GET /auditorias/dashboard/ HTTP/1.1" 200 41783
+INFO 2025-09-17 15:29:38,957 basehttp 31168 31696 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38394
+INFO 2025-09-17 15:29:42,230 basehttp 31168 31696 "GET /auditorias/tipos-questao/2/editar/ HTTP/1.1" 200 38071
+INFO 2025-09-17 15:29:46,576 basehttp 31168 31696 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38394
+INFO 2025-09-17 15:29:49,031 basehttp 31168 31696 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38394
+INFO 2025-09-17 15:35:07,429 basehttp 31168 38452 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 46955
+INFO 2025-09-17 15:36:39,536 basehttp 31168 38452 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 40142
+INFO 2025-09-17 15:36:59,598 basehttp 31168 28816 "GET /auditorias/pilares/ HTTP/1.1" 200 48314
+INFO 2025-09-17 15:37:03,434 basehttp 31168 28816 "GET /auditorias/categorias/ HTTP/1.1" 200 40067
+INFO 2025-09-17 15:37:05,434 basehttp 31168 28816 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 38957
+INFO 2025-09-17 15:37:07,241 basehttp 31168 28816 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38954
+INFO 2025-09-17 15:37:09,484 basehttp 31168 28816 "GET /auditorias/categorias/ HTTP/1.1" 200 40067
+INFO 2025-09-17 15:37:10,660 basehttp 31168 28816 "GET /auditorias/auditorias/ HTTP/1.1" 200 38905
+INFO 2025-09-17 15:37:11,615 basehttp 31168 28816 "GET /auditorias/dashboard/ HTTP/1.1" 200 43531
+INFO 2025-09-17 15:37:12,767 basehttp 31168 28816 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:37:56,571 basehttp 31168 24564 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:37:57,954 basehttp 31168 24564 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:37:59,062 basehttp 31168 24564 "GET /ativos/modelos/ HTTP/1.1" 200 38789
+INFO 2025-09-17 15:37:59,955 basehttp 31168 24564 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:38:00,486 basehttp 31168 24564 "GET /ativos/modelos/ HTTP/1.1" 200 38789
+INFO 2025-09-17 15:38:01,504 basehttp 31168 24564 "GET /itens/dashboard/ HTTP/1.1" 200 38197
+INFO 2025-09-17 15:38:02,214 basehttp 31168 24564 "GET /itens/ HTTP/1.1" 200 38743
+INFO 2025-09-17 15:38:02,773 basehttp 31168 24564 "GET /itens/categorias/ HTTP/1.1" 200 39996
+INFO 2025-09-17 15:38:03,300 basehttp 31168 24564 "GET /itens/subcategorias/ HTTP/1.1" 200 38944
+INFO 2025-09-17 15:38:03,820 basehttp 31168 24564 "GET /itens/almoxarifados/ HTTP/1.1" 200 38866
+INFO 2025-09-17 15:38:05,017 basehttp 31168 24564 "GET /auditorias/categorias/ HTTP/1.1" 200 40067
+INFO 2025-09-17 15:38:06,462 basehttp 31168 24564 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:38:07,152 basehttp 31168 24564 "GET /itens/dashboard/ HTTP/1.1" 200 38197
+INFO 2025-09-17 15:38:55,211 basehttp 31168 39284 "GET /auditorias/checklists/ HTTP/1.1" 200 38837
+INFO 2025-09-17 15:38:56,679 basehttp 31168 39284 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38954
+INFO 2025-09-17 15:38:58,709 basehttp 31168 39284 "GET /usuarios/usuarios/ HTTP/1.1" 200 43686
+INFO 2025-09-17 15:39:20,315 basehttp 31168 39284 "GET /usuarios/usuarios/ HTTP/1.1" 200 43686
+INFO 2025-09-17 15:39:25,637 basehttp 31168 39284 "GET /auditorias/checklists/ HTTP/1.1" 200 38837
+INFO 2025-09-17 15:40:51,456 basehttp 31168 39284 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 40142
+INFO 2025-09-17 15:41:02,477 basehttp 31168 39284 "GET /auditorias/dashboard/ HTTP/1.1" 200 43531
+INFO 2025-09-17 15:41:05,326 basehttp 31168 39284 "GET /auditorias/auditorias/ HTTP/1.1" 200 38905
+INFO 2025-09-17 15:41:06,149 basehttp 31168 39284 "GET /ativos/ HTTP/1.1" 200 38188
+INFO 2025-09-17 15:41:09,280 basehttp 31168 39284 "GET /ativos/ HTTP/1.1" 200 38188
+INFO 2025-09-17 15:41:10,060 basehttp 31168 39284 "GET /ativos/ HTTP/1.1" 200 38188
+INFO 2025-09-17 15:41:10,461 basehttp 31168 39284 "GET /ativos/ativos/ HTTP/1.1" 200 38776
+INFO 2025-09-17 15:41:10,805 basehttp 31168 39284 "GET /ativos/ HTTP/1.1" 200 38188
+INFO 2025-09-17 15:43:21,992 basehttp 31168 39284 "GET /ativos/ativos/ HTTP/1.1" 200 38776
+INFO 2025-09-17 15:43:40,767 basehttp 31168 39284 "GET /ativos/ HTTP/1.1" 200 38188
+INFO 2025-09-17 15:43:42,485 basehttp 31168 39284 "GET /ativos/categorias/ HTTP/1.1" 200 38899
+INFO 2025-09-17 15:43:43,260 basehttp 31168 39284 "GET /ativos/marcas/ HTTP/1.1" 200 38777
+INFO 2025-09-17 15:43:43,928 basehttp 31168 39284 "GET /ativos/modelos/ HTTP/1.1" 200 38789
+INFO 2025-09-17 15:43:45,364 basehttp 31168 39284 "GET /itens/dashboard/ HTTP/1.1" 200 38197
+INFO 2025-09-17 15:43:46,121 basehttp 31168 39284 "GET /itens/ HTTP/1.1" 200 38743
+INFO 2025-09-17 15:43:46,860 basehttp 31168 39284 "GET /itens/categorias/ HTTP/1.1" 200 39996
+INFO 2025-09-17 15:43:50,006 basehttp 31168 39284 "GET /itens/subcategorias/ HTTP/1.1" 200 38944
+INFO 2025-09-17 15:43:52,216 basehttp 31168 39284 "GET /itens/almoxarifados/ HTTP/1.1" 200 38866
+INFO 2025-09-17 15:49:33,625 basehttp 31168 31652 "GET /itens/almoxarifados/ HTTP/1.1" 200 36069
+INFO 2025-09-17 15:49:34,893 basehttp 31168 31652 "GET /ativos/ativos/ HTTP/1.1" 200 36007
+INFO 2025-09-17 15:49:35,419 basehttp 31168 31652 "GET /ativos/ HTTP/1.1" 200 36218
+INFO 2025-09-17 15:49:35,952 basehttp 31168 31652 "GET /ativos/categorias/ HTTP/1.1" 200 36074
+INFO 2025-09-17 15:49:36,455 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:49:37,251 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:49:37,906 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:49:38,764 basehttp 31168 31652 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 36132
+INFO 2025-09-17 15:49:40,082 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37230
+INFO 2025-09-17 15:49:40,710 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:49:41,180 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37230
+INFO 2025-09-17 15:49:41,629 basehttp 31168 31652 "GET /auditorias/pilares/ HTTP/1.1" 200 40018
+INFO 2025-09-17 15:49:42,086 basehttp 31168 31652 "GET /itens/almoxarifados/ HTTP/1.1" 200 36069
+INFO 2025-09-17 15:49:42,562 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37175
+INFO 2025-09-17 15:49:43,069 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:49:43,640 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:49:44,182 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:49:44,655 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:49:45,582 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:49:46,155 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37175
+INFO 2025-09-17 15:49:47,693 basehttp 31168 31652 "GET /ativos/ HTTP/1.1" 200 36218
+INFO 2025-09-17 15:49:48,229 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 36080
+INFO 2025-09-17 15:49:48,701 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:49:49,390 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 36080
+INFO 2025-09-17 15:49:50,019 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:49:50,835 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:49:51,588 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:49:51,984 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:49:53,621 basehttp 31168 31652 "GET /ativos/ HTTP/1.1" 200 36218
+INFO 2025-09-17 15:49:54,296 basehttp 31168 31652 "GET /ativos/marcas/ HTTP/1.1" 200 36008
+INFO 2025-09-17 15:49:55,372 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:49:56,717 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:49:57,556 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:49:58,047 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37175
+INFO 2025-09-17 15:49:59,295 basehttp 31168 31652 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 36132
+INFO 2025-09-17 15:49:59,760 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:50:00,133 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37230
+INFO 2025-09-17 15:50:00,545 basehttp 31168 31652 "GET /auditorias/pilares/ HTTP/1.1" 200 40018
+INFO 2025-09-17 15:50:00,899 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37230
+INFO 2025-09-17 15:50:01,888 basehttp 31168 31652 "GET /auditorias/pilares/ HTTP/1.1" 200 40018
+INFO 2025-09-17 15:50:02,340 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:50:03,664 basehttp 31168 31652 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36129
+INFO 2025-09-17 15:50:04,387 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 36052
+INFO 2025-09-17 15:50:11,704 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 36052
+INFO 2025-09-17 15:50:15,106 basehttp 31168 31652 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37207
+INFO 2025-09-17 15:50:15,699 basehttp 31168 31652 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37329
+INFO 2025-09-17 15:50:17,763 basehttp 31168 31652 "GET /ativos/ativos/ HTTP/1.1" 200 36007
+INFO 2025-09-17 15:50:30,998 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:50:32,331 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 36080
+INFO 2025-09-17 15:51:04,281 basehttp 31168 31652 "GET /ativos/categorias/ HTTP/1.1" 200 36074
+INFO 2025-09-17 15:51:04,889 basehttp 31168 31652 "GET /ativos/marcas/ HTTP/1.1" 200 36008
+INFO 2025-09-17 15:51:05,692 basehttp 31168 31652 "GET /ativos/categorias/ HTTP/1.1" 200 36074
+INFO 2025-09-17 15:51:06,199 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:51:07,317 basehttp 31168 31652 "GET /ativos/modelos/criar/ HTTP/1.1" 200 39008
+INFO 2025-09-17 15:51:10,037 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:51:11,354 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43119
+INFO 2025-09-17 15:51:14,657 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 36080
+INFO 2025-09-17 15:51:16,690 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 36052
+INFO 2025-09-17 15:51:17,181 basehttp 31168 31652 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36129
+INFO 2025-09-17 15:51:17,631 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 36052
+INFO 2025-09-17 15:51:17,987 basehttp 31168 31652 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37207
+INFO 2025-09-17 15:51:18,643 basehttp 31168 31652 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37329
+INFO 2025-09-17 15:51:19,403 basehttp 31168 31652 "GET /usuarios/usuarios/ HTTP/1.1" 200 40905
+INFO 2025-09-17 15:51:25,915 basehttp 31168 31652 "GET /ativos/marcas/ HTTP/1.1" 200 36008
+INFO 2025-09-17 15:51:26,592 basehttp 31168 31652 "GET /ativos/categorias/ HTTP/1.1" 200 36074
+INFO 2025-09-17 15:51:27,064 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 36016
+INFO 2025-09-17 15:51:27,599 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:51:28,039 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:51:28,583 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:51:30,323 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:51:31,062 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36229
+INFO 2025-09-17 15:51:31,655 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35978
+INFO 2025-09-17 15:51:32,064 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37175
+INFO 2025-09-17 15:53:35,370 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37081
+INFO 2025-09-17 15:53:42,270 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 35986
+INFO 2025-09-17 15:53:42,792 basehttp 31168 31652 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36035
+INFO 2025-09-17 15:53:43,217 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 35958
+INFO 2025-09-17 15:53:43,741 basehttp 31168 31652 "GET /auditorias/pilares/ HTTP/1.1" 200 39924
+INFO 2025-09-17 15:53:44,466 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37136
+INFO 2025-09-17 15:53:45,323 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 35922
+INFO 2025-09-17 15:53:45,790 basehttp 31168 31652 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 36038
+INFO 2025-09-17 15:53:46,685 basehttp 31168 31652 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37113
+INFO 2025-09-17 15:53:47,534 basehttp 31168 31652 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37235
+INFO 2025-09-17 15:53:49,096 basehttp 31168 31652 "GET /ativos/ HTTP/1.1" 200 36124
+INFO 2025-09-17 15:53:49,709 basehttp 31168 31652 "GET /ativos/ativos/ HTTP/1.1" 200 35913
+INFO 2025-09-17 15:53:50,494 basehttp 31168 31652 "GET /ativos/categorias/ HTTP/1.1" 200 35980
+INFO 2025-09-17 15:53:51,264 basehttp 31168 31652 "GET /ativos/marcas/ HTTP/1.1" 200 35914
+INFO 2025-09-17 15:53:51,618 basehttp 31168 31652 "GET /ativos/modelos/ HTTP/1.1" 200 35922
+INFO 2025-09-17 15:53:52,681 basehttp 31168 31652 "GET /itens/dashboard/ HTTP/1.1" 200 36135
+INFO 2025-09-17 15:53:53,318 basehttp 31168 31652 "GET /itens/ HTTP/1.1" 200 35884
+INFO 2025-09-17 15:53:54,476 basehttp 31168 31652 "GET /itens/categorias/ HTTP/1.1" 200 37081
+INFO 2025-09-17 15:53:55,134 basehttp 31168 31652 "GET /itens/subcategorias/ HTTP/1.1" 200 36017
+INFO 2025-09-17 15:53:55,559 basehttp 31168 31652 "GET /itens/almoxarifados/ HTTP/1.1" 200 35975
+INFO 2025-09-17 15:53:56,333 basehttp 31168 31652 "GET /usuarios/usuarios/ HTTP/1.1" 200 40811
+INFO 2025-09-17 15:54:01,203 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43025
+INFO 2025-09-17 15:54:04,998 basehttp 31168 31652 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36035
+INFO 2025-09-17 15:54:05,513 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 35986
+INFO 2025-09-17 15:54:06,073 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 35958
+INFO 2025-09-17 15:54:06,588 basehttp 31168 31652 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36035
+INFO 2025-09-17 15:54:07,034 basehttp 31168 31652 "GET /auditorias/checklists/ HTTP/1.1" 200 35958
+INFO 2025-09-17 15:54:07,756 basehttp 31168 31652 "GET /auditorias/pilares/ HTTP/1.1" 200 39924
+INFO 2025-09-17 15:54:08,221 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37136
+INFO 2025-09-17 15:54:08,819 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 35922
+INFO 2025-09-17 15:54:09,458 basehttp 31168 31652 "GET /auditorias/categorias/ HTTP/1.1" 200 37136
+INFO 2025-09-17 15:54:10,811 basehttp 31168 31652 "GET /auditorias/normas/ HTTP/1.1" 200 35922
+INFO 2025-09-17 15:54:11,460 basehttp 31168 31652 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 36038
+INFO 2025-09-17 15:54:12,355 basehttp 31168 31652 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37113
+INFO 2025-09-17 15:54:13,022 basehttp 31168 31652 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37235
+INFO 2025-09-17 15:54:13,528 basehttp 31168 31652 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37113
+INFO 2025-09-17 15:54:35,462 basehttp 31168 31652 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-17 15:54:35,467 basehttp 31168 31652 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-17 15:54:35,481 basehttp 31168 31652 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-17 15:54:35,482 basehttp 31168 36728 "GET /static/js/login.js HTTP/1.1" 304 0
+INFO 2025-09-17 15:54:41,721 basehttp 31168 36728 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-17 15:54:41,760 basehttp 31168 36728 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-17 15:54:41,778 basehttp 31168 31652 "GET /auditorias/dashboard/ HTTP/1.1" 200 43025
+INFO 2025-09-17 15:54:49,089 basehttp 31168 31652 "GET /auditorias/auditorias/ HTTP/1.1" 200 35986
+INFO 2025-09-17 15:54:52,151 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43025
+INFO 2025-09-17 15:55:04,305 basehttp 31168 33136 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37235
+INFO 2025-09-17 15:55:06,364 basehttp 31168 33136 "GET /auditorias/tipos-questao/2/editar/ HTTP/1.1" 200 38537
+INFO 2025-09-17 15:55:07,855 basehttp 31168 33136 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 37235
+INFO 2025-09-17 15:55:10,170 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43025
+INFO 2025-09-17 15:55:23,475 basehttp 31168 33136 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36035
+INFO 2025-09-17 15:55:24,032 basehttp 31168 33136 "GET /auditorias/checklists/ HTTP/1.1" 200 35958
+INFO 2025-09-17 15:55:25,167 basehttp 31168 33136 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 39086
+INFO 2025-09-17 15:55:31,400 basehttp 31168 33136 "POST /auditorias/checklists/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 15:55:31,416 basehttp 31168 33136 "GET /auditorias/checklists/ HTTP/1.1" 200 37194
+INFO 2025-09-17 15:55:34,852 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43025
+INFO 2025-09-17 15:55:57,001 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 35884
+INFO 2025-09-17 15:55:57,883 basehttp 31168 33136 "GET /itens/categorias/ HTTP/1.1" 200 37081
+INFO 2025-09-17 15:55:58,482 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 35884
+INFO 2025-09-17 15:55:59,005 basehttp 31168 33136 "GET /itens/categorias/ HTTP/1.1" 200 37081
+INFO 2025-09-17 15:55:59,491 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 35884
+INFO 2025-09-17 15:55:59,921 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36135
+INFO 2025-09-17 15:58:53,297 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36926
+INFO 2025-09-17 16:01:46,802 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36890
+INFO 2025-09-17 16:01:47,415 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36890
+INFO 2025-09-17 16:01:48,023 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36890
+INFO 2025-09-17 16:01:48,455 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36890
+INFO 2025-09-17 16:03:31,628 basehttp 31168 33136 "GET /itens/dashboard/ HTTP/1.1" 200 36875
+WARNING 2025-09-17 16:03:33,610 log 31168 33136 Not Found: /favicon.ico
+WARNING 2025-09-17 16:03:33,610 basehttp 31168 33136 "GET /favicon.ico HTTP/1.1" 404 3634
+INFO 2025-09-17 16:03:34,609 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:35,682 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:35,889 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:36,111 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:36,293 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:36,488 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:36,672 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:03:43,272 basehttp 31168 33136 "GET / HTTP/1.1" 302 0
+INFO 2025-09-17 16:03:43,295 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43765
+INFO 2025-09-17 16:05:42,392 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43834
+INFO 2025-09-17 16:05:47,633 basehttp 31168 33136 "GET /auditorias/auditorias/ HTTP/1.1" 200 36795
+INFO 2025-09-17 16:05:48,282 basehttp 31168 33136 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36844
+INFO 2025-09-17 16:05:48,826 basehttp 31168 33136 "GET /auditorias/checklists/ HTTP/1.1" 200 37859
+INFO 2025-09-17 16:05:49,731 basehttp 31168 33136 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 36844
+INFO 2025-09-17 16:05:50,280 basehttp 31168 33136 "GET /auditorias/checklists/ HTTP/1.1" 200 37859
+INFO 2025-09-17 16:05:51,162 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 36693
+INFO 2025-09-17 16:05:52,961 basehttp 31168 33136 "GET /ativos/ HTTP/1.1" 200 36933
+INFO 2025-09-17 16:05:53,531 basehttp 31168 33136 "GET /ativos/ativos/ HTTP/1.1" 200 36722
+INFO 2025-09-17 16:05:54,490 basehttp 31168 33136 "GET /itens/almoxarifados/ HTTP/1.1" 200 36784
+INFO 2025-09-17 16:05:56,290 basehttp 31168 33136 "GET /itens/subcategorias/ HTTP/1.1" 200 36826
+INFO 2025-09-17 16:05:57,726 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 36693
+INFO 2025-09-17 16:05:59,774 basehttp 31168 33136 "GET /itens/ HTTP/1.1" 200 36693
+INFO 2025-09-17 16:06:17,298 basehttp 31168 33136 "GET /auditorias/normas/ HTTP/1.1" 200 36731
+INFO 2025-09-17 16:06:18,094 basehttp 31168 33136 "GET /auditorias/categorias/ HTTP/1.1" 200 37945
+INFO 2025-09-17 16:06:18,507 basehttp 31168 33136 "GET /auditorias/normas/ HTTP/1.1" 200 36731
+INFO 2025-09-17 16:06:18,974 basehttp 31168 33136 "GET /auditorias/categorias/ HTTP/1.1" 200 37945
+INFO 2025-09-17 16:06:20,032 basehttp 31168 33136 "GET /auditorias/pilares/ HTTP/1.1" 200 40733
+INFO 2025-09-17 16:06:20,660 basehttp 31168 33136 "GET /auditorias/categorias/ HTTP/1.1" 200 37945
+INFO 2025-09-17 16:06:21,027 basehttp 31168 33136 "GET /auditorias/pilares/ HTTP/1.1" 200 40733
+INFO 2025-09-17 16:06:21,701 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43834
+INFO 2025-09-17 16:06:28,905 basehttp 31168 33136 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 37922
+INFO 2025-09-17 16:06:31,492 basehttp 31168 33136 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38044
+INFO 2025-09-17 16:06:32,727 basehttp 31168 33136 "GET /ativos/categorias/ HTTP/1.1" 200 36789
+INFO 2025-09-17 16:06:37,530 basehttp 31168 33136 "GET /auditorias/dashboard/ HTTP/1.1" 200 43834
+INFO 2025-09-17 16:13:37,807 autoreload 31168 29360 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\urls.py changed, reloading.
+INFO 2025-09-17 16:13:38,833 autoreload 15012 23364 Watching for file changes with StatReloader
+INFO 2025-09-17 16:14:00,454 autoreload 15012 23364 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\settings.py changed, reloading.
+INFO 2025-09-17 16:14:01,229 autoreload 35844 25608 Watching for file changes with StatReloader
+INFO 2025-09-17 16:15:07,438 basehttp 35844 27008 "GET /auditorias/dashboard/ HTTP/1.1" 200 44695
+INFO 2025-09-17 16:15:09,628 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 37613
+INFO 2025-09-17 16:15:10,514 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 37593
+INFO 2025-09-17 16:15:11,446 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 37613
+INFO 2025-09-17 16:15:11,871 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 37593
+INFO 2025-09-17 16:15:12,440 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 37599
+INFO 2025-09-17 16:15:13,080 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 37632
+INFO 2025-09-17 16:15:13,657 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 37599
+INFO 2025-09-17 16:15:14,035 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 37593
+INFO 2025-09-17 16:15:14,431 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 37613
+INFO 2025-09-17 16:15:15,187 basehttp 35844 27008 "GET /organizacao/empresas/criar/ HTTP/1.1" 200 40958
+INFO 2025-09-17 16:15:28,254 basehttp 35844 27008 "POST /organizacao/empresas/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:15:28,273 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 38841
+INFO 2025-09-17 16:15:32,090 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 37593
+INFO 2025-09-17 16:15:33,474 basehttp 35844 27008 "GET /organizacao/areas/criar/ HTTP/1.1" 200 40880
+INFO 2025-09-17 16:15:40,370 basehttp 35844 27008 "POST /organizacao/areas/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:15:40,391 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 38807
+INFO 2025-09-17 16:15:41,491 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 37599
+INFO 2025-09-17 16:15:42,756 basehttp 35844 27008 "GET /organizacao/setores/criar/ HTTP/1.1" 200 40883
+INFO 2025-09-17 16:15:55,383 basehttp 35844 27008 "POST /organizacao/setores/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:15:55,406 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 38876
+INFO 2025-09-17 16:15:59,278 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 37632
+INFO 2025-09-17 16:16:00,546 basehttp 35844 27008 "GET /organizacao/subsetores/criar/ HTTP/1.1" 200 40922
+INFO 2025-09-17 16:16:19,697 basehttp 35844 27008 "POST /organizacao/subsetores/criar/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:16:19,715 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 38949
+INFO 2025-09-17 16:16:42,701 basehttp 35844 27008 "GET /auditorias/auditorias/ HTTP/1.1" 200 37656
+INFO 2025-09-17 16:16:44,147 basehttp 35844 27008 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37705
+INFO 2025-09-17 16:16:44,837 basehttp 35844 27008 "GET /auditorias/checklists/ HTTP/1.1" 200 38720
+INFO 2025-09-17 16:16:46,056 basehttp 35844 27008 "GET /auditorias/pilares/ HTTP/1.1" 200 41594
+INFO 2025-09-17 16:16:46,865 basehttp 35844 27008 "GET /auditorias/categorias/ HTTP/1.1" 200 38806
+INFO 2025-09-17 16:16:47,585 basehttp 35844 27008 "GET /auditorias/normas/ HTTP/1.1" 200 37592
+INFO 2025-09-17 16:16:48,256 basehttp 35844 27008 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37708
+INFO 2025-09-17 16:16:48,769 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38783
+INFO 2025-09-17 16:16:49,962 basehttp 35844 27008 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37708
+INFO 2025-09-17 16:16:50,423 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38783
+INFO 2025-09-17 16:16:52,244 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38783
+INFO 2025-09-17 16:17:32,604 basehttp 35844 27008 "GET /auditorias/dashboard/ HTTP/1.1" 200 44695
+INFO 2025-09-17 16:17:59,378 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 38699
+ERROR 2025-09-17 16:18:18,535 log 35844 27008 Internal Server Error: /organizacao/empresas/
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 510, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'raw'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\organizacao\views.py", line 38, in lista_empresas
+    return render(request, 'organizacao/empresas/lista.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 1016, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loader_tags.py", line 199, in render
+    template = context.template.engine.select_template(template_name)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\engine.py", line 208, in select_template
+    return self.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 512, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "C:\Users\FG3454\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\template\base.py", line 577, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 1: 'raw'. Did you forget to register or load this tag?
+ERROR 2025-09-17 16:18:18,543 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 500 280637
+INFO 2025-09-17 16:18:42,347 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 38710
+INFO 2025-09-17 16:18:45,936 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 38811
+INFO 2025-09-17 16:18:47,611 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 38747
+INFO 2025-09-17 16:18:48,490 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 38678
+INFO 2025-09-17 16:18:49,152 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 38710
+INFO 2025-09-17 16:18:49,625 basehttp 35844 27008 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38916
+INFO 2025-09-17 16:18:50,290 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:18:51,148 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:18:51,548 basehttp 35844 27008 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37719
+INFO 2025-09-17 16:18:52,261 basehttp 35844 27008 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38916
+INFO 2025-09-17 16:18:52,648 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:05,477 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:06,203 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:06,408 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:06,569 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:07,611 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:08,436 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:09,659 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+WARNING 2025-09-17 16:19:11,083 log 35844 27008 Not Found: /favicon.ico
+WARNING 2025-09-17 16:19:11,083 basehttp 35844 27008 "GET /favicon.ico HTTP/1.1" 404 3789
+INFO 2025-09-17 16:19:13,046 basehttp 35844 27008 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38916
+INFO 2025-09-17 16:19:14,198 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38794
+INFO 2025-09-17 16:19:15,811 basehttp 35844 27008 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37719
+INFO 2025-09-17 16:19:17,278 basehttp 35844 27008 "GET /auditorias/normas/ HTTP/1.1" 200 37603
+INFO 2025-09-17 16:19:17,758 basehttp 35844 27008 "GET /auditorias/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:19:18,226 basehttp 35844 27008 "GET /auditorias/auditorias/ HTTP/1.1" 200 37667
+INFO 2025-09-17 16:19:19,064 basehttp 35844 27008 "GET /auditorias/dashboard/ HTTP/1.1" 200 44706
+INFO 2025-09-17 16:19:20,575 basehttp 35844 27008 "GET /itens/dashboard/ HTTP/1.1" 200 37816
+INFO 2025-09-17 16:19:22,854 basehttp 35844 27008 "GET /itens/subcategorias/ HTTP/1.1" 200 37698
+INFO 2025-09-17 16:20:19,307 basehttp 35844 27008 "GET /itens/subcategorias/ HTTP/1.1" 200 37697
+INFO 2025-09-17 16:20:39,710 basehttp 35844 27008 "GET /itens/subcategorias/ HTTP/1.1" 200 37697
+INFO 2025-09-17 16:20:40,529 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38793
+INFO 2025-09-17 16:20:41,283 basehttp 35844 27008 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38915
+INFO 2025-09-17 16:20:41,837 basehttp 35844 27008 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37718
+INFO 2025-09-17 16:20:42,322 basehttp 35844 27008 "GET /auditorias/normas/ HTTP/1.1" 200 37602
+INFO 2025-09-17 16:20:43,019 basehttp 35844 27008 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38793
+INFO 2025-09-17 16:20:43,402 basehttp 35844 27008 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38915
+INFO 2025-09-17 16:20:44,510 basehttp 35844 27008 "GET /auditorias/categorias/ HTTP/1.1" 200 38816
+INFO 2025-09-17 16:20:44,853 basehttp 35844 27008 "GET /auditorias/categorias/ HTTP/1.1" 200 38816
+INFO 2025-09-17 16:20:45,235 basehttp 35844 27008 "GET /auditorias/pilares/ HTTP/1.1" 200 41604
+INFO 2025-09-17 16:20:45,795 basehttp 35844 27008 "GET /auditorias/checklists/ HTTP/1.1" 200 38730
+INFO 2025-09-17 16:20:46,211 basehttp 35844 27008 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37715
+INFO 2025-09-17 16:20:46,900 basehttp 35844 27008 "GET /auditorias/auditorias/ HTTP/1.1" 200 37666
+INFO 2025-09-17 16:20:47,454 basehttp 35844 27008 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37715
+INFO 2025-09-17 16:20:52,487 basehttp 35844 27008 "GET /auditorias/dashboard/ HTTP/1.1" 200 44705
+INFO 2025-09-17 16:20:55,155 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 38810
+INFO 2025-09-17 16:21:02,990 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 38746
+INFO 2025-09-17 16:21:03,756 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 38677
+INFO 2025-09-17 16:21:04,306 basehttp 35844 27008 "GET /organizacao/empresas/ HTTP/1.1" 200 38709
+INFO 2025-09-17 16:22:02,341 basehttp 35844 27008 "GET /organizacao/areas/ HTTP/1.1" 200 38677
+INFO 2025-09-17 16:22:02,867 basehttp 35844 27008 "GET /organizacao/setores/ HTTP/1.1" 200 38746
+INFO 2025-09-17 16:22:03,298 basehttp 35844 27008 "GET /organizacao/subsetores/ HTTP/1.1" 200 38810
+INFO 2025-09-17 16:22:05,508 basehttp 35844 27008 "GET /ativos/ HTTP/1.1" 200 37804
+INFO 2025-09-17 16:26:11,551 basehttp 35844 20428 "GET /auditorias/auditorias/ HTTP/1.1" 200 37598
+INFO 2025-09-17 16:26:12,527 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:26:18,513 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:26:19,877 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:26:22,206 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:26:23,106 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:26:23,681 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37656
+INFO 2025-09-17 16:26:24,170 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38731
+INFO 2025-09-17 16:26:26,116 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:26:28,266 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38731
+INFO 2025-09-17 16:26:30,107 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:26:50,599 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38731
+INFO 2025-09-17 16:26:53,342 basehttp 35844 20428 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38853
+INFO 2025-09-17 16:26:54,789 basehttp 35844 20428 "GET /organizacao/empresas/ HTTP/1.1" 200 38641
+INFO 2025-09-17 16:26:55,380 basehttp 35844 20428 "GET /organizacao/areas/ HTTP/1.1" 200 38609
+INFO 2025-09-17 16:26:56,762 basehttp 35844 20428 "GET /organizacao/setores/ HTTP/1.1" 200 38678
+INFO 2025-09-17 16:26:58,230 basehttp 35844 20428 "GET /organizacao/subsetores/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:27:00,345 basehttp 35844 20428 "GET /ativos/ HTTP/1.1" 200 37736
+INFO 2025-09-17 16:27:01,682 basehttp 35844 20428 "GET /ativos/ativos/ HTTP/1.1" 200 37525
+INFO 2025-09-17 16:27:03,053 basehttp 35844 20428 "GET /ativos/categorias/ HTTP/1.1" 200 37592
+INFO 2025-09-17 16:27:12,831 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37656
+INFO 2025-09-17 16:27:14,299 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:27:15,636 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:27:16,300 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:27:16,710 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:27:17,119 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:27:17,530 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:27:18,191 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:27:18,587 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:27:18,940 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:27:19,408 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37659
+INFO 2025-09-17 16:27:52,527 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37647
+INFO 2025-09-17 16:27:55,989 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37647
+INFO 2025-09-17 16:27:57,284 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:27:57,946 basehttp 35844 20428 "GET /auditorias/auditorias/ HTTP/1.1" 200 37598
+INFO 2025-09-17 16:27:58,517 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37647
+INFO 2025-09-17 16:27:59,024 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:27:59,668 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:28:00,429 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:28:01,138 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:28:01,537 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:28:01,944 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:28:02,309 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37650
+INFO 2025-09-17 16:28:02,694 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38725
+INFO 2025-09-17 16:28:03,601 basehttp 35844 20428 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38847
+INFO 2025-09-17 16:28:05,102 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37650
+INFO 2025-09-17 16:28:05,632 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:28:06,104 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:28:22,889 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38725
+INFO 2025-09-17 16:28:23,203 basehttp 35844 20428 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38847
+INFO 2025-09-17 16:28:31,270 basehttp 35844 20428 "GET /organizacao/setores/ HTTP/1.1" 200 38678
+INFO 2025-09-17 16:28:32,113 basehttp 35844 20428 "GET /organizacao/areas/ HTTP/1.1" 200 38609
+INFO 2025-09-17 16:28:32,818 basehttp 35844 20428 "GET /organizacao/empresas/ HTTP/1.1" 200 38641
+INFO 2025-09-17 16:28:33,358 basehttp 35844 20428 "GET /organizacao/subsetores/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:28:34,580 basehttp 35844 20428 "GET /ativos/ HTTP/1.1" 200 37736
+INFO 2025-09-17 16:28:36,548 basehttp 35844 20428 "GET /itens/categorias/ HTTP/1.1" 200 38693
+INFO 2025-09-17 16:28:38,888 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37629
+INFO 2025-09-17 16:29:23,764 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37629
+INFO 2025-09-17 16:30:13,051 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:30:13,599 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37653
+INFO 2025-09-17 16:30:15,561 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37653
+INFO 2025-09-17 16:30:16,152 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37653
+INFO 2025-09-17 16:30:16,883 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:30:17,569 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:30:18,392 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37656
+INFO 2025-09-17 16:30:18,850 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38731
+INFO 2025-09-17 16:30:19,823 basehttp 35844 20428 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38853
+INFO 2025-09-17 16:30:20,434 basehttp 35844 20428 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 37656
+INFO 2025-09-17 16:30:20,973 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37534
+INFO 2025-09-17 16:30:21,737 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38748
+INFO 2025-09-17 16:30:22,176 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41536
+INFO 2025-09-17 16:30:22,675 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38662
+INFO 2025-09-17 16:30:23,079 basehttp 35844 20428 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37653
+INFO 2025-09-17 16:30:24,663 basehttp 35844 20428 "GET /organizacao/empresas/ HTTP/1.1" 200 38641
+INFO 2025-09-17 16:30:25,394 basehttp 35844 20428 "GET /organizacao/areas/ HTTP/1.1" 200 38609
+INFO 2025-09-17 16:30:25,892 basehttp 35844 20428 "GET /organizacao/setores/ HTTP/1.1" 200 38678
+INFO 2025-09-17 16:30:26,324 basehttp 35844 20428 "GET /organizacao/subsetores/ HTTP/1.1" 200 38742
+INFO 2025-09-17 16:30:27,581 basehttp 35844 20428 "GET /ativos/ HTTP/1.1" 200 37736
+INFO 2025-09-17 16:30:29,186 basehttp 35844 20428 "GET /ativos/ativos/ HTTP/1.1" 200 37525
+INFO 2025-09-17 16:30:30,201 basehttp 35844 20428 "GET /itens/categorias/ HTTP/1.1" 200 38693
+INFO 2025-09-17 16:30:31,266 basehttp 35844 20428 "GET /itens/almoxarifados/ HTTP/1.1" 200 37587
+INFO 2025-09-17 16:30:34,446 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37623
+INFO 2025-09-17 16:30:36,632 basehttp 35844 20428 "GET /usuarios/usuarios/ HTTP/1.1" 200 42423
+INFO 2025-09-17 16:32:25,388 basehttp 35844 20428 "GET /usuarios/usuarios/ HTTP/1.1" 200 42547
+WARNING 2025-09-17 16:32:26,511 log 35844 20428 Not Found: /favicon.ico
+WARNING 2025-09-17 16:32:26,511 basehttp 35844 20428 "GET /favicon.ico HTTP/1.1" 404 3789
+INFO 2025-09-17 16:32:27,400 basehttp 35844 20428 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38855
+INFO 2025-09-17 16:32:28,796 basehttp 35844 20428 "GET /ativos/modelos/ HTTP/1.1" 200 37658
+INFO 2025-09-17 16:32:29,470 basehttp 35844 20428 "GET /ativos/marcas/ HTTP/1.1" 200 37650
+INFO 2025-09-17 16:32:29,953 basehttp 35844 20428 "GET /ativos/categorias/ HTTP/1.1" 200 37716
+INFO 2025-09-17 16:32:30,385 basehttp 35844 20428 "GET /ativos/ativos/ HTTP/1.1" 200 37649
+INFO 2025-09-17 16:32:31,096 basehttp 35844 20428 "GET /ativos/ HTTP/1.1" 200 37860
+INFO 2025-09-17 16:32:31,526 basehttp 35844 20428 "GET /ativos/ativos/ HTTP/1.1" 200 37649
+INFO 2025-09-17 16:32:32,152 basehttp 35844 20428 "GET /ativos/ HTTP/1.1" 200 37860
+INFO 2025-09-17 16:32:32,882 basehttp 35844 20428 "GET /itens/dashboard/ HTTP/1.1" 200 37871
+INFO 2025-09-17 16:32:33,735 basehttp 35844 20428 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:32:34,218 basehttp 35844 20428 "GET /itens/dashboard/ HTTP/1.1" 200 37871
+INFO 2025-09-17 16:32:34,591 basehttp 35844 20428 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:32:34,995 basehttp 35844 20428 "GET /itens/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:32:35,464 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:32:35,957 basehttp 35844 20428 "GET /itens/almoxarifados/ HTTP/1.1" 200 37711
+INFO 2025-09-17 16:32:36,556 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:32:37,852 basehttp 35844 20428 "GET /itens/almoxarifados/ HTTP/1.1" 200 37711
+INFO 2025-09-17 16:32:38,571 basehttp 35844 20428 "GET /usuarios/usuarios/ HTTP/1.1" 200 42547
+INFO 2025-09-17 16:32:40,333 basehttp 35844 20428 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:32:40,791 basehttp 35844 20428 "GET /itens/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:32:41,515 basehttp 35844 20428 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:32:42,075 basehttp 35844 20428 "GET /itens/dashboard/ HTTP/1.1" 200 37871
+INFO 2025-09-17 16:32:43,681 basehttp 35844 20428 "GET /auditorias/checklists/ HTTP/1.1" 200 38786
+INFO 2025-09-17 16:32:44,125 basehttp 35844 20428 "GET /auditorias/pilares/ HTTP/1.1" 200 41660
+INFO 2025-09-17 16:32:44,580 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38872
+INFO 2025-09-17 16:32:45,062 basehttp 35844 20428 "GET /auditorias/normas/ HTTP/1.1" 200 37658
+INFO 2025-09-17 16:32:45,484 basehttp 35844 20428 "GET /auditorias/categorias/ HTTP/1.1" 200 38872
+INFO 2025-09-17 16:32:47,292 basehttp 35844 20428 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:32:47,315 basehttp 35844 20428 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-17 16:32:52,441 basehttp 35844 20428 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-17 16:32:52,460 basehttp 35844 20428 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-17 16:32:52,508 basehttp 35844 12768 "GET /auditorias/dashboard/ HTTP/1.1" 200 44761
+INFO 2025-09-17 16:33:06,077 basehttp 35844 12768 "GET /auditorias/dashboard/ HTTP/1.1" 200 44761
+INFO 2025-09-17 16:33:07,510 basehttp 35844 12768 "GET /auditorias/checklists/ HTTP/1.1" 200 38786
+INFO 2025-09-17 16:33:11,588 basehttp 35844 12768 "GET /organizacao/empresas/ HTTP/1.1" 200 38765
+INFO 2025-09-17 16:33:13,670 basehttp 35844 12768 "GET /auditorias/tipos-questao/ HTTP/1.1" 200 38977
+INFO 2025-09-17 16:33:14,271 basehttp 35844 12768 "GET /auditorias/modelos-avaliacao/ HTTP/1.1" 200 38855
+INFO 2025-09-17 16:33:15,247 basehttp 35844 12768 "GET /auditorias/normas/ HTTP/1.1" 200 37658
+INFO 2025-09-17 16:34:32,594 basehttp 35844 12768 "GET /admin/planos_de_acao/mensagemforum/ HTTP/1.1" 200 28155
+INFO 2025-09-17 16:34:32,688 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
+INFO 2025-09-17 16:34:35,916 basehttp 35844 12768 "GET /admin/planos_de_acao/naoconformidade/ HTTP/1.1" 200 29866
+INFO 2025-09-17 16:34:35,947 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
+INFO 2025-09-17 16:34:41,052 basehttp 35844 12768 "GET /admin/planos_de_acao/responsavellocal/ HTTP/1.1" 200 27764
+INFO 2025-09-17 16:34:41,076 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
+INFO 2025-09-17 16:34:49,902 basehttp 35844 12768 "GET /admin/planos_de_acao/forum/ HTTP/1.1" 200 27334
+INFO 2025-09-17 16:34:49,928 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158

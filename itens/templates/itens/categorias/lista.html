@@ -1,0 +1,37 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Descrição da Categoria</th>
+    <th>Total de Itens</th>
+    <th>Status</th>
+    <th>Data de Cadastro</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.descricao }}
+        </div>
+    </td>
+    <td>{{ object.total_itens }}</td>
+    <td>
+        {% if object.ativo %}
+            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
+        {% else %}
+            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
+        {% endif %}
+    </td>
+    <td>{{ object.data_cadastro|date:"d/m/Y" }}</td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'itens:editar_categoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Categoria">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Categoria"
+                    onclick="confirmDelete('{% url 'itens:deletar_categoria' object.pk %}', '{{ object.descricao }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

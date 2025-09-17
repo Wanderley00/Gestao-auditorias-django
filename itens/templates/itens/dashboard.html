@@ -1,0 +1,106 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}Dashboard de Itens{% endblock %}
+{% block page_title %}Dashboard de Itens{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2 class="content-title">Visão Geral de Itens</h2>
+    <p class="content-subtitle">Estatísticas e informações sobre os itens cadastrados.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">{{ total_itens }}</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Total de Itens</p>
+                </div>
+                <div style="font-size: 24px; color: var(--primary);"><i class="fas fa-boxes"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;">{{ itens_ativos }}</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Itens Ativos</p>
+                </div>
+                <div style="font-size: 24px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">{{ total_categorias }}</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Categorias</p>
+                </div>
+                <div style="font-size: 24px; color: var(--warning);"><i class="fas fa-tags"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 32px; font-weight: 700; color: var(--info); margin-bottom: 8px;">{{ total_almoxarifados }}</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Almoxarifados</p>
+                </div>
+                <div style="font-size: 24px; color: var(--info);"><i class="fas fa-warehouse"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Itens Adicionados Recentemente</h3>
+        </div>
+        <div class="card-body">
+            {% if itens_recentes %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Data Cadastro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in itens_recentes %}
+                            <tr>
+                                <td><a href="{% url 'itens:editar_item' item.pk %}">{{ item.codigo_interno }}</a></td>
+                                <td>{{ item.descricao }}</td>
+                                <td><span class="badge badge-info">{{ item.categoria_principal.descricao|default:'N/A' }}</span></td>
+                                <td>{{ item.data_cadastro|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>Nenhum item cadastrado recentemente.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Ações Rápidas</h3>
+        </div>
+        <div class="card-body" style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{% url 'itens:criar_item' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Item</a>
+            <a href="{% url 'itens:criar_categoria' %}" class="btn btn-secondary"><i class="fas fa-plus"></i> Nova Categoria</a>
+            <a href="{% url 'itens:criar_subcategoria' %}" class="btn btn-secondary"><i class="fas fa-plus"></i> Nova Subcategoria</a>
+            <a href="{% url 'itens:criar_almoxarifado' %}" class="btn btn-secondary"><i class="fas fa-plus"></i> Novo Almoxarifado</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

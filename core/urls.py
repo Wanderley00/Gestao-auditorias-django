@@ -1,3 +1,4 @@
+# core/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -16,7 +17,8 @@ urlpatterns = [
     path('auditorias/', include('auditorias.urls')),
     path('usuarios/', include('usuarios.urls')),
     path('itens/', include('itens.urls')),
-    path('ativos/', include('ativos.urls')),  # <-- ADICIONE ESTA LINHA
+    path('ativos/', include('ativos.urls')),
+    path('organizacao/', include('organizacao.urls')), # <-- ADICIONE ESTA LINHA
 ]
 
 if settings.DEBUG:

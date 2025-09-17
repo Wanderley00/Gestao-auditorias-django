@@ -1,0 +1,37 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Nome da Empresa</th>
+    <th>CNPJ</th>
+    <th>Responsável</th>
+    <th>Status</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.nome }}
+        </div>
+    </td>
+    <td>{{ object.cnpj|default:"—" }}</td>
+    <td>{{ object.usuario_responsavel.get_full_name|default:object.usuario_responsavel.username|default:"—" }}</td>
+    <td>
+        {% if object.ativo %}
+            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
+        {% else %}
+            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'organizacao:editar_empresa' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Empresa">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Empresa"
+                    onclick="confirmDelete('{% url 'organizacao:deletar_empresa' object.pk %}', '{{ object.nome }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

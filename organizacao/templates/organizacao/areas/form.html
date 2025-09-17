@@ -1,0 +1,44 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="empresa" class="form-label">Empresa</label>
+        <select id="empresa" name="empresa" class="form-control form-select" required>
+            <option value="">Selecione...</option>
+            {% for empresa in empresas %}
+            <option value="{{ empresa.pk }}" {% if object.empresa.pk == empresa.pk %}selected{% endif %}>{{ empresa.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="nome" class="form-label">Nome da Área</label>
+        <input type="text" id="nome" name="nome" class="form-control" value="{{ object.nome|default:'' }}" required maxlength="100">
+    </div>
+</div>
+<div class="form-row">
+    <div class="form-group">
+        <label for="usuario_responsavel" class="form-label">Responsável</label>
+        <select id="usuario_responsavel" name="usuario_responsavel" class="form-control form-select">
+            <option value="">Selecione...</option>
+            {% for usuario in usuarios %}
+            <option value="{{ usuario.pk }}" {% if object.usuario_responsavel.pk == usuario.pk %}selected{% endif %}>{{ usuario.get_full_name|default:usuario.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="form-row single">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="ativo" {% if object.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">Área ativa no sistema</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

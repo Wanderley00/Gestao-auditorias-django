@@ -1,0 +1,155 @@
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-top">
+            <div class="sidebar-logo">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="sidebar-title">GK SKF</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="sidebar-search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="sidebarSearch" placeholder="Filtrar funcionalidades...">
+        </div>
+    </div>
+
+    <div class="sidebar-nav" id="sidebarNav">
+
+        <div class="nav-section">
+            <div class="nav-section-title">Principal</div>
+            <a href="{% url 'auditorias:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.app_name == 'auditorias' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="nav-item-text">Dashboard</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Gerenciamento de Auditorias</div>
+            <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if '/auditorias/auditorias/' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i>
+                <span class="nav-item-text">Auditorias</span>
+            </a>
+            <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-item {% if '/auditorias/modelos-auditoria/' in request.path %}active{% endif %}">
+                <i class="fas fa-file-alt"></i>
+                <span class="nav-item-text">Modelos de Auditoria</span>
+            </a>
+            <a href="{% url 'auditorias:lista_checklists' %}" class="nav-item {% if '/auditorias/checklists/' in request.path %}active{% endif %}">
+                <i class="fas fa-list-check"></i>
+                <span class="nav-item-text">Checklists</span>
+            </a>
+            <a href="{% url 'auditorias:lista_pilares' %}" class="nav-item {% if '/auditorias/pilares/' in request.path %}active{% endif %}">
+                <i class="fas fa-columns"></i>
+                <span class="nav-item-text">Pilares</span>
+            </a>
+            <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-item {% if '/auditorias/categorias/' in request.path %}active{% endif %}">
+                <i class="fas fa-tags"></i>
+                <span class="nav-item-text">Categorias</span>
+            </a>
+            <a href="{% url 'auditorias:lista_normas' %}" class="nav-item {% if '/auditorias/normas/' in request.path %}active{% endif %}">
+                <i class="fas fa-book"></i>
+                <span class="nav-item-text">Normas</span>
+            </a>
+            <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-item {% if '/auditorias/ferramentas-digitais/' in request.path %}active{% endif %}">
+                <i class="fas fa-tools"></i>
+                <span class="nav-item-text">Ferramentas</span>
+            </a>
+            <a href="{% url 'auditorias:lista_modelos_avaliacao' %}" class="nav-item {% if '/auditorias/modelos-avaliacao/' in request.path %}active{% endif %}">
+                <i class="fas fa-clipboard-list"></i>
+                <span class="nav-item-text">Modelos de Avaliação</span>
+            </a>
+            <a href="{% url 'auditorias:lista_tipos_questao' %}" class="nav-item {% if '/auditorias/tipos-questao/' in request.path %}active{% endif %}">
+                <i class="fas fa-question-circle"></i>
+                <span class="nav-item-text">Tipos de Questão</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Organização</div>
+            <a href="{% url 'organizacao:lista_empresas' %}" class="nav-item {% if '/organizacao/empresas/' in request.path %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span class="nav-item-text">Empresas</span>
+            </a>
+            <a href="{% url 'organizacao:lista_areas' %}" class="nav-item {% if '/organizacao/areas/' in request.path %}active{% endif %}">
+                <i class="fas fa-map"></i>
+                <span class="nav-item-text">Áreas</span>
+            </a>
+            <a href="{% url 'organizacao:lista_setores' %}" class="nav-item {% if '/organizacao/setores/' in request.path %}active{% endif %}">
+                <i class="fas fa-briefcase"></i>
+                <span class="nav-item-text">Setores</span>
+            </a>
+            <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-item {% if '/organizacao/subsetores/' in request.path %}active{% endif %}">
+                <i class="fas fa-sitemap"></i>
+                <span class="nav-item-text">Subsetores</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Ativos</div>
+            <a href="{% url 'ativos:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'ativos' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i>
+                <span class="nav-item-text">Dashboard</span>
+            </a>
+            <a href="{% url 'ativos:lista_ativos' %}" class="nav-item {% if '/ativos/ativos/' in request.path %}active{% endif %}">
+                <i class="fas fa-archive"></i>
+                <span class="nav-item-text">Ativos</span>
+            </a>
+            <a href="{% url 'ativos:lista_categorias' %}" class="nav-item {% if '/ativos/categorias/' in request.path %}active{% endif %}">
+                <i class="fas fa-tags"></i>
+                <span class="nav-item-text">Categorias</span>
+            </a>
+            <a href="{% url 'ativos:lista_marcas' %}" class="nav-item {% if '/ativos/marcas/' in request.path %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span class="nav-item-text">Marcas</span>
+            </a>
+            <a href="{% url 'ativos:lista_modelos' %}" class="nav-item {% if '/ativos/modelos/' in request.path %}active{% endif %}">
+                <i class="fas fa-cogs"></i>
+                <span class="nav-item-text">Modelos</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Itens</div>
+            <a href="{% url 'itens:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="nav-item-text">Dashboard</span>
+            </a>
+            <a href="{% url 'itens:lista_itens' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name in 'lista_itens,criar_item,editar_item' %}active{% endif %}">
+                <i class="fas fa-box"></i>
+                <span class="nav-item-text">Itens</span>
+            </a>
+            <a href="{% url 'itens:lista_categorias' %}" class="nav-item {% if '/itens/categorias/' in request.path %}active{% endif %}">
+                <i class="fas fa-tags"></i>
+                <span class="nav-item-text">Categorias</span>
+            </a>
+            <a href="{% url 'itens:lista_subcategorias' %}" class="nav-item {% if '/itens/subcategorias/' in request.path %}active{% endif %}">
+                <i class="fas fa-sitemap"></i>
+                <span class="nav-item-text">Subcategorias</span>
+            </a>
+            <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-item {% if '/itens/almoxarifados/' in request.path %}active{% endif %}">
+                <i class="fas fa-warehouse"></i>
+                <span class="nav-item-text">Almoxarifados</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Sistema</div>
+            <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span class="nav-item-text">Usuários</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span class="nav-item-text">Configurações</span>
+            </a>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
+                {% csrf_token %}
+                <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="nav-item-text">Sair</span>
+                </a>
+            </form>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,37 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição da Subcategoria</label>
+        <input type="text" id="descricao" name="descricao" class="form-control" value="{{ object.descricao|default:'' }}" required maxlength="100">
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="categoria" class="form-label">Categoria Principal</label>
+        <select id="categoria" name="categoria" class="form-control form-select" required>
+            <option value="">Selecione...</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.pk }}" {% if object.categoria.pk == cat.pk %}selected{% endif %}>{{ cat.descricao }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="ativo" {% if object.ativo|default:True %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">
+                Subcategoria ativa no sistema
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

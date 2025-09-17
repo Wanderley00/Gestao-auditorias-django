@@ -1,0 +1,152 @@
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed'); 
+    }
+
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('mobile-open'); 
+    }
+
+    // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)'; 
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            }, 5000); 
+        }); 
+    });
+    // Form validation helpers
+    function validateForm(formId) { 
+        const form = document.getElementById(formId);
+        const inputs = form.querySelectorAll('input[required], select[required], textarea[required]'); 
+        let isValid = true;
+        inputs.forEach(input => { 
+            if (!input.value.trim()) {
+                input.style.borderColor = 'var(--error)';
+                isValid = false;
+            } else {
+                input.style.borderColor = 'var(--border)'; 
+            }
+        });
+        return isValid; 
+    }
+
+    // Loading state for buttons
+    function setButtonLoading(buttonId, loading = true) {
+        const button = document.getElementById(buttonId);
+        if (loading) { 
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Carregando...'; 
+        } else {
+            button.disabled = false;
+            button.innerHTML = button.getAttribute('data-original-text'); 
+        }
+    }
+
+    // AJAX helpers
+    function makeAjaxRequest(url, method = 'GET', data = null) {
+        return fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            body: data ? JSON.stringify(data) : null
+        }).then(response => response.json());
+    } 
+</script>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // AQUI ESTÁ A CORREÇÃO: Seleciona o elemento correto que tem a rolagem
+    const sidebarNav = document.getElementById('sidebarNav');
+    const searchInput = document.getElementById('sidebarSearch');
+
+    // ========================================================
+    // 1. LÓGICA PARA MANTER A POSIÇÃO DA ROLAGEM (CORRIGIDA)
+    // ========================================================
+    
+    // Restaura a posição da rolagem ao carregar a página
+    if (sidebarNav && localStorage.getItem('sidebarScrollPos')) { 
+        sidebarNav.scrollTop = parseInt(localStorage.getItem('sidebarScrollPos'), 10);
+    }
+
+    // Salva a posição da rolagem antes de sair da página
+    window.addEventListener('beforeunload', () => {
+        if (sidebarNav) {
+            localStorage.setItem('sidebarScrollPos', sidebarNav.scrollTop); 
+        }
+    });
+
+    // ========================================================
+    // 2. LÓGICA PARA O FILTRO DA BARRA LATERAL
+    // ========================================================
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const filterText = this.value.toLowerCase().trim();
+            const navSections = document.querySelectorAll('.sidebar-nav .nav-section');
+            navSections.forEach(section => { 
+                const navItems = section.querySelectorAll('.nav-item');
+                let sectionHasVisibleItems = false;
+
+                navItems.forEach(item => {
+                    const itemText = item.querySelector('.nav-item-text').textContent.toLowerCase(); 
+                    
+                    if (itemText.includes(filterText)) {
+                        item.style.display = 'flex';
+                        sectionHasVisibleItems = true; 
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }); 
+
+                // Mostra ou esconde a seção inteira baseada nos itens visíveis
+                if (sectionHasVisibleItems) {
+                    section.style.display = 'block';
+                } else { 
+                    section.style.display = 'none';
+                }
+            });
+        }); 
+    }
+});
+</script>
+{% endblock %}
+
+<script>
+// Melhorar navegação dos botões voltar
+document.addEventListener('DOMContentLoaded', function() {
+    // Interceptar todos os links de voltar/cancelar
+    const backButtons = document.querySelectorAll('a[href*="lista"], button[onclick*="history.back"]');
+    
+    backButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Se é um link e não tem href válida, usar history.back()
+            if (this.tagName === 'A' && (!this.href || this.href.includes('undefined'))) { 
+                e.preventDefault();
+                window.history.back();
+            }
+        }); 
+    });
+    
+    // Função global para voltar
+    window.goBack = function() {
+        if (document.referrer && document.referrer !== window.location.href) {
+            window.history.back(); 
+        } else {
+            // Fallback: ir para o dashboard se não houver histórico
+            window.location.href = "{% url 'auditorias:dashboard' %}"; 
+        } 
+    };
+}); 
+</script>

@@ -57,6 +57,7 @@ TEMPLATES = [
             BASE_DIR / 'auditorias' / 'templates', # Mantemos para usar o base.html
             BASE_DIR / 'usuarios' / 'templates',
             BASE_DIR / 'itens' / 'templates', # <-- ADICIONADO
+            BASE_DIR / 'organizacao' / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {

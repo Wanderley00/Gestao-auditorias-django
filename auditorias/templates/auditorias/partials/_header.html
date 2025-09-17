@@ -1,0 +1,17 @@
+<header class="main-header">
+    <div class="header-content">
+        <h1 class="page-title">{% block page_title %}{% endblock %}</h1> 
+        
+        <div class="header-actions">
+            <div class="user-menu">
+                <div class="user-avatar"> 
+                    {{ user.first_name.0|default:user.username.0|upper }} 
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div> 
+                    <div class="user-role">Administrador</div>
+                </div> 
+            </div> 
+        </div>
+    </div>
+</header>
