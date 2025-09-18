@@ -3382,3 +3382,33 @@ INFO 2025-09-17 16:34:41,052 basehttp 35844 12768 "GET /admin/planos_de_acao/res
 INFO 2025-09-17 16:34:41,076 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
 INFO 2025-09-17 16:34:49,902 basehttp 35844 12768 "GET /admin/planos_de_acao/forum/ HTTP/1.1" 200 27334
 INFO 2025-09-17 16:34:49,928 basehttp 35844 12768 "GET /admin/jsi18n/ HTTP/1.1" 200 8158
+INFO 2025-09-17 16:41:04,163 basehttp 35844 33352 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:41:05,885 basehttp 35844 33352 "GET /itens/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:41:06,652 basehttp 35844 33352 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:41:07,088 basehttp 35844 33352 "GET /itens/almoxarifados/ HTTP/1.1" 200 37711
+INFO 2025-09-17 16:41:07,511 basehttp 35844 33352 "GET /itens/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:41:08,063 basehttp 35844 33352 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:41:08,558 basehttp 35844 33352 "GET /itens/dashboard/ HTTP/1.1" 200 37871
+INFO 2025-09-17 16:41:19,044 basehttp 35844 33352 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:41:19,996 basehttp 35844 33352 "GET /itens/almoxarifados/ HTTP/1.1" 200 37711
+INFO 2025-09-17 16:41:20,558 basehttp 35844 33352 "GET /itens/subcategorias/ HTTP/1.1" 200 37747
+INFO 2025-09-17 16:41:21,233 basehttp 35844 33352 "GET /itens/categorias/ HTTP/1.1" 200 38817
+INFO 2025-09-17 16:41:21,827 basehttp 35844 33352 "GET /itens/ HTTP/1.1" 200 37626
+INFO 2025-09-17 16:41:22,496 basehttp 35844 33352 "GET /itens/dashboard/ HTTP/1.1" 200 37871
+INFO 2025-09-18 15:35:25,423 autoreload 37568 22884 Watching for file changes with StatReloader
+INFO 2025-09-18 15:35:31,594 basehttp 37568 36376 "GET / HTTP/1.1" 302 0
+INFO 2025-09-18 15:35:31,608 basehttp 37568 36376 "GET /auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-18 15:35:31,658 basehttp 37568 36376 "GET /login/?next=/auditorias/dashboard/ HTTP/1.1" 200 3748
+INFO 2025-09-18 15:35:31,854 basehttp 37568 36376 "GET /static/css/login.css HTTP/1.1" 200 23163
+INFO 2025-09-18 15:35:31,867 basehttp 37568 33156 "GET /static/img/imagem2.png HTTP/1.1" 200 153024
+INFO 2025-09-18 15:35:31,885 basehttp 37568 34152 "GET /static/js/login.js HTTP/1.1" 200 13870
+WARNING 2025-09-18 15:35:32,701 log 37568 34152 Not Found: /favicon.ico
+WARNING 2025-09-18 15:35:32,701 basehttp 37568 34152 "GET /favicon.ico HTTP/1.1" 404 3789
+INFO 2025-09-18 15:35:40,269 basehttp 37568 13300 "GET /login/?next=/auditorias/dashboard/ HTTP/1.1" 200 3748
+INFO 2025-09-18 15:35:40,296 basehttp 37568 13300 "GET /static/css/login.css HTTP/1.1" 304 0
+INFO 2025-09-18 15:35:40,308 basehttp 37568 13300 "GET /static/img/imagem2.png HTTP/1.1" 304 0
+INFO 2025-09-18 15:35:40,308 basehttp 37568 36772 "GET /static/js/login.js HTTP/1.1" 304 0
+WARNING 2025-09-18 15:35:41,253 log 37568 36772 Not Found: /favicon.ico
+WARNING 2025-09-18 15:35:41,253 basehttp 37568 36772 "GET /favicon.ico HTTP/1.1" 404 3789
+INFO 2025-09-18 15:35:46,728 basehttp 37568 36772 "POST /login/?next=/auditorias/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-18 15:35:46,878 basehttp 37568 36772 "GET /auditorias/dashboard/ HTTP/1.1" 200 44761
