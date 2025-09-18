@@ -1,3 +1,4 @@
+from django.contrib.messages import constants as messages
 import os
 from pathlib import Path
 
@@ -10,7 +11,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '100.000.000.000']
 
 # Application definition
 INSTALLED_APPS = [
@@ -20,7 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Apps locais (adicione todos os seus apps aqui)
     'auditorias',
     'usuarios',
@@ -31,7 +32,7 @@ INSTALLED_APPS = [
     'clientes',             # <-- ADICIONADO
     'fornecedores',         # <-- ADICIONADO
     'planos_de_acao',       # <-- ADICIONADO
-    
+
     # Apps de terceiros (se necessário)
     # 'rest_framework',
     # 'corsheaders',
@@ -54,9 +55,9 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             BASE_DIR / 'templates',
-            BASE_DIR / 'auditorias' / 'templates', # Mantemos para usar o base.html
+            BASE_DIR / 'auditorias' / 'templates',  # Mantemos para usar o base.html
             BASE_DIR / 'usuarios' / 'templates',
-            BASE_DIR / 'itens' / 'templates', # <-- ADICIONADO
+            BASE_DIR / 'itens' / 'templates',  # <-- ADICIONADO
             BASE_DIR / 'organizacao' / 'templates',
         ],
         'APP_DIRS': True,
@@ -232,7 +233,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
+
     # Configurações de cache para produção
     CACHES = {
         'default': {
@@ -240,7 +241,7 @@ if not DEBUG:
             'LOCATION': 'redis://127.0.0.1:6379/1',
         }
     }
-    
+
     # Configurações de banco para produção
     DATABASES = {
         'default': {
@@ -254,7 +255,6 @@ if not DEBUG:
     }
 
 # Configurações de mensagens
-from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'debug',
     messages.INFO: 'info',
@@ -279,7 +279,7 @@ USE_TZ = True
 # Configurações de arquivos estáticos para produção
 if not DEBUG:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    
+
 # Configurações de CORS (se usando API)
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:3000",
@@ -300,6 +300,4 @@ if not DEBUG:
 #     'PAGE_SIZE': 20,
 # }
 
-## teste wanderley add informações
-
-## teste remove 
+# teste wanderley add informações
