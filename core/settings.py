@@ -301,3 +301,5 @@ if not DEBUG:
 # }
 
 ## teste wanderley add informações
+
+## teste remove 
