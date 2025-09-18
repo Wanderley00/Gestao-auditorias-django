@@ -3412,3 +3412,5 @@ WARNING 2025-09-18 15:35:41,253 log 37568 36772 Not Found: /favicon.ico
 WARNING 2025-09-18 15:35:41,253 basehttp 37568 36772 "GET /favicon.ico HTTP/1.1" 404 3789
 INFO 2025-09-18 15:35:46,728 basehttp 37568 36772 "POST /login/?next=/auditorias/dashboard/ HTTP/1.1" 302 0
 INFO 2025-09-18 15:35:46,878 basehttp 37568 36772 "GET /auditorias/dashboard/ HTTP/1.1" 200 44761
+INFO 2025-09-18 15:42:36,327 autoreload 37568 22884 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\core\settings.py changed, reloading.
+INFO 2025-09-18 15:42:37,265 autoreload 29616 34624 Watching for file changes with StatReloader
