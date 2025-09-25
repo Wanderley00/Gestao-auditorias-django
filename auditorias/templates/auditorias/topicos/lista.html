@@ -1,0 +1,39 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Descrição do Tópico</th>
+    <th>Checklist Associado</th>
+    <th>Ordem</th>
+    <th>Nº de Perguntas</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            {{ object.descricao }}
+        </div>
+    </td>
+    <td>
+        <a href="{% url 'auditorias:editar_checklist' object.checklist.pk %}">
+            {{ object.checklist.nome|default:"—" }}
+        </a>
+    </td>
+    <td>
+        <span class="badge badge-info">{{ object.ordem }}</span>
+    </td>
+    <td>
+        {{ object.perguntas.count }}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'auditorias:editar_topico' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Tópico">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Tópico"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_topico' object.pk %}', '{{ object.descricao }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}

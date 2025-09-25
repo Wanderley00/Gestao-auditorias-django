@@ -13,12 +13,14 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', redirect_to_auditorias, name='home'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(http_method_names=['get', 'post']), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(http_method_names=['get', 'post'] ), name='logout'),
     path('auditorias/', include('auditorias.urls')),
     path('usuarios/', include('usuarios.urls')),
     path('itens/', include('itens.urls')),
     path('ativos/', include('ativos.urls')),
-    path('organizacao/', include('organizacao.urls')), # <-- ADICIONE ESTA LINHA
+    path('organizacao/', include('organizacao.urls')),
+    path('clientes/', include('clientes.urls')),          # <-- ADICIONE ESTA LINHA
+    path('fornecedores/', include('fornecedores.urls')),  # <-- ADICIONE ESTA LINHA
 ]
 
 if settings.DEBUG:

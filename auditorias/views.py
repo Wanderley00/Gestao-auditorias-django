@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -1223,3 +1224,256 @@ def lista_modelos_avaliacao(request):
         'empty_subtitle': 'Comece criando o primeiro modelo de avaliação.'
     }
     return render(request, 'auditorias/modelos_avaliacao/lista.html', context)
+
+@login_required
+def lista_perguntas(request, checklist_pk):
+    """Lista todas as perguntas de um checklist, agrupadas por tópico."""
+    checklist = get_object_or_404(Checklist, pk=checklist_pk)
+    topicos_com_perguntas = checklist.topicos.prefetch_related('perguntas__tipo_questao').order_by('ordem')
+
+    context = {
+        'checklist': checklist,
+        'topicos_com_perguntas': topicos_com_perguntas,
+        'title': f'Perguntas do Checklist: {checklist.nome}',
+        'back_url': 'auditorias:lista_checklists'
+    }
+    return render(request, 'auditorias/perguntas/lista.html', context)
+
+
+@login_required
+def criar_pergunta(request, checklist_pk):
+    """Cria uma nova pergunta para um tópico dentro de um checklist."""
+    checklist = get_object_or_404(Checklist, pk=checklist_pk)
+    
+    if request.method == 'POST':
+        # ... (sua lógica de POST continua a mesma)
+        topico_id = request.POST.get('topico')
+        descricao = request.POST.get('descricao')
+        tipo_questao_id = request.POST.get('tipo_questao')
+        
+        if topico_id and descricao and tipo_questao_id:
+            try:
+                Pergunta.objects.create(
+                    topico_id=topico_id,
+                    descricao=descricao,
+                    tipo_questao_id=tipo_questao_id,
+                    campo_obrigatorio=request.POST.get('campo_obrigatorio') == 'on',
+                    campo_desabilitado=request.POST.get('campo_desabilitado') == 'on',
+                    ordem=int(request.POST.get('ordem', 0))
+                )
+                messages.success(request, 'Pergunta criada com sucesso!')
+                return redirect('auditorias:lista_perguntas', checklist_pk=checklist.pk)
+            except Exception as e:
+                messages.error(request, f'Erro ao criar pergunta: {e}')
+        else:
+            messages.error(request, 'Tópico, Descrição e Tipo de Questão são obrigatórios.')
+
+    context = {
+        'checklist': checklist,
+        'topicos': checklist.topicos.order_by('ordem'),
+        'tipos_questao': TipoQuestao.objects.all(),
+        'title': 'Criar Nova Pergunta',
+        # CORREÇÃO: Montamos a URL completa aqui na view
+        'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist.pk}),
+    }
+    return render(request, 'auditorias/perguntas/form.html', context)
+
+@login_required
+def editar_pergunta(request, pk):
+    """Edita uma pergunta existente."""
+    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist').prefetch_related('opcoes'), pk=pk)
+    checklist = pergunta.topico.checklist
+
+    if request.method == 'POST':
+        topico_id = request.POST.get('topico')
+        descricao = request.POST.get('descricao')
+        tipo_questao_id = request.POST.get('tipo_questao')
+
+        if topico_id and descricao and tipo_questao_id:
+            try:
+                pergunta.topico_id = topico_id
+                pergunta.descricao = descricao
+                pergunta.tipo_questao_id = tipo_questao_id
+                pergunta.campo_obrigatorio = request.POST.get('campo_obrigatorio') == 'on'
+                pergunta.campo_desabilitado = request.POST.get('campo_desabilitado') == 'on'
+                pergunta.ordem = int(request.POST.get('ordem', 0))
+                pergunta.save()
+
+                # --- LÓGICA PARA SALVAR OPÇÕES DA PERGUNTA ---
+                opcoes_desc = request.POST.getlist('opcao_descricao')
+                opcoes_status = request.POST.getlist('opcao_tipo_status')
+                opcoes_instrucoes = request.POST.getlist('opcao_instrucoes')
+                opcoes_ids = request.POST.getlist('opcao_id')
+
+                # Limpa opções existentes que não foram enviadas de volta
+                opcoes_existentes_ids = [op.id for op in pergunta.opcoes.all()]
+                ids_para_deletar = [op_id for op_id in opcoes_existentes_ids if str(op_id) not in opcoes_ids]
+                if ids_para_deletar:
+                    OpcaoPergunta.objects.filter(id__in=ids_para_deletar).delete()
+
+                for i, desc in enumerate(opcoes_desc):
+                    if desc:  # Apenas processa se a descrição não for vazia
+                        opcao_id = opcoes_ids[i] if i < len(opcoes_ids) else None
+                        
+                        if opcao_id and opcao_id != 'new':
+                            # Atualiza opção existente
+                            opcao = OpcaoPergunta.objects.get(id=opcao_id, pergunta=pergunta)
+                            opcao.descricao = desc
+                            opcao.tipo_status = opcoes_status[i]
+                            opcao.instrucoes_usuario = opcoes_instrucoes[i]
+                            opcao.save()
+                        else:
+                            # Cria nova opção
+                            OpcaoPergunta.objects.create(
+                                pergunta=pergunta,
+                                descricao=desc,
+                                tipo_status=opcoes_status[i],
+                                instrucoes_usuario=opcoes_instrucoes[i]
+                            )
+                # --- FIM DA LÓGICA ---
+                
+                messages.success(request, 'Pergunta atualizada com sucesso!')
+                return redirect('auditorias:lista_perguntas', checklist_pk=checklist.pk)
+            except Exception as e:
+                messages.error(request, f'Erro ao atualizar pergunta: {e}')
+        else:
+            messages.error(request, 'Tópico, Descrição e Tipo de Questão são obrigatórios.')
+
+    context = {
+        'object': pergunta,
+        'checklist': checklist,
+        'topicos': checklist.topicos.order_by('ordem'),
+        'tipos_questao': TipoQuestao.objects.all(),
+        'title': 'Editar Pergunta',
+        'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist.pk}),
+    }
+    return render(request, 'auditorias/perguntas/form.html', context)
+
+@login_required
+def deletar_pergunta(request, pk):
+    """Deleta uma pergunta."""
+    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist'), pk=pk)
+    checklist_pk = pergunta.topico.checklist.pk
+
+    if request.method == 'POST':
+        try:
+            pergunta.delete()
+            messages.success(request, 'Pergunta deletada com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao deletar pergunta: {e}')
+        return redirect('auditorias:lista_perguntas', checklist_pk=checklist_pk)
+
+    context = {
+        'object': pergunta,
+        'title': 'Pergunta',
+        # CORREÇÃO: Montamos a URL completa aqui na view para o botão "Cancelar"
+        'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist_pk}),
+    }
+    # Usaremos um template de deleção que também entenda a URL completa
+    return render(request, 'auditorias/deletar_pergunta.html', context)
+
+@login_required
+def lista_topicos(request):
+    """Lista todos os tópicos com busca e paginação."""
+    search = request.GET.get('search', '')
+    topicos = Topico.objects.select_related('checklist').order_by('checklist__nome', 'ordem')
+
+    if search:
+        topicos = topicos.filter(
+            Q(descricao__icontains=search) | Q(checklist__nome__icontains=search)
+        )
+
+    paginator = Paginator(topicos, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'title': 'Tópicos de Checklist',
+        'singular': 'Tópico',
+        'button_text': 'Novo Tópico',
+        'create_url': 'auditorias:criar_topico',
+        'artigo': 'o',
+        'empty_message': 'Nenhum tópico cadastrado.',
+        'empty_subtitle': 'Comece criando o primeiro tópico.'
+    }
+    return render(request, 'auditorias/topicos/lista.html', context)
+
+
+@login_required
+def criar_topico(request):
+    """Cria um novo tópico."""
+    if request.method == 'POST':
+        descricao = request.POST.get('descricao')
+        checklist_id = request.POST.get('checklist')
+        ordem = request.POST.get('ordem', 0)
+
+        if descricao and checklist_id:
+            try:
+                Topico.objects.create(
+                    descricao=descricao,
+                    checklist_id=checklist_id,
+                    ordem=int(ordem)
+                )
+                messages.success(request, 'Tópico criado com sucesso!')
+                return redirect('auditorias:lista_topicos')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar tópico: {e}')
+        else:
+            messages.error(request, 'Descrição e Checklist são obrigatórios.')
+
+    context = {
+        'title': 'Criar Tópico',
+        'back_url': 'auditorias:lista_topicos',
+        'checklists': Checklist.objects.filter(ativo=True)
+    }
+    return render(request, 'auditorias/topicos/form.html', context)
+
+
+@login_required
+def editar_topico(request, pk):
+    """Edita um tópico existente."""
+    topico = get_object_or_404(Topico, pk=pk)
+    if request.method == 'POST':
+        topico.descricao = request.POST.get('descricao')
+        topico.checklist_id = request.POST.get('checklist')
+        topico.ordem = int(request.POST.get('ordem', 0))
+
+        if topico.descricao and topico.checklist_id:
+            try:
+                topico.save()
+                messages.success(request, 'Tópico atualizado com sucesso!')
+                return redirect('auditorias:lista_topicos')
+            except Exception as e:
+                messages.error(request, f'Erro ao atualizar tópico: {e}')
+        else:
+            messages.error(request, 'Descrição e Checklist são obrigatórios.')
+
+    context = {
+        'object': topico,
+        'title': 'Editar Tópico',
+        'back_url': 'auditorias:lista_topicos',
+        'checklists': Checklist.objects.filter(ativo=True)
+    }
+    return render(request, 'auditorias/topicos/form.html', context)
+
+
+@login_required
+def deletar_topico(request, pk):
+    """Deleta um tópico."""
+    topico = get_object_or_404(Topico, pk=pk)
+    if request.method == 'POST':
+        try:
+            topico.delete()
+            messages.success(request, 'Tópico deletado com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao deletar tópico: {e}')
+        return redirect('auditorias:lista_topicos')
+
+    context = {
+        'object': topico,
+        'title': 'Tópico'
+    }
+    return render(request, 'auditorias/deletar_generico.html', context)
+

@@ -1,0 +1,186 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="topico" class="form-label">Tópico</label>
+        <select id="topico" name="topico" class="form-control form-select" required>
+            <option value="">Selecione um tópico...</option>
+            {% for topico in topicos %}
+            <option value="{{ topico.pk }}" {% if object.topico.pk == topico.pk %}selected{% endif %}>
+                {{ topico.descricao }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="field-help">A pergunta será associada a este tópico do checklist.</div>
+    </div>
+</div>
+
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição da Pergunta</label>
+        <textarea id="descricao" name="descricao" class="form-control" rows="4" required placeholder="Ex: O equipamento está limpo e em boas condições?">{{ object.descricao|default:'' }}</textarea>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group required">
+        <label for="tipo_questao" class="form-label">Tipo de Questão</label>
+        <select id="tipo_questao" name="tipo_questao" class="form-control form-select" required>
+            <option value="">Selecione o tipo...</option>
+            {% for tipo in tipos_questao %}
+            <option value="{{ tipo.pk }}" {% if object.tipo_questao.pk == tipo.pk %}selected{% endif %}>
+                {{ tipo.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="ordem" class="form-label">Ordem</label>
+        <input type="number" id="ordem" name="ordem" class="form-control" value="{{ object.ordem|default:0 }}">
+        <div class="field-help">Define a ordem de exibição da pergunta dentro do tópico.</div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Campo Obrigatório?</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="campo_obrigatorio" {% if object.campo_obrigatorio %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">
+                A resposta é obrigatória
+            </span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Campo Desabilitado?</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="toggle-switch">
+                <input type="checkbox" name="campo_desabilitado" {% if object.campo_desabilitado %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px;">
+                A pergunta não pode ser respondida
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Opções da Pergunta -->
+<div id="opcoes-container" style="margin-top: 32px;">
+    <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+        Opções de Resposta
+    </h4>
+    <div id="opcoes-list">
+        {% for opcao in object.opcoes.all %}
+        <div class="opcao-item" style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border);">
+            <input type="hidden" name="opcao_id" value="{{ opcao.id }}">
+            <div class="form-row">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Descrição da Opção</label>
+                    <input type="text" name="opcao_descricao" class="form-control" value="{{ opcao.descricao }}" placeholder="Ex: Conforme, Não Conforme">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Tipo de Status</label>
+                    <select name="opcao_tipo_status" class="form-control form-select">
+                        <option value="CONFORME" {% if opcao.tipo_status == 'CONFORME' %}selected{% endif %}>Conforme</option>
+                        <option value="NAO_CONFORME" {% if opcao.tipo_status == 'NAO_CONFORME' %}selected{% endif %}>Não Conforme</option>
+                        <option value="NA" {% if opcao.tipo_status == 'NA' %}selected{% endif %}>N/A</option>
+                        <option value="DESVIO_SOLUCIONADO" {% if opcao.tipo_status == 'DESVIO_SOLUCIONADO' %}selected{% endif %}>Desvio Solucionado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 16px; margin-bottom: 0;">
+                <label class="form-label">Instruções do Usuário (Opcional)</label>
+                <input type="text" name="opcao_instrucoes" class="form-control" value="{{ opcao.instrucoes_usuario|default:'' }}" placeholder="Instrução para o usuário ao selecionar esta opção">
+            </div>
+            <div style="text-align: right; margin-top: 12px;">
+                <button type="button" class="btn btn-danger btn-sm remove-opcao-btn">
+                    <i class="fas fa-trash"></i> Remover
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" id="add-opcao-btn" class="btn btn-secondary" style="margin-top: 16px;">
+        <i class="fas fa-plus"></i> Adicionar Opção
+    </button>
+</div>
+
+<!-- Template para novas opções -->
+<template id="opcao-template">
+    <div class="opcao-item" style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border);">
+        <input type="hidden" name="opcao_id" value="new">
+        <div class="form-row">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Descrição da Opção</label>
+                <input type="text" name="opcao_descricao" class="form-control" placeholder="Ex: Conforme, Não Conforme">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Tipo de Status</label>
+                <select name="opcao_tipo_status" class="form-control form-select">
+                    <option value="CONFORME">Conforme</option>
+                    <option value="NAO_CONFORME">Não Conforme</option>
+                    <option value="NA">N/A</option>
+                    <option value="DESVIO_SOLUCIONADO">Desvio Solucionado</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 16px; margin-bottom: 0;">
+            <label class="form-label">Instruções do Usuário (Opcional)</label>
+            <input type="text" name="opcao_instrucoes" class="form-control" placeholder="Instrução para o usuário ao selecionar esta opção">
+        </div>
+        <div style="text-align: right; margin-top: 12px;">
+            <button type="button" class="btn btn-danger btn-sm remove-opcao-btn">
+                <i class="fas fa-trash"></i> Remover
+            </button>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoQuestaoSelect = document.getElementById('tipo_questao');
+    const opcoesContainer = document.getElementById('opcoes-container');
+    const addOpcaoBtn = document.getElementById('add-opcao-btn');
+    const opcoesList = document.getElementById('opcoes-list');
+    const opcaoTemplate = document.getElementById('opcao-template');
+
+    function toggleOpcoesContainer() {
+        // O nome do tipo de questão que deve mostrar as opções.
+        // ATENÇÃO: Ajuste este nome se for diferente no seu banco de dados.
+        const tipoQuestaoComOpcoes = "Criar uma Opção"; 
+        
+        const selectedOptionText = tipoQuestaoSelect.options[tipoQuestaoSelect.selectedIndex].text;
+        
+        if (selectedOptionText.trim() === tipoQuestaoComOpcoes) {
+            opcoesContainer.style.display = 'block';
+        } else {
+            opcoesContainer.style.display = 'none';
+        }
+    }
+
+    addOpcaoBtn.addEventListener('click', function() {
+        const newOpcao = opcaoTemplate.content.cloneNode(true);
+        opcoesList.appendChild(newOpcao);
+    });
+
+    opcoesList.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-opcao-btn')) {
+            e.target.closest('.opcao-item').remove();
+        }
+    });
+
+    tipoQuestaoSelect.addEventListener('change', toggleOpcoesContainer);
+
+    // Executa a verificação no carregamento da página
+    toggleOpcoesContainer();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'auditorias/form_generico.html' %}
+
+{% block form_content %}
+<div class="form-row single">
+    <div class="form-group required">
+        <label for="descricao" class="form-label">Descrição do Tópico</label>
+        <input type="text" 
+               id="descricao" 
+               name="descricao" 
+               class="form-control" 
+               value="{{ object.descricao|default:'' }}" 
+               required 
+               maxlength="255"
+               placeholder="Ex: Segurança do Equipamento, Condições de Limpeza">
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group required">
+        <label for="checklist" class="form-label">Checklist</label>
+        <select id="checklist" name="checklist" class="form-control form-select" required>
+            <option value="">Selecione um checklist...</option>
+            {% for checklist in checklists %}
+            <option value="{{ checklist.pk }}" {% if object.checklist.pk == checklist.pk %}selected{% endif %}>
+                {{ checklist.nome }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="field-help">O tópico pertencerá a este checklist.</div>
+    </div>
+    <div class="form-group">
+        <label for="ordem" class="form-label">Ordem de Exibição</label>
+        <input type="number" 
+               id="ordem" 
+               name="ordem" 
+               class="form-control" 
+               value="{{ object.ordem|default:0 }}">
+        <div class="field-help">Define a posição do tópico no checklist (0, 1, 2...).</div>
+    </div>
+</div>
+{% endblock %}

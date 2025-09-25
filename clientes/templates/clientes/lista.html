@@ -1,0 +1,48 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block table_headers %}
+    <th>Nome do Cliente</th>
+    <th>NPR</th>
+    <th>Email</th>
+    <th>Responsável</th>
+    <th>Status</th>
+    <th style="width: 120px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            {% if object.logo_cliente %}
+                <img src="{{ object.logo_cliente.url }}" alt="Logo" style="width: 40px; height: 40px; border-radius: var(--radius-sm); object-fit: contain;">
+            {% else %}
+                <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px; border-radius: var(--radius-sm);">
+                    {{ object.nome.0|upper }}
+                </div>
+            {% endif %}
+            <div style="font-weight: 600; color: var(--text-primary);">
+                {{ object.nome }}
+            </div>
+        </div>
+    </td>
+    <td>{{ object.npr|default:"—" }}</td>
+    <td>{{ object.email|default:"—" }}</td>
+    <td>{{ object.usuario_responsavel.get_full_name|default:object.usuario_responsavel.username|default:"—" }}</td>
+    <td>
+        {% if object.ativo %}
+            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
+        {% else %}
+            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'clientes:editar_cliente' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Cliente">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Cliente"
+                    onclick="confirmDelete('{% url 'clientes:deletar_cliente' object.pk %}', '{{ object.nome }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+{% endblock %}
