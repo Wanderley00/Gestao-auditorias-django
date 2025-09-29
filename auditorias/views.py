@@ -13,7 +13,7 @@ import json
 
 from .models import (
     Pilar, CategoriaAuditoria, Norma, RequisitoNorma, FerramentaDigital,
-    TipoQuestao, ModeloAvaliacao, Checklist, Topico, Pergunta, OpcaoPergunta,
+    Checklist, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem,
     FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia
 )
 from organizacao.models import Empresa, Area, Setor, SubSetor
@@ -96,7 +96,7 @@ def criar_pilar(request):
     
     context = {
         'title': 'Criar Pilar',
-        'back_url': 'auditorias:lista_pilares'  # SEMPRE ADICIONAR ISSO
+        'back_url': 'auditorias:lista_pilares'
     }
     return render(request, 'auditorias/pilares/form.html', context)
 
@@ -120,7 +120,7 @@ def editar_pilar(request, pk):
     context = {
         'pilar': pilar,
         'title': 'Editar Pilar',
-        'back_url': 'auditorias:lista_pilares'  # SEMPRE ADICIONAR ISSO
+        'back_url': 'auditorias:lista_pilares'
     }
     return render(request, 'auditorias/pilares/form.html', context)
 
@@ -145,7 +145,7 @@ def deletar_pilar(request, pk):
 
 
 # ============================================================================
-# VIEWS PARA CATEGORIAS DE AUDITORIA
+# VIEWS PARA CATEGORias DE AUDITORIA
 # ============================================================================
 
 @login_required
@@ -203,7 +203,7 @@ def criar_categoria_auditoria(request):
     context = {
         'pilares': Pilar.objects.filter(ativo=True),
         'title': 'Criar Categoria de Auditoria',
-        'back_url': 'auditorias:lista_categorias_auditoria'  # ADICIONADO
+        'back_url': 'auditorias:lista_categorias_auditoria'
     }
     return render(request, 'auditorias/categorias/form.html', context)
 
@@ -231,7 +231,7 @@ def editar_categoria_auditoria(request, pk):
         'categoria': categoria,
         'pilares': Pilar.objects.filter(ativo=True),
         'title': 'Editar Categoria de Auditoria',
-        'back_url': 'auditorias:lista_categorias_auditoria'  # ADICIONADO
+        'back_url': 'auditorias:lista_categorias_auditoria'
     }
     return render(request, 'auditorias/categorias/form.html', context)
 
@@ -311,7 +311,7 @@ def criar_norma(request):
     
     context = {
         'title': 'Criar Norma',
-        'back_url': 'auditorias:lista_normas'  # ADICIONADO
+        'back_url': 'auditorias:lista_normas'
     }
     return render(request, 'auditorias/normas/form.html', context)
 
@@ -335,7 +335,7 @@ def editar_norma(request, pk):
     context = {
         'norma': norma,
         'title': 'Editar Norma',
-        'back_url': 'auditorias:lista_normas'  # ADICIONADO
+        'back_url': 'auditorias:lista_normas'
     }
     return render(request, 'auditorias/normas/form.html', context)
 
@@ -407,7 +407,7 @@ def criar_ferramenta_digital(request):
     
     context = {
         'title': 'Criar Ferramenta Digital',
-        'back_url': 'auditorias:lista_ferramentas_digitais'  # ADICIONADO
+        'back_url': 'auditorias:lista_ferramentas_digitais'
     }
     return render(request, 'auditorias/ferramentas_digitais/form.html', context)
 
@@ -429,7 +429,7 @@ def editar_ferramenta_digital(request, pk):
     context = {
         'ferramenta': ferramenta,
         'title': 'Editar Ferramenta Digital',
-        'back_url': 'auditorias:lista_ferramentas_digitais'  # ADICIONADO
+        'back_url': 'auditorias:lista_ferramentas_digitais'
     }
     return render(request, 'auditorias/ferramentas_digitais/form.html', context)
 
@@ -455,220 +455,6 @@ def deletar_ferramenta_digital(request, pk):
 
 
 # ============================================================================
-# VIEWS PARA TIPOS DE QUESTÃO
-# ============================================================================
-
-@login_required
-def lista_tipos_questao(request):
-    """Lista todos os tipos de questão"""
-    search = request.GET.get('search', '')
-    tipos = TipoQuestao.objects.all()
-    
-    if search:
-        tipos = tipos.filter(
-            Q(nome__icontains=search) | Q(descricao__icontains=search)
-        )
-    
-    paginator = Paginator(tipos, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'search': search,
-        'title': 'Tipos de Questão',
-        'singular': 'Tipo de Questão',
-        'button_text': 'Novo Tipo de Questão',
-        'create_url': 'auditorias:criar_tipo_questao',
-        'artigo': 'o',
-        'empty_message': 'Nenhum tipo de questão cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro tipo de questão.'
-    }
-    return render(request, 'auditorias/tipos_questao/lista.html', context)
-
-@login_required
-def criar_tipo_questao(request):
-    """Cria um novo tipo de questão"""
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        descricao = request.POST.get('descricao')
-        icone = request.FILES.get('icone')
-        
-        if nome and descricao:
-            try:
-                TipoQuestao.objects.create(
-                    nome=nome,
-                    descricao=descricao,
-                    icone=icone
-                )
-                messages.success(request, 'Tipo de questão criado com sucesso!')
-                return redirect('auditorias:lista_tipos_questao')
-            except Exception as e:
-                messages.error(request, f'Erro ao criar tipo de questão: {str(e)}')
-        else:
-            messages.error(request, 'Nome e descrição são obrigatórios!')
-    
-    context = {
-        'title': 'Criar Tipo de Questão',
-        'back_url': 'auditorias:lista_tipos_questao'  # ADICIONADO
-    }
-    return render(request, 'auditorias/tipos_questao/form.html', context)
-
-@login_required
-def editar_tipo_questao(request, pk):
-    """Edita um tipo de questão existente"""
-    tipo = get_object_or_404(TipoQuestao, pk=pk)
-    
-    if request.method == 'POST':
-        tipo.nome = request.POST.get('nome')
-        tipo.descricao = request.POST.get('descricao')
-        
-        if request.FILES.get('icone'):
-            tipo.icone = request.FILES.get('icone')
-        
-        try:
-            tipo.save()
-            messages.success(request, 'Tipo de questão atualizado com sucesso!')
-            return redirect('auditorias:lista_tipos_questao')
-        except Exception as e:
-            messages.error(request, f'Erro ao atualizar tipo de questão: {str(e)}')
-    
-    context = {
-        'tipo': tipo,
-        'title': 'Editar Tipo de Questão',
-        'back_url': 'auditorias:lista_tipos_questao'  # ADICIONADO
-    }
-    return render(request, 'auditorias/tipos_questao/form.html', context)
-
-
-@login_required
-def deletar_tipo_questao(request, pk):
-    """Deleta um tipo de questão"""
-    tipo = get_object_or_404(TipoQuestao, pk=pk)
-    
-    if request.method == 'POST':
-        try:
-            tipo.delete()
-            messages.success(request, 'Tipo de questão deletado com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao deletar tipo de questão: {str(e)}')
-        return redirect('auditorias:lista_tipos_questao')
-    
-    context = {
-        'object': tipo,
-        'title': 'Tipo de Questão'
-    }
-    return render(request, 'auditorias/deletar_generico.html', context)
-
-
-# ============================================================================
-# VIEWS PARA MODELOS DE AVALIAÇÃO
-# ============================================================================
-
-@login_required
-def lista_checklists(request):
-    """Lista todos os checklists"""
-    search = request.GET.get('search', '')
-    checklists = Checklist.objects.select_related('ferramenta', 'modelo_avaliacao').all()
-    
-    if search:
-        checklists = checklists.filter(nome__icontains=search)
-    
-    paginator = Paginator(checklists, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'search': search,
-        'title': 'Checklists',
-        'singular': 'Checklist',
-        'button_text': 'Novo Checklist',
-        'create_url': 'auditorias:criar_checklist',
-        'artigo': 'o',
-        'empty_message': 'Nenhum checklist cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro checklist.'
-    }
-    return render(request, 'auditorias/checklists/lista.html', context)
-
-@login_required
-def criar_modelo_avaliacao(request):
-    """Cria um novo modelo de avaliação"""
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        descricao = request.POST.get('descricao')
-        tipos_questao_ids = request.POST.getlist('tipos_questao_suportados')
-        
-        if nome and descricao:
-            try:
-                modelo = ModeloAvaliacao.objects.create(
-                    nome=nome,
-                    descricao=descricao
-                )
-                if tipos_questao_ids:
-                    modelo.tipos_questao_suportados.set(tipos_questao_ids)
-                
-                messages.success(request, 'Modelo de avaliação criado com sucesso!')
-                return redirect('auditorias:lista_modelos_avaliacao')
-            except Exception as e:
-                messages.error(request, f'Erro ao criar modelo: {str(e)}')
-        else:
-            messages.error(request, 'Nome e descrição são obrigatórios!')
-    
-    context = {
-        'tipos_questao': TipoQuestao.objects.all(),
-        'title': 'Criar Modelo de Avaliação',
-        'back_url': 'auditorias:lista_modelos_avaliacao'  # ADICIONADO
-    }
-    return render(request, 'auditorias/modelos_avaliacao/form.html', context)
-
-@login_required
-def editar_modelo_avaliacao(request, pk):
-    """Edita um modelo de avaliação existente"""
-    modelo = get_object_or_404(ModeloAvaliacao, pk=pk)
-    
-    if request.method == 'POST':
-        modelo.nome = request.POST.get('nome')
-        modelo.descricao = request.POST.get('descricao')
-        tipos_questao_ids = request.POST.getlist('tipos_questao_suportados')
-        
-        try:
-            modelo.save()
-            modelo.tipos_questao_suportados.set(tipos_questao_ids)
-            messages.success(request, 'Modelo de avaliação atualizado com sucesso!')
-            return redirect('auditorias:lista_modelos_avaliacao')
-        except Exception as e:
-            messages.error(request, f'Erro ao atualizar modelo: {str(e)}')
-    
-    context = {
-        'modelo': modelo,
-        'tipos_questao': TipoQuestao.objects.all(),
-        'title': 'Editar Modelo de Avaliação',
-        'back_url': 'auditorias:lista_modelos_avaliacao'  # ADICIONADO
-    }
-    return render(request, 'auditorias/modelos_avaliacao/form.html', context)
-
-@login_required
-def deletar_modelo_avaliacao(request, pk):
-    """Deleta um modelo de avaliação"""
-    modelo = get_object_or_404(ModeloAvaliacao, pk=pk)
-    
-    if request.method == 'POST':
-        try:
-            modelo.delete()
-            messages.success(request, 'Modelo de avaliação deletado com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao deletar modelo: {str(e)}')
-        return redirect('auditorias:lista_modelos_avaliacao')
-    
-    context = {
-        'object': modelo,
-        'title': 'Modelo de Avaliação'
-    }
-    return render(request, 'auditorias/deletar_generico.html', context)
-
-
-# ============================================================================
 # VIEWS PARA CHECKLISTS
 # ============================================================================
 
@@ -676,7 +462,7 @@ def deletar_modelo_avaliacao(request, pk):
 def lista_checklists(request):
     """Lista todos os checklists"""
     search = request.GET.get('search', '')
-    checklists = Checklist.objects.select_related('ferramenta', 'modelo_avaliacao').all()
+    checklists = Checklist.objects.select_related('ferramenta').all()
     
     if search:
         checklists = checklists.filter(nome__icontains=search)
@@ -700,7 +486,6 @@ def criar_checklist(request):
     if request.method == 'POST':
         nome = request.POST.get('nome')
         ferramenta_id = request.POST.get('ferramenta')
-        modelo_avaliacao_id = request.POST.get('modelo_avaliacao')
         ativo = request.POST.get('ativo') == 'on'
         
         if nome:
@@ -712,12 +497,9 @@ def criar_checklist(request):
                 
                 if ferramenta_id:
                     checklist.ferramenta = FerramentaDigital.objects.get(pk=ferramenta_id)
-                if modelo_avaliacao_id:
-                    checklist.modelo_avaliacao = ModeloAvaliacao.objects.get(pk=modelo_avaliacao_id)
                 
                 checklist.save()
                 messages.success(request, 'Checklist criado com sucesso! Agora adicione os tópicos e perguntas.')
-                # REDIRECIONA PARA A TELA DE EDIÇÃO COMPLETA
                 return redirect('auditorias:editar_checklist', pk=checklist.pk)
             except Exception as e:
                 messages.error(request, f'Erro ao criar checklist: {str(e)}')
@@ -726,19 +508,17 @@ def criar_checklist(request):
     
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
-        'modelos_avaliacao': ModeloAvaliacao.objects.all(),
         'title': 'Criar Checklist',
         'back_url': 'auditorias:lista_checklists'
     }
-    # A view de criação agora pode usar o mesmo form da de edição
     return render(request, 'auditorias/checklists/form.html', context)
 
 @login_required
 def editar_checklist(request, pk):
     """Edita um checklist existente, incluindo seus tópicos, perguntas e opções em uma única tela."""
     checklist = get_object_or_404(Checklist.objects.prefetch_related(
-        'topicos__perguntas__opcoes', 
-        'topicos__perguntas__tipo_questao'
+        'topicos__perguntas__opcoes_resposta', 
+        'topicos__perguntas__opcoes_porcentagem'
     ), pk=pk)
     
     if request.method == 'POST':
@@ -747,15 +527,14 @@ def editar_checklist(request, pk):
             checklist.nome = request.POST.get('nome')
             checklist.ativo = request.POST.get('ativo') == 'on'
             ferramenta_id = request.POST.get('ferramenta')
-            modelo_avaliacao_id = request.POST.get('modelo_avaliacao')
             checklist.ferramenta_id = ferramenta_id if ferramenta_id else None
-            checklist.modelo_avaliacao_id = modelo_avaliacao_id if modelo_avaliacao_id else None
             checklist.save()
 
             # IDs de itens que foram enviados no formulário (para saber quais deletar)
             topicos_ids_enviados = []
             perguntas_ids_enviadas = []
-            opcoes_ids_enviadas = []
+            opcoes_resposta_ids_enviadas = []
+            opcoes_porcentagem_ids_enviadas = []
 
             # 2. PROCESSAR TÓPICOS
             for key, descricao in request.POST.items():
@@ -782,49 +561,78 @@ def editar_checklist(request, pk):
                     p_id_str_full = p_key.split('[')[1].split(']')[0]
                     p_id_str = p_id_str_full.replace(f'{id_str}-', '')
                     
-                    p_tipo_questao_id = request.POST.get(f'pergunta-tipo[{p_id_str_full}]')
                     p_ordem = request.POST.get(f'pergunta-ordem[{p_id_str_full}]', 0)
                     p_obrigatorio = request.POST.get(f'pergunta-obrigatorio[{p_id_str_full}]') == 'on'
                     
+                    # Capturar os tipos de resposta
+                    p_resposta_livre = request.POST.get(f'pergunta-resposta_livre[{p_id_str_full}]') == 'on'
+                    p_foto = request.POST.get(f'pergunta-foto[{p_id_str_full}]') == 'on'
+                    p_criar_opcao = request.POST.get(f'pergunta-criar_opcao[{p_id_str_full}]') == 'on'
+                    p_porcentagem = request.POST.get(f'pergunta-porcentagem[{p_id_str_full}]') == 'on'
+
                     if p_id_str.startswith('new-'):
                         pergunta = Pergunta.objects.create(
-                            topico=topico, descricao=p_descricao, tipo_questao_id=p_tipo_questao_id,
-                            ordem=p_ordem, campo_obrigatorio=p_obrigatorio
+                            topico=topico, descricao=p_descricao,
+                            ordem=p_ordem, obrigatoria=p_obrigatorio,
+                            resposta_livre=p_resposta_livre, foto=p_foto,
+                            criar_opcao=p_criar_opcao, porcentagem=p_porcentagem
                         )
                     else:
                         pergunta = get_object_or_404(Pergunta, pk=int(p_id_str), topico=topico)
-                        pergunta.descricao, pergunta.tipo_questao_id = p_descricao, p_tipo_questao_id
-                        pergunta.ordem, pergunta.campo_obrigatorio = p_ordem, p_obrigatorio
+                        pergunta.descricao = p_descricao
+                        pergunta.ordem, pergunta.obrigatoria = p_ordem, p_obrigatorio
+                        pergunta.resposta_livre, pergunta.foto = p_resposta_livre, p_foto
+                        pergunta.criar_opcao, pergunta.porcentagem = p_criar_opcao, p_porcentagem
                         pergunta.save()
                     
                     perguntas_ids_enviadas.append(pergunta.id)
 
-                    # 4. PROCESSAR OPÇÕES DA PERGUNTA
-                    for o_key, o_descricao in request.POST.items():
-                        if not o_key.startswith(f'opcao-descricao[{p_id_str_full}-'):
+                    # 4. PROCESSAR OPÇÕES DE RESPOSTA
+                    for or_key, or_descricao in request.POST.items():
+                        if not or_key.startswith(f'opcao-resposta-descricao[{p_id_str_full}-'):
                             continue
                         
-                        o_id_str_full = o_key.split('[')[1].split(']')[0]
-                        o_id_str = o_id_str_full.replace(f'{p_id_str_full}-', '')
+                        or_id_str_full = or_key.split('[')[1].split(']')[0]
+                        or_id_str = or_id_str_full.replace(f'{p_id_str_full}-', '')
 
-                        o_status = request.POST.get(f'opcao-status[{o_id_str_full}]')
-                        o_instrucoes = request.POST.get(f'opcao-instrucoes[{o_id_str_full}]', '')
+                        or_status = request.POST.get(f'opcao-resposta-status[{or_id_str_full}]')
                         
-                        if o_id_str.startswith('new-'):
-                            OpcaoPergunta.objects.create(
-                                pergunta=pergunta, descricao=o_descricao,
-                                tipo_status=o_status, instrucoes_usuario=o_instrucoes
+                        if or_id_str.startswith('new-'):
+                            opcao_resposta = OpcaoResposta.objects.create(
+                                pergunta=pergunta, descricao=or_descricao, status=or_status
                             )
                         else:
-                            opcao = get_object_or_404(OpcaoPergunta, pk=int(o_id_str), pergunta=pergunta)
-                            opcao.descricao, opcao.tipo_status = o_descricao, o_status
-                            opcao.instrucoes_usuario = o_instrucoes
-                            opcao.save()
+                            opcao_resposta = get_object_or_404(OpcaoResposta, pk=int(or_id_str), pergunta=pergunta)
+                            opcao_resposta.descricao, opcao_resposta.status = or_descricao, or_status
+                            opcao_resposta.save()
                         
-                        opcoes_ids_enviadas.append(opcao.id)
+                        opcoes_resposta_ids_enviadas.append(opcao_resposta.id)
 
-            # 5. DELETAR ITENS QUE NÃO ESTAVAM NO FORMULÁRIO
-            OpcaoPergunta.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_ids_enviadas).delete()
+                    # 5. PROCESSAR OPÇÕES DE PORCENTAGEM
+                    for op_key, op_descricao in request.POST.items():
+                        if not op_key.startswith(f'opcao-porcentagem-descricao[{p_id_str_full}-'):
+                            continue
+                        
+                        op_id_str_full = op_key.split('[')[1].split(']')[0]
+                        op_id_str = op_id_str_full.replace(f'{p_id_str_full}-', '')
+
+                        op_peso = request.POST.get(f'opcao-porcentagem-peso[{op_id_str_full}]')
+                        op_cor = request.POST.get(f'opcao-porcentagem-cor[{op_id_str_full}]')
+                        
+                        if op_id_str.startswith('new-'):
+                            opcao_porcentagem = OpcaoPorcentagem.objects.create(
+                                pergunta=pergunta, descricao=op_descricao, peso=op_peso, cor=op_cor
+                            )
+                        else:
+                            opcao_porcentagem = get_object_or_404(OpcaoPorcentagem, pk=int(op_id_str), pergunta=pergunta)
+                            opcao_porcentagem.descricao, opcao_porcentagem.peso, opcao_porcentagem.cor = op_descricao, op_peso, op_cor
+                            opcao_porcentagem.save()
+                        
+                        opcoes_porcentagem_ids_enviadas.append(opcao_porcentagem.id)
+
+            # 6. DELETAR ITENS QUE NÃO ESTAVAM NO FORMULÁRIO
+            OpcaoResposta.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_resposta_ids_enviadas).delete()
+            OpcaoPorcentagem.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_porcentagem_ids_enviadas).delete()
             Pergunta.objects.filter(topico__checklist=checklist).exclude(id__in=perguntas_ids_enviadas).delete()
             Topico.objects.filter(checklist=checklist).exclude(id__in=topicos_ids_enviados).delete()
 
@@ -838,9 +646,7 @@ def editar_checklist(request, pk):
         'checklist': checklist,
         'object': checklist, # Para compatibilidade com o form_generico
         'ferramentas': FerramentaDigital.objects.all(),
-        'modelos_avaliacao': ModeloAvaliacao.objects.all(),
-        'tipos_questao': TipoQuestao.objects.all(),
-        'status_opcoes': OpcaoPergunta._meta.get_field('tipo_status').choices,
+        'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': 'Editar Checklist',
         'back_url': 'auditorias:lista_checklists'
     }
@@ -935,7 +741,7 @@ def criar_modelo_auditoria(request):
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Criar Modelo de Auditoria',
-        'back_url': 'auditorias:lista_modelos_auditoria'  # ADICIONADO
+        'back_url': 'auditorias:lista_modelos_auditoria'
     }
     return render(request, 'auditorias/modelos_auditoria/form.html', context)
 
@@ -981,7 +787,7 @@ def editar_modelo_auditoria(request, pk):
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Editar Modelo de Auditoria',
-        'back_url': 'auditorias:lista_modelos_auditoria'  # ADICIONADO
+        'back_url': 'auditorias:lista_modelos_auditoria'
     }
     return render(request, 'auditorias/modelos_auditoria/form.html', context)
 
@@ -1128,7 +934,7 @@ def criar_auditoria(request):
         'ativos': Ativo.objects.filter(ativo=True),
         'turnos': Turno.objects.filter(ativo=True),
         'title': 'Criar Auditoria',
-        'back_url': 'auditorias:lista_auditorias'  # ADICIONADO
+        'back_url': 'auditorias:lista_auditorias'
     }
     return render(request, 'auditorias/auditorias/form.html', context)
 
@@ -1202,7 +1008,7 @@ def editar_auditoria(request, pk):
         'ativos': Ativo.objects.filter(ativo=True),
         'turnos': Turno.objects.filter(ativo=True),
         'title': 'Editar Auditoria',
-        'back_url': 'auditorias:lista_auditorias'  # ADICIONADO
+        'back_url': 'auditorias:lista_auditorias'
     }
     return render(request, 'auditorias/auditorias/form.html', context)
 
@@ -1276,38 +1082,10 @@ def get_ativos_por_local(request):
     return JsonResponse(list(ativos_data), safe=False)
 
 @login_required
-def lista_modelos_avaliacao(request):
-    """Lista todos os modelos de avaliação"""
-    search = request.GET.get('search', '')
-    modelos = ModeloAvaliacao.objects.prefetch_related('tipos_questao_suportados').all()
-    
-    if search:
-        modelos = modelos.filter(
-            Q(nome__icontains=search) | Q(descricao__icontains=search)
-        )
-    
-    paginator = Paginator(modelos, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'search': search,
-        'title': 'Modelos de Avaliação',
-        'singular': 'Modelo de Avaliação',
-        'button_text': 'Novo Modelo de Avaliação',
-        'create_url': 'auditorias:criar_modelo_avaliacao',
-        'artigo': 'o',
-        'empty_message': 'Nenhum modelo de avaliação cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro modelo de avaliação.'
-    }
-    return render(request, 'auditorias/modelos_avaliacao/lista.html', context)
-
-@login_required
 def lista_perguntas(request, checklist_pk):
     """Lista todas as perguntas de um checklist, agrupadas por tópico."""
     checklist = get_object_or_404(Checklist, pk=checklist_pk)
-    topicos_com_perguntas = checklist.topicos.prefetch_related('perguntas__tipo_questao').order_by('ordem')
+    topicos_com_perguntas = checklist.topicos.prefetch_related('perguntas').order_by('ordem')
 
     context = {
         'checklist': checklist,
@@ -1324,17 +1102,14 @@ def criar_pergunta(request, checklist_pk):
     checklist = get_object_or_404(Checklist, pk=checklist_pk)
     
     if request.method == 'POST':
-        # ... (sua lógica de POST continua a mesma)
         topico_id = request.POST.get('topico')
         descricao = request.POST.get('descricao')
-        tipo_questao_id = request.POST.get('tipo_questao')
         
-        if topico_id and descricao and tipo_questao_id:
+        if topico_id and descricao:
             try:
                 Pergunta.objects.create(
                     topico_id=topico_id,
                     descricao=descricao,
-                    tipo_questao_id=tipo_questao_id,
                     campo_obrigatorio=request.POST.get('campo_obrigatorio') == 'on',
                     campo_desabilitado=request.POST.get('campo_desabilitado') == 'on',
                     ordem=int(request.POST.get('ordem', 0))
@@ -1344,14 +1119,12 @@ def criar_pergunta(request, checklist_pk):
             except Exception as e:
                 messages.error(request, f'Erro ao criar pergunta: {e}')
         else:
-            messages.error(request, 'Tópico, Descrição e Tipo de Questão são obrigatórios.')
+            messages.error(request, 'Tópico e Descrição são obrigatórios.')
 
     context = {
         'checklist': checklist,
         'topicos': checklist.topicos.order_by('ordem'),
-        'tipos_questao': TipoQuestao.objects.all(),
         'title': 'Criar Nova Pergunta',
-        # CORREÇÃO: Montamos a URL completa aqui na view
         'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist.pk}),
     }
     return render(request, 'auditorias/perguntas/form.html', context)
@@ -1359,69 +1132,33 @@ def criar_pergunta(request, checklist_pk):
 @login_required
 def editar_pergunta(request, pk):
     """Edita uma pergunta existente."""
-    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist').prefetch_related('opcoes'), pk=pk)
+    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist').prefetch_related('opcoes_resposta', 'opcoes_porcentagem'), pk=pk)
     checklist = pergunta.topico.checklist
 
     if request.method == 'POST':
         topico_id = request.POST.get('topico')
         descricao = request.POST.get('descricao')
-        tipo_questao_id = request.POST.get('tipo_questao')
 
-        if topico_id and descricao and tipo_questao_id:
+        if topico_id and descricao:
             try:
                 pergunta.topico_id = topico_id
                 pergunta.descricao = descricao
-                pergunta.tipo_questao_id = tipo_questao_id
                 pergunta.campo_obrigatorio = request.POST.get('campo_obrigatorio') == 'on'
                 pergunta.campo_desabilitado = request.POST.get('campo_desabilitado') == 'on'
                 pergunta.ordem = int(request.POST.get('ordem', 0))
                 pergunta.save()
 
-                # --- LÓGICA PARA SALVAR OPÇÕES DA PERGUNTA ---
-                opcoes_desc = request.POST.getlist('opcao_descricao')
-                opcoes_status = request.POST.getlist('opcao_tipo_status')
-                opcoes_instrucoes = request.POST.getlist('opcao_instrucoes')
-                opcoes_ids = request.POST.getlist('opcao_id')
-
-                # Limpa opções existentes que não foram enviadas de volta
-                opcoes_existentes_ids = [op.id for op in pergunta.opcoes.all()]
-                ids_para_deletar = [op_id for op_id in opcoes_existentes_ids if str(op_id) not in opcoes_ids]
-                if ids_para_deletar:
-                    OpcaoPergunta.objects.filter(id__in=ids_para_deletar).delete()
-
-                for i, desc in enumerate(opcoes_desc):
-                    if desc:  # Apenas processa se a descrição não for vazia
-                        opcao_id = opcoes_ids[i] if i < len(opcoes_ids) else None
-                        
-                        if opcao_id and opcao_id != 'new':
-                            # Atualiza opção existente
-                            opcao = OpcaoPergunta.objects.get(id=opcao_id, pergunta=pergunta)
-                            opcao.descricao = desc
-                            opcao.tipo_status = opcoes_status[i]
-                            opcao.instrucoes_usuario = opcoes_instrucoes[i]
-                            opcao.save()
-                        else:
-                            # Cria nova opção
-                            OpcaoPergunta.objects.create(
-                                pergunta=pergunta,
-                                descricao=desc,
-                                tipo_status=opcoes_status[i],
-                                instrucoes_usuario=opcoes_instrucoes[i]
-                            )
-                # --- FIM DA LÓGICA ---
-                
                 messages.success(request, 'Pergunta atualizada com sucesso!')
                 return redirect('auditorias:lista_perguntas', checklist_pk=checklist.pk)
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar pergunta: {e}')
         else:
-            messages.error(request, 'Tópico, Descrição e Tipo de Questão são obrigatórios.')
+            messages.error(request, 'Tópico e Descrição são obrigatórios.')
 
     context = {
         'object': pergunta,
         'checklist': checklist,
         'topicos': checklist.topicos.order_by('ordem'),
-        'tipos_questao': TipoQuestao.objects.all(),
         'title': 'Editar Pergunta',
         'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist.pk}),
     }
@@ -1444,10 +1181,8 @@ def deletar_pergunta(request, pk):
     context = {
         'object': pergunta,
         'title': 'Pergunta',
-        # CORREÇÃO: Montamos a URL completa aqui na view para o botão "Cancelar"
         'back_url': reverse('auditorias:lista_perguntas', kwargs={'checklist_pk': checklist_pk}),
     }
-    # Usaremos um template de deleção que também entenda a URL completa
     return render(request, 'auditorias/deletar_pergunta.html', context)
 
 @login_required
@@ -1554,4 +1289,3 @@ def deletar_topico(request, pk):
         'title': 'Tópico'
     }
     return render(request, 'auditorias/deletar_generico.html', context)
-

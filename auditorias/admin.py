@@ -7,8 +7,6 @@ from .models import (
     Norma,
     RequisitoNorma,
     FerramentaDigital,
-    TipoQuestao,
-    ModeloAvaliacao,
     Checklist,
     FerramentaCausaRaiz,
     ModeloAuditoria,
@@ -16,10 +14,9 @@ from .models import (
     AuditoriaInstancia,
     Topico,
     Pergunta,
-    OpcaoPergunta,
-
+    OpcaoResposta,
+    OpcaoPorcentagem,
 )
-
 
 @admin.register(Pilar)
 class PilarAdmin(admin.ModelAdmin):
@@ -32,7 +29,6 @@ class PilarAdmin(admin.ModelAdmin):
         }),
     )
 
-
 @admin.register(CategoriaAuditoria)
 class CategoriaAuditoriaAdmin(admin.ModelAdmin):
     list_display = ('id', 'pilar', 'descricao', 'ativo', 'data_cadastro')
@@ -44,22 +40,17 @@ class CategoriaAuditoriaAdmin(admin.ModelAdmin):
         }),
     )
 
-# Inline para permitir adicionar/editar requisitos dentro do formulário de Norma
-
-
 class RequisitoNormaInline(admin.TabularInline):
     model = RequisitoNorma
-    extra = 0  # Não mostra formulários vazios extras por padrão
-    min_num = 1  # Garante que pelo menos um requisito seja criado
+    extra = 0
+    min_num = 1
     fields = ('codigo', 'requisito', 'descricao', 'ativo')
-
 
 @admin.register(Norma)
 class NormaAdmin(admin.ModelAdmin):
     list_display = ('descricao', 'revisao', 'ativo', 'data_cadastro')
     list_filter = ('ativo',)
     search_fields = ('descricao', 'revisao')
-    # Adiciona o inline para gerenciar os requisitos
     inlines = [RequisitoNormaInline]
     fieldsets = (
         (None, {
@@ -67,32 +58,15 @@ class NormaAdmin(admin.ModelAdmin):
         }),
     )
 
-
 @admin.register(FerramentaDigital)
 class FerramentaDigitalAdmin(admin.ModelAdmin):
     list_display = ('nome',)
     search_fields = ('nome',)
 
-
-@admin.register(TipoQuestao)
-class TipoQuestaoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao')
-    search_fields = ('nome', 'descricao')
-
-
-@admin.register(ModeloAvaliacao)
-class ModeloAvaliacaoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao')
-    search_fields = ('nome',)
-    # Melhor para ManyToMany no admin
-    filter_horizontal = ('tipos_questao_suportados',)
-
-
 @admin.register(FerramentaCausaRaiz)
 class FerramentaCausaRaizAdmin(admin.ModelAdmin):
     list_display = ('nome',)
     search_fields = ('nome',)
-
 
 @admin.register(ModeloAuditoria)
 class ModeloAuditoriaAdmin(admin.ModelAdmin):
@@ -100,7 +74,6 @@ class ModeloAuditoriaAdmin(admin.ModelAdmin):
         'descricao',
         'checklist',
         'categoria',
-        # O nome do campo não muda, apenas sua referência no banco de dados
         'ferramenta_causa_raiz',
         'ativo',
         'iniciar_por_codigo_qr',
@@ -117,14 +90,13 @@ class ModeloAuditoriaAdmin(admin.ModelAdmin):
         'descricao',
         'checklist__nome',
         'categoria__descricao',
-        'ferramenta_causa_raiz__nome'  # Agora é possível pesquisar pelo nome da ferramenta
+        'ferramenta_causa_raiz__nome'
     )
     fieldsets = (
         (None, {
             'fields': ('descricao', 'checklist', 'categoria', 'ferramenta_causa_raiz', 'ativo', 'iniciar_por_codigo_qr')
         }),
     )
-
 
 @admin.register(Auditoria)
 class AuditoriaAdmin(admin.ModelAdmin):
@@ -152,7 +124,6 @@ class AuditoriaAdmin(admin.ModelAdmin):
         'local_setor__nome',
         'local_subsetor__nome'
     )
-    # Para as relações ManyToMany, 'filter_horizontal' é mais amigável
     filter_horizontal = ('modelos', 'ativos_auditados', 'turnos')
     fieldsets = (
         ("Informações Gerais", {
@@ -169,40 +140,34 @@ class AuditoriaAdmin(admin.ModelAdmin):
         }),
     )
 
-
 @admin.register(AuditoriaInstancia)
 class AuditoriaInstanciaAdmin(admin.ModelAdmin):
     list_display = ('auditoria_agendada', 'data_execucao', 'executada')
     list_filter = ('executada', 'data_execucao')
     search_fields = ('auditoria_agendada__descricao',)
 
-
-class OpcaoPerguntaInline(admin.TabularInline):
-    model = OpcaoPergunta
+class OpcaoRespostaInline(admin.TabularInline):
+    model = OpcaoResposta
     extra = 0
-    fields = ('descricao', 'tipo_status', 'instrucoes_usuario')
+    fields = ('descricao', 'status')
 
-# Admin para as Perguntas (agora pode referenciar OpcaoPerguntaInline)
-
+class OpcaoPorcentagemInline(admin.TabularInline):
+    model = OpcaoPorcentagem
+    extra = 0
+    fields = ('descricao', 'peso', 'cor')
 
 @admin.register(Pergunta)
 class PerguntaAdmin(admin.ModelAdmin):
-    list_display = ('topico', 'descricao', 'tipo_questao',
-                    'campo_obrigatorio', 'campo_desabilitado')
-    list_filter = ('tipo_questao', 'campo_obrigatorio', 'campo_desabilitado')
+    list_display = ('topico', 'descricao', 'obrigatoria', 'campo_desabilitado')
+    list_filter = ('obrigatoria', 'campo_desabilitado')
     search_fields = ('descricao',)
-    inlines = [OpcaoPerguntaInline]
+    inlines = [OpcaoRespostaInline, OpcaoPorcentagemInline]
 
-
-# Inline para as Perguntas do Tópico (colocado ANTES de TopicoAdmin)
 class PerguntaInline(admin.TabularInline):
     model = Pergunta
     extra = 0
-    fields = ('descricao', 'tipo_questao', 'campo_obrigatorio',
-              'campo_desabilitado', 'ordem')
+    fields = ('descricao', 'obrigatoria', 'campo_desabilitado', 'ordem')
 
-
-# Admin para os Tópicos (agora pode referenciar PerguntaInline)
 @admin.register(Topico)
 class TopicoAdmin(admin.ModelAdmin):
     list_display = ('checklist', 'descricao', 'ordem')
@@ -210,23 +175,18 @@ class TopicoAdmin(admin.ModelAdmin):
     search_fields = ('descricao',)
     inlines = [PerguntaInline]
 
-
-# Inline para os Tópicos do Checklist
 class TopicoInline(admin.TabularInline):
     model = Topico
     extra = 0
     fields = ('descricao', 'ordem')
 
-
-# Admin para o Checklist
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
     list_display = (
         'nome',
         'ativo',
         'ferramenta',
-        'modelo_avaliacao',
     )
-    list_filter = ('ativo', 'ferramenta', 'modelo_avaliacao')
+    list_filter = ('ativo', 'ferramenta')
     search_fields = ('nome',)
     inlines = [TopicoInline]

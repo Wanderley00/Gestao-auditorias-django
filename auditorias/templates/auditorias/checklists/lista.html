@@ -3,7 +3,6 @@
 {% block table_headers %}
     <th>Nome do Checklist</th>
     <th>Ferramenta</th>
-    <th>Modelo de Avaliação</th>
     <th>Status</th>
     <th style="width: 120px;">Ações</th>
 {% endblock %}
@@ -15,7 +14,6 @@
         </div>
     </td>
     <td>{{ object.ferramenta.nome|default:"—" }}</td>
-    <td>{{ object.modelo_avaliacao.nome|default:"—" }}</td>
     <td>
         {% if object.ativo %}
             <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
