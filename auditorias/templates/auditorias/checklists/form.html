@@ -656,7 +656,7 @@
         
         <div class="checklist-body" id="topics-container">
             {% for topico in checklist.topicos.all %}
-            <div class="topic-wrapper">
+            <div class="topic-wrapper" data-topic-id="{{ topico.id }}">
                 <div class="topic-header">
                     <div class="topic-header-controls">
                         <i class="fas fa-grip-vertical drag-handle topic-drag-handle" title="Arraste para reordenar"></i>
@@ -672,10 +672,10 @@
                         <span class="topic-question-count">{{ topico.perguntas.all|length }}</span>
                     </div>
                 </div>
-    
+
                 <div class="questions-container">
                     {% for pergunta in topico.perguntas.all %}
-                    <div class="question-card" data-search-text="{{ pergunta.descricao|lower }}">
+                    <div class="question-card" data-question-id="{{ pergunta.id }}">
                         <i class="fas fa-grip-vertical drag-handle question-drag-handle" title="Arraste para reordenar" style="position: absolute; left: 0.5rem; top: 1.5rem; color: var(--gray-400);"></i>
                         <div class="question-content">
                             <div class="question-header">
@@ -702,7 +702,7 @@
                                     <h5>Opções de Resposta</h5>
                                     <div class="options-container">
                                         {% for opcao in pergunta.opcoes.all %}
-                                        <div class="option-item">
+                                        <div class="option-item" data-option-id="{{ opcao.id }}">
                                             <input type="text" name="opcao-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.descricao }}" placeholder="Descrição da opção">
                                             <select name="opcao-status[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control form-select">
                                                 {% for value, text in status_opcoes %}<option value="{{ value }}" {% if opcao.tipo_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}
@@ -726,7 +726,6 @@
                 <button type="button" class="btn btn-primary btn-sm js-add-question">
                     <i class="fas fa-plus"></i> Adicionar Pergunta
                 </button>
-
             </div>
             {% endfor %}
         </div>
@@ -746,14 +745,10 @@
         </button>
     </div>
 </form>
-{% endblock %}
 
-{% block extra_js %}
-{{ block.super }}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
+<!-- Templates para novos elementos -->
 <template id="topic-template">
-    <div class="topic-wrapper">
+    <div class="topic-wrapper" data-topic-id="new-id">
         <div class="topic-header">
             <div class="topic-header-controls">
                 <i class="fas fa-grip-vertical drag-handle topic-drag-handle" title="Arraste para reordenar"></i>
@@ -777,7 +772,7 @@
 </template>
 
 <template id="question-template">
-    <div class="question-card" data-search-text="">
+    <div class="question-card" data-question-id="new-question-id">
         <i class="fas fa-grip-vertical drag-handle question-drag-handle" title="Arraste para reordenar" style="position: absolute; left: 0.5rem; top: 1.5rem; color: var(--gray-400);"></i>
         <div class="question-content">
             <div class="question-header">
@@ -813,8 +808,8 @@
 </template>
 
 <template id="option-template">
-    <div class="option-item">
-        <input type="text" name="opcao-descricao[question-id-option-id]" class="form-control" placeholder="Descrição da opção">
+    <div class="option-item" data-option-id="new-option-id">
+        <input type="text" name="opcao-descricao[question-id-option-id]" class="form-control" placeholder="Descrição da nova opção">
         <select name="opcao-status[question-id-option-id]" class="form-control form-select">
             {% for value, text in status_opcoes %}<option value="{{ value }}">{{ text }}</option>{% endfor %}
         </select>
@@ -825,11 +820,13 @@
     </div>
 </template>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const topicsContainer = document.getElementById('topics-container');
-    const addTopicBtn = document.getElementById('add-topic-btn');
     const filterInput = document.getElementById('filter-items');
+    const addTopicBtn = document.getElementById('add-topic-btn');
+    
     let newTopicCounter = 0;
     let newQuestionCounter = 0;
     let newOptionCounter = 0;
@@ -837,21 +834,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para inicializar todos os sortables
     function initAllSortables() {
         // Sortable para tópicos
-        new Sortable(topicsContainer, {
-            handle: '.topic-drag-handle',
-            animation: 300,
-            ghostClass: 'sortable-ghost',
-            dragClass: 'sortable-drag',
-            onEnd: function() {
-                updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
-            }
-        });
+        if (topicsContainer) {
+            new Sortable(topicsContainer, {
+                handle: '.topic-drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function() {
+                    updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
+                }
+            });
+        }
 
         // Sortable para perguntas dentro de cada tópico
         document.querySelectorAll('.questions-container').forEach(container => {
             new Sortable(container, {
                 handle: '.question-drag-handle',
-                animation: 300,
+                animation: 150,
                 ghostClass: 'sortable-ghost',
                 dragClass: 'sortable-drag',
                 onEnd: function() {
@@ -882,68 +881,87 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Event listener centralizado para todos os cliques
+    document.body.addEventListener('click', function(e) {
+        const target = e.target;
 
-    // Adicionar novo tópico
-    addTopicBtn.addEventListener('click', function() {
-        newTopicCounter++;
-        const topicTemplate = document.getElementById('topic-template').content.cloneNode(true);
-        
-        let html = topicTemplate.firstElementChild.outerHTML.replace(/new-id/g, `new-${newTopicCounter}`);
-        topicsContainer.insertAdjacentHTML('beforeend', html);
-        
-        // Reinicializar sortables
-        initAllSortables();
-        updateTopicCounters();
-        updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
-        
-        // Focar no input do novo tópico
-        const newTopic = topicsContainer.lastElementChild;
-        const titleInput = newTopic.querySelector('input[name^="topico-descricao"]');
-        if (titleInput) {
-            titleInput.focus();
-        }
-    });
+        // Adicionar Novo Tópico
+        if (target.closest('#add-topic-btn')) {
+            e.preventDefault();
+            newTopicCounter++;
+            const topicTemplate = document.getElementById('topic-template');
+            if (!topicTemplate) {
+                console.error('Template de tópico não encontrado');
+                return;
+            }
+            
+            const newTopicElement = topicTemplate.content.cloneNode(true);
+            const topicWrapper = newTopicElement.querySelector('.topic-wrapper');
+            
+            // Substitui os IDs e names para o novo tópico
+            const newId = `new-${newTopicCounter}`;
+            topicWrapper.dataset.topicId = newId;
+            topicWrapper.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace('new-id', newId);
+            });
 
-    // Event delegation para todos os cliques
-    topicsContainer.addEventListener('click', function(e) {
-        const target = e.target.closest('button, .js-add-question, .js-remove-topic, .js-remove-question, .js-add-option, .js-remove-option');
-        if (!target) return;
-
-        // ADD QUESTION
-        const addQuestionBtn = target.closest('.js-add-question');
-        if (addQuestionBtn) {
-            newQuestionCounter++;
-            const questionTemplate = document.getElementById('question-template').content.cloneNode(true);
+            topicsContainer.appendChild(newTopicElement);
             
-            // **CORREÇÃO PRINCIPAL AQUI**
-            // Encontra o container de perguntas, que agora é o irmão anterior do botão
-            const questionsContainer = addQuestionBtn.previousElementSibling; 
-            
-            const topicWrapper = addQuestionBtn.closest('.topic-wrapper');
-            const topicIdInput = topicWrapper.querySelector('input[name^="topico-ordem"]');
-            const topicId = topicIdInput.name.match(/\[(.*?)\]/)[1];
-            
-            let html = questionTemplate.firstElementChild.outerHTML.replace(/topic-id-question-id/g, `${topicId}-new-${newQuestionCounter}`);
-            
-            // Insere o novo HTML da pergunta diretamente no final do container
-            questionsContainer.insertAdjacentHTML('beforeend', html);
-
+            initAllSortables();
             updateTopicCounters();
-            initAllSortables(); // Garante que a nova pergunta também seja arrastável
-            updateOrder(questionsContainer, '.question-card', '.question-order-input');
-
-            const newQuestion = questionsContainer.lastElementChild;
-            if (newQuestion) {
-                newQuestion.querySelector('textarea').focus();
+            updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
+            
+            const titleInput = topicWrapper.querySelector('input[name^="topico-descricao"]');
+            if (titleInput) {
+                titleInput.focus();
             }
             return;
         }
 
-        // REMOVE TOPIC
-        const removeTopicBtn = target.closest('.js-remove-topic');
-        if (removeTopicBtn) {
+        // Adicionar Nova Pergunta
+        if (target.closest('.js-add-question')) {
+            e.preventDefault();
+            newQuestionCounter++;
+            const addQuestionBtn = target.closest('.js-add-question');
+            const questionTemplate = document.getElementById('question-template');
+            if (!questionTemplate) {
+                console.error('Template de pergunta não encontrado');
+                return;
+            }
+            
+            const newQuestionElement = questionTemplate.content.cloneNode(true);
+            const questionCard = newQuestionElement.querySelector('.question-card');
+            
+            const topicWrapper = addQuestionBtn.closest('.topic-wrapper');
+            const questionsContainer = topicWrapper.querySelector('.questions-container');
+            const topicId = topicWrapper.dataset.topicId;
+            const newQuestionId = `new-${newQuestionCounter}`;
+            
+            questionCard.dataset.questionId = newQuestionId;
+
+            questionCard.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace(/topic-id-question-id/g, `${topicId}-${newQuestionId}`);
+            });
+
+            questionsContainer.appendChild(newQuestionElement);
+            updateTopicCounters();
+            initAllSortables();
+            updateOrder(questionsContainer, '.question-card', '.question-order-input');
+
+            const newTextarea = questionCard.querySelector('textarea');
+            if (newTextarea) {
+                newTextarea.focus();
+            }
+            return;
+        }
+
+        // Remover Tópico
+        if (target.closest('.js-remove-topic')) {
+            e.preventDefault();
             if (confirm('Tem certeza que deseja remover este tópico e todas as suas perguntas?')) {
-                const topicWrapper = removeTopicBtn.closest('.topic-wrapper');
+                const topicWrapper = target.closest('.topic-wrapper');
+                topicWrapper.style.transition = 'all 0.3s ease';
                 topicWrapper.style.transform = 'scale(0.8)';
                 topicWrapper.style.opacity = '0';
                 setTimeout(() => {
@@ -954,12 +972,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // REMOVE QUESTION
-        const removeQuestionBtn = target.closest('.js-remove-question');
-        if (removeQuestionBtn) {
+        // Remover Pergunta
+        if (target.closest('.js-remove-question')) {
+            e.preventDefault();
             if (confirm('Tem certeza que deseja remover esta pergunta?')) {
-                const questionCard = removeQuestionBtn.closest('.question-card');
+                const questionCard = target.closest('.question-card');
                 const questionsContainer = questionCard.parentElement;
+                questionCard.style.transition = 'all 0.3s ease';
                 questionCard.style.transform = 'translateX(-100%)';
                 questionCard.style.opacity = '0';
                 setTimeout(() => {
@@ -971,35 +990,50 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // ADD OPTION
-        const addOptionBtn = target.closest('.js-add-option');
-        if (addOptionBtn) {
+        // Adicionar Opção de Resposta
+        if (target.closest('.js-add-option')) {
+            e.preventDefault();
             newOptionCounter++;
-            const optionTemplate = document.getElementById('option-template').content.cloneNode(true);
-            const optionsContainer = addOptionBtn.previousElementSibling;
-            const questionIdFull = addOptionBtn.closest('.question-card').querySelector('textarea[name^="pergunta-descricao"]').name.match(/\[(.*?)\]/)[1];
-            let html = optionTemplate.firstElementChild.outerHTML.replace(/question-id-option-id/g, `${questionIdFull}-new-${newOptionCounter}`);
-            const newOptionItem = document.createElement('div');
-            newOptionItem.className = 'option-item';
-            newOptionItem.innerHTML = html;
-            newOptionItem.style.opacity = '0';
-            newOptionItem.style.transform = 'translateY(-10px)';
+            const addOptionBtn = target.closest('.js-add-option');
+            const optionTemplate = document.getElementById('option-template');
+            if (!optionTemplate) {
+                console.error('Template de opção não encontrado');
+                return;
+            }
             
-            optionsContainer.appendChild(newOptionItem);
+            const newOptionElement = optionTemplate.content.cloneNode(true);
+            const optionItem = newOptionElement.querySelector('.option-item');
+            const optionsContainer = addOptionBtn.closest('.options-section').querySelector('.options-container');
             
-            // Animação de entrada
+            const questionCard = addOptionBtn.closest('.question-card');
+            const topicId = questionCard.closest('.topic-wrapper').dataset.topicId;
+            const questionId = questionCard.dataset.questionId;
+            const questionIdFull = `${topicId}-${questionId}`;
+            const newOptionId = `new-${newOptionCounter}`;
+            
+            optionItem.dataset.optionId = newOptionId;
+
+            optionItem.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace(/question-id-option-id/g, `${questionIdFull}-${newOptionId}`);
+            });
+            
+            optionItem.style.opacity = '0';
+            optionItem.style.transform = 'translateY(-10px)';
+            optionsContainer.appendChild(newOptionElement);
+            
             setTimeout(() => {
-                newOptionItem.style.transition = 'all 0.3s ease';
-                newOptionItem.style.opacity = '1';
-                newOptionItem.style.transform = 'translateY(0)';
+                optionItem.style.transition = 'all 0.3s ease';
+                optionItem.style.opacity = '1';
+                optionItem.style.transform = 'translateY(0)';
             }, 10);
             return;
         }
 
-        // REMOVE OPTION
-        const removeOptionBtn = target.closest('.js-remove-option');
-        if (removeOptionBtn) {
-            const optionItem = removeOptionBtn.closest('.option-item');
+        // Remover Opção de Resposta
+        if (target.closest('.js-remove-option')) {
+            e.preventDefault();
+            const optionItem = target.closest('.option-item');
+            optionItem.style.transition = 'all 0.3s ease';
             optionItem.style.transform = 'translateX(100%)';
             optionItem.style.opacity = '0';
             setTimeout(() => {
@@ -1018,7 +1052,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (selectedOptionText.trim() === 'Criar uma Opção') {
                 optionsSection.style.display = 'block';
-                optionsSection.style.opacity = '0';
                 setTimeout(() => {
                     optionsSection.style.transition = 'opacity 0.3s ease';
                     optionsSection.style.opacity = '1';
@@ -1032,56 +1065,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Filtro de busca aprimorado
-    filterInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase().trim();
-        
-        document.querySelectorAll('.topic-wrapper').forEach(topicWrapper => {
-            const topicInput = topicWrapper.querySelector('input[name^="topico-descricao"]');
-            const topicText = (topicInput.value).toLowerCase();
-            let topicVisible = topicText.includes(searchTerm);
-            let hasVisibleQuestion = false;
+    // Filtro de busca
+    if (filterInput) {
+        filterInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            
+            document.querySelectorAll('.topic-wrapper').forEach(topicWrapper => {
+                const topicInput = topicWrapper.querySelector('input[name^="topico-descricao"]');
+                const topicText = (topicInput.value || '').toLowerCase();
+                let topicIsVisible = topicText.includes(searchTerm);
+                let hasVisibleQuestions = false;
 
-            topicWrapper.querySelectorAll('.question-card').forEach(questionCard => {
-                const questionInput = questionCard.querySelector('textarea[name^="pergunta-descricao"]');
-                const questionText = (questionInput.value).toLowerCase();
-                if (questionText.includes(searchTerm)) {
-                    questionCard.style.display = 'block';
-                    questionCard.style.opacity = '1';
-                    hasVisibleQuestion = true;
-                } else {
-                    questionCard.style.opacity = '0.3';
-                    if (!topicVisible) {
+                topicWrapper.querySelectorAll('.question-card').forEach(questionCard => {
+                    const questionInput = questionCard.querySelector('textarea[name^="pergunta-descricao"]');
+                    const questionText = (questionInput.value || '').toLowerCase();
+                    
+                    if (questionText.includes(searchTerm)) {
+                        questionCard.style.display = 'block';
+                        hasVisibleQuestions = true;
+                    } else {
                         questionCard.style.display = 'none';
                     }
-                }
-            });
+                });
 
-            if (topicVisible || hasVisibleQuestion) {
-                topicWrapper.style.display = 'block';
-                topicWrapper.style.opacity = '1';
-            } else {
-                topicWrapper.style.opacity = '0.3';
-                if (searchTerm) {
+                if (topicIsVisible || hasVisibleQuestions) {
+                    topicWrapper.style.display = 'block';
+                    if(topicIsVisible) {
+                        topicWrapper.querySelectorAll('.question-card').forEach(qc => {
+                            if(searchTerm){
+                                const qText = (qc.querySelector('textarea[name^="pergunta-descricao"]').value || '').toLowerCase();
+                                if(qText.includes(searchTerm)){
+                                    qc.style.display = 'block';
+                                } else {
+                                    qc.style.display = 'none';
+                                }
+                            } else {
+                                qc.style.display = 'block';
+                            }
+                        });
+                    }
+                } else {
                     topicWrapper.style.display = 'none';
                 }
+            });
+
+            // Se o campo de busca estiver vazio, mostra tudo
+            if (!searchTerm) {
+                document.querySelectorAll('.topic-wrapper, .question-card').forEach(el => {
+                    el.style.display = '';
+                });
             }
         });
-
-        // Se não há termo de busca, mostrar tudo
-        if (!searchTerm) {
-            document.querySelectorAll('.topic-wrapper, .question-card').forEach(el => {
-                el.style.display = '';
-                el.style.opacity = '';
-            });
-        }
-    });
+    }
 
     // Inicialização
     initAllSortables();
     updateTopicCounters();
     
-    // Adicionar efeito de loading inicial
     topicsContainer.classList.add('loading');
     setTimeout(() => {
         topicsContainer.classList.remove('loading');

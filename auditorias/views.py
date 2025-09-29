@@ -846,6 +846,7 @@ def editar_checklist(request, pk):
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
+
 @login_required
 def deletar_checklist(request, pk):
     """Deleta um checklist"""
