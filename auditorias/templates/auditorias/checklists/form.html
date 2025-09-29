@@ -1,44 +1,1091 @@
-{% extends 'auditorias/form_generico.html' %}
+{% extends 'auditorias/base.html' %}
 
-{% block form_content %}
-<div class="form-row single">
-    <div class="form-group required">
-        <label for="nome" class="form-label">Nome do Checklist</label>
-        <input type="text" id="nome" name="nome" class="form-control" value="{{ checklist.nome|default:'' }}" required maxlength="255">
-    </div>
-</div>
+{% block content %}
+<style>
+    /* --- Variáveis CSS para Consistência --- */
+    :root {
+        --primary-color: #3b82f6;
+        --primary-light: #dbeafe;
+        --primary-dark: #1e40af;
+        --success-color: #10b981;
+        --success-light: #d1fae5;
+        --warning-color: #f59e0b;
+        --warning-light: #fef3c7;
+        --danger-color: #ef4444;
+        --danger-light: #fee2e2;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --transition-all: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-<div class="form-row">
-    <div class="form-group">
-        <label for="ferramenta" class="form-label">Ferramenta Digital</label>
-        <select id="ferramenta" name="ferramenta" class="form-control form-select">
-            <option value="">Selecione...</option>
-            {% for f in ferramentas %}
-            <option value="{{ f.pk }}" {% if checklist.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="modelo_avaliacao" class="form-label">Modelo de Avaliação</label>
-        <select id="modelo_avaliacao" name="modelo_avaliacao" class="form-control form-select">
-            <option value="">Selecione...</option>
-            {% for m in modelos_avaliacao %}
-            <option value="{{ m.pk }}" {% if checklist.modelo_avaliacao.pk == m.pk %}selected{% endif %}>{{ m.nome }}</option>
-            {% endfor %}
-        </select>
-    </div>
-</div>
+    /* --- Layout Principal Moderno --- */
+    .checklist-manager {
+        background: linear-gradient(135deg, var(--gray-50) 0%, #ffffff 100%);
+        border-radius: var(--radius-xl);
+        padding: 2rem;
+        margin-top: 2rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+    }
 
-<div class="form-row single">
-    <div class="form-group">
-        <label class="form-label">Status</label>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <label class="toggle-switch">
-                <input type="checkbox" name="ativo" {% if checklist.ativo|default:True %}checked{% endif %}>
-                <span class="toggle-slider"></span>
-            </label>
-            <span style="color: var(--text-secondary); font-size: 14px;">Checklist ativo no sistema</span>
+    .manager-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        position: relative;
+    }
+
+    .manager-header::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 80px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+        border-radius: 1px;
+    }
+
+    .manager-header h4 {
+        color: var(--gray-800);
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .manager-header h4::before {
+        content: '📋';
+        font-size: 1.5rem;
+    }
+
+    /* --- Container de Busca Elegante --- */
+    .search-container {
+        position: relative;
+        width: 350px;
+    }
+
+    .search-container::before {
+        content: '🔍';
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        font-size: 1rem;
+        opacity: 0.6;
+    }
+
+    .search-input {
+        padding-left: 3rem !important;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        transition: var(--transition-all);
+        background: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .search-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-light);
+        outline: none;
+    }
+
+    /* --- Layout de Tópicos Centralizado --- */
+    .checklist-body {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .topic-wrapper {
+        width: 100%;
+        background: white;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        transition: var(--transition-all);
+        position: relative;
+    }
+
+    .topic-wrapper:hover {
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-2px);
+    }
+
+    /* --- Cabeçalho do Tópico Redesenhado --- */
+    .topic-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .topic-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100%;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        transform: skewX(-15deg);
+        transform-origin: top right;
+    }
+
+    .topic-header-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.25rem;
+        padding: 0.5rem;
+        border-radius: var(--radius-md);
+        transition: var(--transition-all);
+    }
+
+    .drag-handle:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .topic-title-input {
+        flex: 1;
+    }
+
+    .topic-title-input input {
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-lg);
+        width: 100%;
+        transition: var(--transition-all);
+        backdrop-filter: blur(10px);
+    }
+
+    .topic-title-input input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .topic-title-input input:focus {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+
+    .topic-question-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-lg);
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .topic-question-count::before {
+        content: '❓';
+        font-size: 0.9rem;
+    }
+
+    /* --- Container de Perguntas Moderno --- */
+    .questions-container {
+        padding: 2rem;
+        background: var(--gray-50);
+    }
+
+    .question-card {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        transition: var(--transition-all);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .question-card:hover {
+        border-color: var(--primary-light);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .question-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--primary-color), var(--primary-light));
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .question-content {
+        margin-left: 1rem;
+    }
+
+    .question-header {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .question-main {
+        flex: 1;
+    }
+
+    .question-main textarea {
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        padding: 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        transition: var(--transition-all);
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .question-main textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-light);
+        outline: none;
+    }
+
+    .question-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .question-actions select {
+        min-width: 180px;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        padding: 0.75rem;
+        transition: var(--transition-all);
+        background: white;
+    }
+
+    .question-actions select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-light);
+        outline: none;
+    }
+
+    /* --- Botões de Ação Elegantes --- */
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: var(--transition-all);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        transition: var(--transition-all);
+        transform: translate(-50%, -50%);
+    }
+
+    .action-btn:hover::before {
+        width: 100%;
+        height: 100%;
+    }
+
+    .btn-delete {
+        background: var(--danger-light);
+        color: var(--danger-color);
+        border: 2px solid transparent;
+    }
+
+    .btn-delete:hover {
+        background: var(--danger-color);
+        color: white;
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-delete:hover::before {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* --- Seção de Opções Redesenhada --- */
+    .question-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px dashed var(--gray-200);
+    }
+
+    .options-section h5 {
+        color: var(--gray-700);
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .options-section h5::before {
+        content: '⚙️';
+        font-size: 0.9rem;
+    }
+
+    .options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .option-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr 2fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--gray-200);
+        transition: var(--transition-all);
+    }
+
+    .option-item:hover {
+        background: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .option-item input,
+    .option-item select {
+        border: 1px solid var(--gray-300);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem;
+        transition: var(--transition-all);
+    }
+
+    .option-item input:focus,
+    .option-item select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px var(--primary-light);
+        outline: none;
+    }
+
+    /* --- Botões Principais Redesenhados --- */
+    .js-add-question,
+    #add-topic-btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
+        margin-top: 1rem;
+    }
+
+    #add-topic-btn {
+        background: linear-gradient(135deg, var(--success-color), #059669);
+        margin-top: 2rem;
+    }
+
+    #add-topic-btn:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    /* --- Animações e Estados --- */
+    .sortable-ghost {
+        opacity: 0.5;
+        background: var(--primary-light);
+        transform: rotate(2deg);
+    }
+
+    .sortable-drag {
+        box-shadow: var(--shadow-xl);
+        transform: rotate(-2deg) scale(1.02);
+        z-index: 1000;
+    }
+
+    /* --- Responsividade Aprimorada --- */
+    @media (max-width: 768px) {
+        .checklist-manager {
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .manager-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .search-container {
+            width: 100%;
+        }
+
+        .topic-header {
+            padding: 1rem;
+        }
+
+        .topic-header-controls {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .questions-container {
+            padding: 1rem;
+        }
+
+        .question-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .question-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .question-actions select {
+            min-width: auto;
+            flex: 1;
+        }
+
+        .option-item {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+    }
+
+    /* --- Estados de Foco e Acessibilidade --- */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px var(--primary-light) !important;
+        outline: none !important;
+    }
+
+    /* --- Melhorias no Toggle Switch --- */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--gray-300);
+        transition: var(--transition-all);
+        border-radius: 34px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: var(--transition-all);
+        border-radius: 50%;
+        box-shadow: var(--shadow-sm);
+    }
+
+    input:checked + .toggle-slider {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* --- Indicadores Visuais --- */
+    .form-group.required .form-label::after {
+        content: ' *';
+        color: var(--danger-color);
+        font-weight: bold;
+    }
+
+    /* --- Animação de Carregamento --- */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .loading {
+        animation: pulse 2s infinite;
+    }
+</style>
+
+<form method="post" enctype="multipart/form-data" id="mainForm" novalidate>
+    {% csrf_token %}
+
+    <div class="content-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 class="content-title">{{ title }}</h2>
+                <p class="content-subtitle">Preencha os campos abaixo para configurar o checklist e sua estrutura.</p>
+            </div>
+            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
+            </a>
         </div>
     </div>
-</div>
+
+    <div class="card" style="margin-bottom: 32px;">
+        <div class="card-body" style="padding: 24px;">
+            <div class="form-row single">
+                <div class="form-group required">
+                    <label for="nome" class="form-label">Nome do Checklist</label>
+                    <input type="text" id="nome" name="nome" class="form-control" value="{{ checklist.nome|default:'' }}" required maxlength="255">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ferramenta" class="form-label">Ferramenta Digital</label>
+                    <select id="ferramenta" name="ferramenta" class="form-control form-select">
+                        <option value="">Selecione...</option>
+                        {% for f in ferramentas %}
+                        <option value="{{ f.pk }}" {% if checklist.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="modelo_avaliacao" class="form-label">Modelo de Avaliação</label>
+                    <select id="modelo_avaliacao" name="modelo_avaliacao" class="form-control form-select">
+                        <option value="">Selecione...</option>
+                        {% for m in modelos_avaliacao %}
+                        <option value="{{ m.pk }}" {% if checklist.modelo_avaliacao.pk == m.pk %}selected{% endif %}>{{ m.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row single">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="ativo" {% if checklist.ativo|default:True %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span style="color: var(--text-secondary); font-size: 14px;">Checklist ativo no sistema</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="checklist-manager">
+        <div class="manager-header">
+            <h4>Estrutura do Checklist</h4>
+            <div class="search-container">
+                <input type="text" id="filter-items" placeholder="Filtrar tópicos ou perguntas..." class="form-control search-input">
+            </div>
+        </div>
+        
+        <div class="checklist-body" id="topics-container">
+            {% for topico in checklist.topicos.all %}
+            <div class="topic-wrapper">
+                <div class="topic-header">
+                    <div class="topic-header-controls">
+                        <i class="fas fa-grip-vertical drag-handle topic-drag-handle" title="Arraste para reordenar"></i>
+                        <div class="topic-title-input">
+                            <input type="hidden" name="topico-ordem[{{ topico.id }}]" class="topic-order-input" value="{{ topico.ordem }}">
+                            <input type="text" name="topico-descricao[{{ topico.id }}]" class="form-control" value="{{ topico.descricao }}" placeholder="Descrição do Tópico">
+                        </div>
+                        <button type="button" class="action-btn btn-delete js-remove-topic" title="Excluir Tópico">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div style="text-align: center; position: relative; z-index: 2;">
+                        <span class="topic-question-count">{{ topico.perguntas.all|length }}</span>
+                    </div>
+                </div>
+    
+                <div class="questions-container">
+                    {% for pergunta in topico.perguntas.all %}
+                    <div class="question-card" data-search-text="{{ pergunta.descricao|lower }}">
+                        <i class="fas fa-grip-vertical drag-handle question-drag-handle" title="Arraste para reordenar" style="position: absolute; left: 0.5rem; top: 1.5rem; color: var(--gray-400);"></i>
+                        <div class="question-content">
+                            <div class="question-header">
+                                <div class="question-main">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <input type="hidden" name="pergunta-ordem[{{ topico.id }}-{{ pergunta.id }}]" class="question-order-input" value="{{ pergunta.ordem }}">
+                                        <textarea name="pergunta-descricao[{{ topico.id }}-{{ pergunta.id }}]" class="form-control" rows="2" placeholder="Descrição da Pergunta">{{ pergunta.descricao }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="question-actions">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <select name="pergunta-tipo[{{ topico.id }}-{{ pergunta.id }}]" class="form-control form-select js-tipo-questao">
+                                            <option value="">Selecione o Tipo...</option>
+                                            {% for tipo in tipos_questao %}<option value="{{ tipo.pk }}" {% if pergunta.tipo_questao.pk == tipo.pk %}selected{% endif %}>{{ tipo.nome }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="button" class="action-btn btn-delete js-remove-question" title="Excluir Pergunta">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="question-footer">
+                                <div class="options-section" {% if pergunta.tipo_questao.nome != 'Criar uma Opção' %}style="display: none;"{% endif %}>
+                                    <h5>Opções de Resposta</h5>
+                                    <div class="options-container">
+                                        {% for opcao in pergunta.opcoes.all %}
+                                        <div class="option-item">
+                                            <input type="text" name="opcao-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.descricao }}" placeholder="Descrição da opção">
+                                            <select name="opcao-status[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control form-select">
+                                                {% for value, text in status_opcoes %}<option value="{{ value }}" {% if opcao.tipo_status == value %}selected{% endif %}>{{ text }}</option>{% endfor %}
+                                            </select>
+                                            <input type="text" name="opcao-instrucoes[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.instrucoes_usuario|default:'' }}" placeholder="Instruções (opcional)">
+                                            <button type="button" class="action-btn btn-delete js-remove-option" title="Excluir Opção">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm js-add-option" style="margin-top: 1rem;">
+                                        <i class="fas fa-plus"></i> Adicionar Opção
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary btn-sm js-add-question">
+                    <i class="fas fa-plus"></i> Adicionar Pergunta
+                </button>
+
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-topic-btn" class="btn btn-secondary">
+            <i class="fas fa-plus-circle"></i> Adicionar Novo Tópico
+        </button>
+    </div>
+
+    <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i>
+            Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary" id="submitBtn" data-original-text="Salvar">
+            <i class="fas fa-save"></i>
+            Salvar Alterações
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<template id="topic-template">
+    <div class="topic-wrapper">
+        <div class="topic-header">
+            <div class="topic-header-controls">
+                <i class="fas fa-grip-vertical drag-handle topic-drag-handle" title="Arraste para reordenar"></i>
+                <div class="topic-title-input">
+                    <input type="hidden" name="topico-ordem[new-id]" class="topic-order-input" value="0">
+                    <input type="text" name="topico-descricao[new-id]" class="form-control" placeholder="Descrição do Novo Tópico">
+                </div>
+                <button type="button" class="action-btn btn-delete js-remove-topic" title="Excluir Tópico">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div style="text-align: center; position: relative; z-index: 2;">
+                <span class="topic-question-count">0</span>
+            </div>
+        </div>
+        <div class="questions-container"></div>
+        <button type="button" class="btn btn-primary btn-sm js-add-question">
+            <i class="fas fa-plus"></i> Adicionar Pergunta
+        </button>
+    </div>
+</template>
+
+<template id="question-template">
+    <div class="question-card" data-search-text="">
+        <i class="fas fa-grip-vertical drag-handle question-drag-handle" title="Arraste para reordenar" style="position: absolute; left: 0.5rem; top: 1.5rem; color: var(--gray-400);"></i>
+        <div class="question-content">
+            <div class="question-header">
+                <div class="question-main">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="hidden" name="pergunta-ordem[topic-id-question-id]" class="question-order-input" value="0">
+                        <textarea name="pergunta-descricao[topic-id-question-id]" class="form-control" rows="2" placeholder="Descrição da Nova Pergunta"></textarea>
+                    </div>
+                </div>
+                <div class="question-actions">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select name="pergunta-tipo[topic-id-question-id]" class="form-control form-select js-tipo-questao">
+                            <option value="">Selecione o Tipo...</option>
+                            {% for tipo in tipos_questao %}<option value="{{ tipo.pk }}">{{ tipo.nome }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" class="action-btn btn-delete js-remove-question" title="Excluir Pergunta">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="question-footer">
+                <div class="options-section" style="display: none;">
+                    <h5>Opções de Resposta</h5>
+                    <div class="options-container"></div>
+                    <button type="button" class="btn btn-secondary btn-sm js-add-option" style="margin-top: 1rem;">
+                        <i class="fas fa-plus"></i> Adicionar Opção
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="option-template">
+    <div class="option-item">
+        <input type="text" name="opcao-descricao[question-id-option-id]" class="form-control" placeholder="Descrição da opção">
+        <select name="opcao-status[question-id-option-id]" class="form-control form-select">
+            {% for value, text in status_opcoes %}<option value="{{ value }}">{{ text }}</option>{% endfor %}
+        </select>
+        <input type="text" name="opcao-instrucoes[question-id-option-id]" class="form-control" placeholder="Instruções (opcional)">
+        <button type="button" class="action-btn btn-delete js-remove-option" title="Excluir Opção">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</template>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const topicsContainer = document.getElementById('topics-container');
+    const addTopicBtn = document.getElementById('add-topic-btn');
+    const filterInput = document.getElementById('filter-items');
+    let newTopicCounter = 0;
+    let newQuestionCounter = 0;
+    let newOptionCounter = 0;
+
+    // Função para inicializar todos os sortables
+    function initAllSortables() {
+        // Sortable para tópicos
+        new Sortable(topicsContainer, {
+            handle: '.topic-drag-handle',
+            animation: 300,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function() {
+                updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
+            }
+        });
+
+        // Sortable para perguntas dentro de cada tópico
+        document.querySelectorAll('.questions-container').forEach(container => {
+            new Sortable(container, {
+                handle: '.question-drag-handle',
+                animation: 300,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function() {
+                    updateOrder(container, '.question-card', '.question-order-input');
+                }
+            });
+        });
+    }
+
+    // Função para atualizar a ordem dos elementos
+    function updateOrder(container, itemSelector, inputSelector) {
+        const items = container.querySelectorAll(itemSelector);
+        items.forEach((item, index) => {
+            const orderInput = item.querySelector(inputSelector);
+            if (orderInput) {
+                orderInput.value = index + 1;
+            }
+        });
+    }
+
+    // Função para atualizar contadores de perguntas
+    function updateTopicCounters() {
+        document.querySelectorAll('.topic-wrapper').forEach(topicWrapper => {
+            const questionCount = topicWrapper.querySelectorAll('.question-card').length;
+            const counter = topicWrapper.querySelector('.topic-question-count');
+            if (counter) {
+                counter.textContent = questionCount;
+            }
+        });
+    }
+
+    // Adicionar novo tópico
+    addTopicBtn.addEventListener('click', function() {
+        newTopicCounter++;
+        const topicTemplate = document.getElementById('topic-template').content.cloneNode(true);
+        
+        let html = topicTemplate.firstElementChild.outerHTML.replace(/new-id/g, `new-${newTopicCounter}`);
+        topicsContainer.insertAdjacentHTML('beforeend', html);
+        
+        // Reinicializar sortables
+        initAllSortables();
+        updateTopicCounters();
+        updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
+        
+        // Focar no input do novo tópico
+        const newTopic = topicsContainer.lastElementChild;
+        const titleInput = newTopic.querySelector('input[name^="topico-descricao"]');
+        if (titleInput) {
+            titleInput.focus();
+        }
+    });
+
+    // Event delegation para todos os cliques
+    topicsContainer.addEventListener('click', function(e) {
+        const target = e.target.closest('button, .js-add-question, .js-remove-topic, .js-remove-question, .js-add-option, .js-remove-option');
+        if (!target) return;
+
+        // ADD QUESTION
+        const addQuestionBtn = target.closest('.js-add-question');
+        if (addQuestionBtn) {
+            newQuestionCounter++;
+            const questionTemplate = document.getElementById('question-template').content.cloneNode(true);
+            
+            // **CORREÇÃO PRINCIPAL AQUI**
+            // Encontra o container de perguntas, que agora é o irmão anterior do botão
+            const questionsContainer = addQuestionBtn.previousElementSibling; 
+            
+            const topicWrapper = addQuestionBtn.closest('.topic-wrapper');
+            const topicIdInput = topicWrapper.querySelector('input[name^="topico-ordem"]');
+            const topicId = topicIdInput.name.match(/\[(.*?)\]/)[1];
+            
+            let html = questionTemplate.firstElementChild.outerHTML.replace(/topic-id-question-id/g, `${topicId}-new-${newQuestionCounter}`);
+            
+            // Insere o novo HTML da pergunta diretamente no final do container
+            questionsContainer.insertAdjacentHTML('beforeend', html);
+
+            updateTopicCounters();
+            initAllSortables(); // Garante que a nova pergunta também seja arrastável
+            updateOrder(questionsContainer, '.question-card', '.question-order-input');
+
+            const newQuestion = questionsContainer.lastElementChild;
+            if (newQuestion) {
+                newQuestion.querySelector('textarea').focus();
+            }
+            return;
+        }
+
+        // REMOVE TOPIC
+        const removeTopicBtn = target.closest('.js-remove-topic');
+        if (removeTopicBtn) {
+            if (confirm('Tem certeza que deseja remover este tópico e todas as suas perguntas?')) {
+                const topicWrapper = removeTopicBtn.closest('.topic-wrapper');
+                topicWrapper.style.transform = 'scale(0.8)';
+                topicWrapper.style.opacity = '0';
+                setTimeout(() => {
+                    topicWrapper.remove();
+                    updateOrder(topicsContainer, '.topic-wrapper', '.topic-order-input');
+                }, 300);
+            }
+            return;
+        }
+
+        // REMOVE QUESTION
+        const removeQuestionBtn = target.closest('.js-remove-question');
+        if (removeQuestionBtn) {
+            if (confirm('Tem certeza que deseja remover esta pergunta?')) {
+                const questionCard = removeQuestionBtn.closest('.question-card');
+                const questionsContainer = questionCard.parentElement;
+                questionCard.style.transform = 'translateX(-100%)';
+                questionCard.style.opacity = '0';
+                setTimeout(() => {
+                    questionCard.remove();
+                    updateTopicCounters();
+                    updateOrder(questionsContainer, '.question-card', '.question-order-input');
+                }, 300);
+            }
+            return;
+        }
+
+        // ADD OPTION
+        const addOptionBtn = target.closest('.js-add-option');
+        if (addOptionBtn) {
+            newOptionCounter++;
+            const optionTemplate = document.getElementById('option-template').content.cloneNode(true);
+            const optionsContainer = addOptionBtn.previousElementSibling;
+            const questionIdFull = addOptionBtn.closest('.question-card').querySelector('textarea[name^="pergunta-descricao"]').name.match(/\[(.*?)\]/)[1];
+            let html = optionTemplate.firstElementChild.outerHTML.replace(/question-id-option-id/g, `${questionIdFull}-new-${newOptionCounter}`);
+            const newOptionItem = document.createElement('div');
+            newOptionItem.className = 'option-item';
+            newOptionItem.innerHTML = html;
+            newOptionItem.style.opacity = '0';
+            newOptionItem.style.transform = 'translateY(-10px)';
+            
+            optionsContainer.appendChild(newOptionItem);
+            
+            // Animação de entrada
+            setTimeout(() => {
+                newOptionItem.style.transition = 'all 0.3s ease';
+                newOptionItem.style.opacity = '1';
+                newOptionItem.style.transform = 'translateY(0)';
+            }, 10);
+            return;
+        }
+
+        // REMOVE OPTION
+        const removeOptionBtn = target.closest('.js-remove-option');
+        if (removeOptionBtn) {
+            const optionItem = removeOptionBtn.closest('.option-item');
+            optionItem.style.transform = 'translateX(100%)';
+            optionItem.style.opacity = '0';
+            setTimeout(() => {
+                optionItem.remove();
+            }, 300);
+            return;
+        }
+    });
+
+    // Event listener para mudança no tipo de questão
+    topicsContainer.addEventListener('change', function(e) {
+        if (e.target.classList.contains('js-tipo-questao')) {
+            const select = e.target;
+            const optionsSection = select.closest('.question-card').querySelector('.options-section');
+            const selectedOptionText = select.options[select.selectedIndex].text;
+            
+            if (selectedOptionText.trim() === 'Criar uma Opção') {
+                optionsSection.style.display = 'block';
+                optionsSection.style.opacity = '0';
+                setTimeout(() => {
+                    optionsSection.style.transition = 'opacity 0.3s ease';
+                    optionsSection.style.opacity = '1';
+                }, 10);
+            } else {
+                optionsSection.style.opacity = '0';
+                setTimeout(() => {
+                    optionsSection.style.display = 'none';
+                }, 300);
+            }
+        }
+    });
+
+    // Filtro de busca aprimorado
+    filterInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        document.querySelectorAll('.topic-wrapper').forEach(topicWrapper => {
+            const topicInput = topicWrapper.querySelector('input[name^="topico-descricao"]');
+            const topicText = (topicInput.value).toLowerCase();
+            let topicVisible = topicText.includes(searchTerm);
+            let hasVisibleQuestion = false;
+
+            topicWrapper.querySelectorAll('.question-card').forEach(questionCard => {
+                const questionInput = questionCard.querySelector('textarea[name^="pergunta-descricao"]');
+                const questionText = (questionInput.value).toLowerCase();
+                if (questionText.includes(searchTerm)) {
+                    questionCard.style.display = 'block';
+                    questionCard.style.opacity = '1';
+                    hasVisibleQuestion = true;
+                } else {
+                    questionCard.style.opacity = '0.3';
+                    if (!topicVisible) {
+                        questionCard.style.display = 'none';
+                    }
+                }
+            });
+
+            if (topicVisible || hasVisibleQuestion) {
+                topicWrapper.style.display = 'block';
+                topicWrapper.style.opacity = '1';
+            } else {
+                topicWrapper.style.opacity = '0.3';
+                if (searchTerm) {
+                    topicWrapper.style.display = 'none';
+                }
+            }
+        });
+
+        // Se não há termo de busca, mostrar tudo
+        if (!searchTerm) {
+            document.querySelectorAll('.topic-wrapper, .question-card').forEach(el => {
+                el.style.display = '';
+                el.style.opacity = '';
+            });
+        }
+    });
+
+    // Inicialização
+    initAllSortables();
+    updateTopicCounters();
+    
+    // Adicionar efeito de loading inicial
+    topicsContainer.classList.add('loading');
+    setTimeout(() => {
+        topicsContainer.classList.remove('loading');
+    }, 500);
+});
+</script>
 {% endblock %}

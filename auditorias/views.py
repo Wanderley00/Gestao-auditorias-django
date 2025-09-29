@@ -696,7 +696,7 @@ def lista_checklists(request):
 
 @login_required
 def criar_checklist(request):
-    """Cria um novo checklist"""
+    """Cria um novo checklist e redireciona para a tela de edição detalhada."""
     if request.method == 'POST':
         nome = request.POST.get('nome')
         ferramenta_id = request.POST.get('ferramenta')
@@ -716,8 +716,9 @@ def criar_checklist(request):
                     checklist.modelo_avaliacao = ModeloAvaliacao.objects.get(pk=modelo_avaliacao_id)
                 
                 checklist.save()
-                messages.success(request, 'Checklist criado com sucesso!')
-                return redirect('auditorias:lista_checklists')
+                messages.success(request, 'Checklist criado com sucesso! Agora adicione os tópicos e perguntas.')
+                # REDIRECIONA PARA A TELA DE EDIÇÃO COMPLETA
+                return redirect('auditorias:editar_checklist', pk=checklist.pk)
             except Exception as e:
                 messages.error(request, f'Erro ao criar checklist: {str(e)}')
         else:
@@ -727,45 +728,121 @@ def criar_checklist(request):
         'ferramentas': FerramentaDigital.objects.all(),
         'modelos_avaliacao': ModeloAvaliacao.objects.all(),
         'title': 'Criar Checklist',
-        'back_url': 'auditorias:lista_checklists'  # ADICIONADO
+        'back_url': 'auditorias:lista_checklists'
     }
+    # A view de criação agora pode usar o mesmo form da de edição
     return render(request, 'auditorias/checklists/form.html', context)
 
 @login_required
 def editar_checklist(request, pk):
-    """Edita um checklist existente"""
-    checklist = get_object_or_404(Checklist, pk=pk)
+    """Edita um checklist existente, incluindo seus tópicos, perguntas e opções em uma única tela."""
+    checklist = get_object_or_404(Checklist.objects.prefetch_related(
+        'topicos__perguntas__opcoes', 
+        'topicos__perguntas__tipo_questao'
+    ), pk=pk)
     
     if request.method == 'POST':
-        checklist.nome = request.POST.get('nome')
-        checklist.ativo = request.POST.get('ativo') == 'on'
-        
-        ferramenta_id = request.POST.get('ferramenta')
-        modelo_avaliacao_id = request.POST.get('modelo_avaliacao')
-        
-        if ferramenta_id:
-            checklist.ferramenta = FerramentaDigital.objects.get(pk=ferramenta_id)
-        else:
-            checklist.ferramenta = None
-            
-        if modelo_avaliacao_id:
-            checklist.modelo_avaliacao = ModeloAvaliacao.objects.get(pk=modelo_avaliacao_id)
-        else:
-            checklist.modelo_avaliacao = None
-        
         try:
+            # 1. ATUALIZAR DADOS DO CHECKLIST
+            checklist.nome = request.POST.get('nome')
+            checklist.ativo = request.POST.get('ativo') == 'on'
+            ferramenta_id = request.POST.get('ferramenta')
+            modelo_avaliacao_id = request.POST.get('modelo_avaliacao')
+            checklist.ferramenta_id = ferramenta_id if ferramenta_id else None
+            checklist.modelo_avaliacao_id = modelo_avaliacao_id if modelo_avaliacao_id else None
             checklist.save()
+
+            # IDs de itens que foram enviados no formulário (para saber quais deletar)
+            topicos_ids_enviados = []
+            perguntas_ids_enviadas = []
+            opcoes_ids_enviadas = []
+
+            # 2. PROCESSAR TÓPICOS
+            for key, descricao in request.POST.items():
+                if not key.startswith('topico-descricao['):
+                    continue
+                
+                id_str = key.split('[')[1].split(']')[0]
+                ordem = request.POST.get(f'topico-ordem[{id_str}]', 0)
+                
+                if id_str.startswith('new-'):
+                    topico = Topico.objects.create(checklist=checklist, descricao=descricao, ordem=ordem)
+                else:
+                    topico = get_object_or_404(Topico, pk=int(id_str), checklist=checklist)
+                    topico.descricao, topico.ordem = descricao, ordem
+                    topico.save()
+                
+                topicos_ids_enviados.append(topico.id)
+
+                # 3. PROCESSAR PERGUNTAS DO TÓPICO
+                for p_key, p_descricao in request.POST.items():
+                    if not p_key.startswith(f'pergunta-descricao[{id_str}-'):
+                        continue
+
+                    p_id_str_full = p_key.split('[')[1].split(']')[0]
+                    p_id_str = p_id_str_full.replace(f'{id_str}-', '')
+                    
+                    p_tipo_questao_id = request.POST.get(f'pergunta-tipo[{p_id_str_full}]')
+                    p_ordem = request.POST.get(f'pergunta-ordem[{p_id_str_full}]', 0)
+                    p_obrigatorio = request.POST.get(f'pergunta-obrigatorio[{p_id_str_full}]') == 'on'
+                    
+                    if p_id_str.startswith('new-'):
+                        pergunta = Pergunta.objects.create(
+                            topico=topico, descricao=p_descricao, tipo_questao_id=p_tipo_questao_id,
+                            ordem=p_ordem, campo_obrigatorio=p_obrigatorio
+                        )
+                    else:
+                        pergunta = get_object_or_404(Pergunta, pk=int(p_id_str), topico=topico)
+                        pergunta.descricao, pergunta.tipo_questao_id = p_descricao, p_tipo_questao_id
+                        pergunta.ordem, pergunta.campo_obrigatorio = p_ordem, p_obrigatorio
+                        pergunta.save()
+                    
+                    perguntas_ids_enviadas.append(pergunta.id)
+
+                    # 4. PROCESSAR OPÇÕES DA PERGUNTA
+                    for o_key, o_descricao in request.POST.items():
+                        if not o_key.startswith(f'opcao-descricao[{p_id_str_full}-'):
+                            continue
+                        
+                        o_id_str_full = o_key.split('[')[1].split(']')[0]
+                        o_id_str = o_id_str_full.replace(f'{p_id_str_full}-', '')
+
+                        o_status = request.POST.get(f'opcao-status[{o_id_str_full}]')
+                        o_instrucoes = request.POST.get(f'opcao-instrucoes[{o_id_str_full}]', '')
+                        
+                        if o_id_str.startswith('new-'):
+                            OpcaoPergunta.objects.create(
+                                pergunta=pergunta, descricao=o_descricao,
+                                tipo_status=o_status, instrucoes_usuario=o_instrucoes
+                            )
+                        else:
+                            opcao = get_object_or_404(OpcaoPergunta, pk=int(o_id_str), pergunta=pergunta)
+                            opcao.descricao, opcao.tipo_status = o_descricao, o_status
+                            opcao.instrucoes_usuario = o_instrucoes
+                            opcao.save()
+                        
+                        opcoes_ids_enviadas.append(opcao.id)
+
+            # 5. DELETAR ITENS QUE NÃO ESTAVAM NO FORMULÁRIO
+            OpcaoPergunta.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_ids_enviadas).delete()
+            Pergunta.objects.filter(topico__checklist=checklist).exclude(id__in=perguntas_ids_enviadas).delete()
+            Topico.objects.filter(checklist=checklist).exclude(id__in=topicos_ids_enviados).delete()
+
             messages.success(request, 'Checklist atualizado com sucesso!')
             return redirect('auditorias:lista_checklists')
+            
         except Exception as e:
             messages.error(request, f'Erro ao atualizar checklist: {str(e)}')
-    
+
     context = {
         'checklist': checklist,
+        'object': checklist, # Para compatibilidade com o form_generico
         'ferramentas': FerramentaDigital.objects.all(),
         'modelos_avaliacao': ModeloAvaliacao.objects.all(),
+        'tipos_questao': TipoQuestao.objects.all(),
+        'status_opcoes': OpcaoPergunta._meta.get_field('tipo_status').choices,
         'title': 'Editar Checklist',
-        'back_url': 'auditorias:lista_checklists'  # ADICIONADO
+        'back_url': 'auditorias:lista_checklists'
     }
     return render(request, 'auditorias/checklists/form.html', context)
 

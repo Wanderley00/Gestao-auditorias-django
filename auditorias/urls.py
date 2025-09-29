@@ -53,13 +53,6 @@ urlpatterns = [
     path('checklists/<int:pk>/deletar/', views.deletar_checklist, name='deletar_checklist'),
     
     # ==================================================
-    # NOVAS URLs PARA TÓPICOS
-    # ==================================================
-    path('topicos/', views.lista_topicos, name='lista_topicos'),
-    path('topicos/criar/', views.criar_topico, name='criar_topico'),
-    path('topicos/<int:pk>/editar/', views.editar_topico, name='editar_topico'),
-    path('topicos/<int:pk>/deletar/', views.deletar_topico, name='deletar_topico'),
-    # ==================================================
     
     # URLs para Modelos de Auditoria
     path('modelos-auditoria/', views.lista_modelos_auditoria, name='lista_modelos_auditoria'),
@@ -79,9 +72,4 @@ urlpatterns = [
     path('ajax/subsetores-por-setor/', views.get_subsetores_por_setor, name='get_subsetores_por_setor'),
     path('ajax/ativos-por-local/', views.get_ativos_por_local, name='get_ativos_por_local'),
 
-    # URLs para Perguntas (dentro de um Checklist/Tópico)
-    path('checklists/<int:checklist_pk>/perguntas/', views.lista_perguntas, name='lista_perguntas'),
-    path('checklists/<int:checklist_pk>/perguntas/criar/', views.criar_pergunta, name='criar_pergunta'),
-    path('perguntas/<int:pk>/editar/', views.editar_pergunta, name='editar_pergunta'),
-    path('perguntas/<int:pk>/deletar/', views.deletar_pergunta, name='deletar_pergunta'),
 ]

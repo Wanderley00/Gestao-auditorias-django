@@ -35,18 +35,10 @@
                 <i class="fas fa-file-alt"></i>
                 <span class="nav-item-text">Modelos de Auditoria</span>
             </a>
-            <a href="{% url 'auditorias:lista_checklists' %}" class="nav-item {% if '/auditorias/checklists/' in request.path %}active{% endif %}">
+            <a href="{% url 'auditorias:lista_checklists' %}" class="nav-item {% if '/auditorias/checklists/' in request.path or '/auditorias/topicos/' in request.path %}active{% endif %}">
                 <i class="fas fa-list-check"></i>
                 <span class="nav-item-text">Checklists</span>
             </a>
-            
-            <!-- NOVO LINK PARA TÓPICOS -->
-            <a href="{% url 'auditorias:lista_topicos' %}" class="nav-item {% if '/auditorias/topicos/' in request.path %}active{% endif %}">
-                <i class="fas fa-tasks"></i>
-                <span class="nav-item-text">Tópicos</span>
-            </a>
-            <!-- FIM DO NOVO LINK -->
-
             <a href="{% url 'auditorias:lista_pilares' %}" class="nav-item {% if '/auditorias/pilares/' in request.path %}active{% endif %}">
                 <i class="fas fa-columns"></i>
                 <span class="nav-item-text">Pilares</span>
