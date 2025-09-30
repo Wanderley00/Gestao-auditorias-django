@@ -8682,3 +8682,148 @@ WARNING 2025-09-29 14:17:19,551 basehttp 35052 33564 "GET /favicon.ico HTTP/1.1"
 INFO 2025-09-29 14:19:52,854 basehttp 35052 33564 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 49142
 WARNING 2025-09-29 14:19:53,212 log 35052 33564 Not Found: /favicon.ico
 WARNING 2025-09-29 14:19:53,212 basehttp 35052 33564 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 14:54:18,850 basehttp 35052 33276 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 49987
+INFO 2025-09-29 14:56:27,199 basehttp 35052 31680 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 50569
+INFO 2025-09-29 14:59:44,659 basehttp 35052 31680 "GET /auditorias/checklists/criar/ HTTP/1.1" 200 52811
+INFO 2025-09-29 15:00:21,795 basehttp 35052 31680 "POST /auditorias/checklists/criar/ HTTP/1.1" 302 0
+INFO 2025-09-29 15:00:21,819 basehttp 35052 31680 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 53153
+INFO 2025-09-29 15:00:25,300 basehttp 35052 31680 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-29 15:00:29,255 basehttp 35052 31680 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 52969
+INFO 2025-09-29 15:05:02,323 autoreload 35052 27444 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-29 15:05:03,777 autoreload 33084 33700 Watching for file changes with StatReloader
+INFO 2025-09-29 15:05:21,121 autoreload 33084 33700 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-29 15:05:22,323 autoreload 36712 10996 Watching for file changes with StatReloader
+INFO 2025-09-29 15:05:53,685 autoreload 36712 10996 H:\Programação\Em Andamento\Gestão kaizen SKF\Gestao-auditorias-django\auditorias\views.py changed, reloading.
+INFO 2025-09-29 15:05:54,884 autoreload 17356 32468 Watching for file changes with StatReloader
+INFO 2025-09-29 15:05:59,970 basehttp 17356 33532 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 52969
+WARNING 2025-09-29 15:06:01,654 log 17356 33532 Not Found: /favicon.ico
+WARNING 2025-09-29 15:06:01,655 basehttp 17356 33532 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 15:06:29,501 basehttp 17356 33532 "POST /auditorias/checklists/5/editar/ HTTP/1.1" 302 0
+INFO 2025-09-29 15:06:29,533 basehttp 17356 33532 "GET /auditorias/checklists/ HTTP/1.1" 200 41928
+INFO 2025-09-29 15:06:39,995 basehttp 17356 33532 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 58055
+INFO 2025-09-29 15:06:46,391 basehttp 17356 33532 "POST /auditorias/checklists/5/editar/ HTTP/1.1" 302 0
+INFO 2025-09-29 15:06:46,415 basehttp 17356 33532 "GET /auditorias/checklists/ HTTP/1.1" 200 41928
+INFO 2025-09-29 15:06:49,664 basehttp 17356 33532 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 58055
+INFO 2025-09-29 16:40:31,424 basehttp 17356 8092 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 49658
+WARNING 2025-09-29 16:40:32,530 log 17356 8092 Not Found: /favicon.ico
+WARNING 2025-09-29 16:40:32,531 basehttp 17356 8092 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 16:45:29,893 basehttp 17356 28668 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 76940
+WARNING 2025-09-29 16:45:30,940 log 17356 28668 Not Found: /favicon.ico
+WARNING 2025-09-29 16:45:30,941 basehttp 17356 28668 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 16:49:27,109 basehttp 17356 28668 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 76940
+INFO 2025-09-29 16:51:45,373 basehttp 17356 28668 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 76940
+WARNING 2025-09-29 16:51:46,668 log 17356 28668 Not Found: /favicon.ico
+WARNING 2025-09-29 16:51:46,669 basehttp 17356 28668 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 16:51:51,892 basehttp 17356 28668 "GET /auditorias/pilares/ HTTP/1.1" 200 41978
+INFO 2025-09-29 16:51:53,220 basehttp 17356 28668 "GET /auditorias/pilares/ HTTP/1.1" 200 41978
+INFO 2025-09-29 16:51:54,615 basehttp 17356 28668 "GET /auditorias/categorias/ HTTP/1.1" 200 39190
+INFO 2025-09-29 16:51:55,924 basehttp 17356 28668 "GET /auditorias/normas/ HTTP/1.1" 200 37976
+INFO 2025-09-29 16:51:57,426 basehttp 17356 28668 "GET /auditorias/dashboard/ HTTP/1.1" 200 44827
+INFO 2025-09-29 16:51:59,828 basehttp 17356 28668 "GET /itens/categorias/ HTTP/1.1" 200 39135
+INFO 2025-09-29 16:52:00,463 basehttp 17356 28668 "GET /itens/subcategorias/ HTTP/1.1" 200 38065
+INFO 2025-09-29 16:52:01,052 basehttp 17356 28668 "GET /itens/almoxarifados/ HTTP/1.1" 200 38029
+INFO 2025-09-29 16:52:01,994 basehttp 17356 28668 "GET /clientes/ HTTP/1.1" 200 37972
+INFO 2025-09-29 16:52:02,467 basehttp 17356 28668 "GET /fornecedores/ HTTP/1.1" 200 38004
+INFO 2025-09-29 16:52:05,340 basehttp 17356 28668 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-29 16:52:06,894 basehttp 17356 28668 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 69339
+INFO 2025-09-29 16:52:40,249 basehttp 17356 28668 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 72940
+WARNING 2025-09-29 16:52:40,699 log 17356 28668 Not Found: /favicon.ico
+WARNING 2025-09-29 16:52:40,699 basehttp 17356 28668 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-29 16:52:53,742 basehttp 17356 28668 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 69339
+WARNING 2025-09-29 16:52:54,217 log 17356 28668 Not Found: /favicon.ico
+WARNING 2025-09-29 16:52:54,218 basehttp 17356 28668 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 13:57:39,121 autoreload 21460 8424 Watching for file changes with StatReloader
+WARNING 2025-09-30 13:57:48,346 log 21460 23004 Not Found: /cadastro/login/
+WARNING 2025-09-30 13:57:48,347 basehttp 21460 23004 "GET /cadastro/login/ HTTP/1.1" 404 4109
+WARNING 2025-09-30 13:57:48,437 log 21460 23004 Not Found: /favicon.ico
+WARNING 2025-09-30 13:57:48,438 basehttp 21460 23004 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 13:57:54,112 basehttp 21460 23004 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-30 13:58:00,621 basehttp 21460 23004 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-30 13:58:00,647 basehttp 21460 23004 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-30 13:58:01,055 basehttp 21460 15536 "GET /auditorias/dashboard/ HTTP/1.1" 200 44827
+INFO 2025-09-30 13:58:04,034 basehttp 21460 15536 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-30 13:58:06,208 basehttp 21460 15536 "GET /auditorias/checklists/2/editar/ HTTP/1.1" 200 73865
+INFO 2025-09-30 14:02:37,475 basehttp 21460 15536 "GET /auditorias/checklists/2/editar/ HTTP/1.1" 200 73032
+WARNING 2025-09-30 14:02:39,217 log 21460 15536 Not Found: /favicon.ico
+WARNING 2025-09-30 14:02:39,218 basehttp 21460 15536 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 14:06:29,087 basehttp 21460 15536 "GET /auditorias/checklists/2/editar/ HTTP/1.1" 200 73302
+WARNING 2025-09-30 14:06:29,556 log 21460 15536 Not Found: /favicon.ico
+WARNING 2025-09-30 14:06:29,557 basehttp 21460 15536 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 14:07:11,981 basehttp 21460 15536 "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-09-30 14:07:11,986 basehttp 21460 15536 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-30 14:07:19,765 basehttp 21460 15536 "GET /login/ HTTP/1.1" 200 3748
+INFO 2025-09-30 14:07:26,460 basehttp 21460 15536 "POST /login/ HTTP/1.1" 302 0
+INFO 2025-09-30 14:07:26,482 basehttp 21460 15536 "GET /auditorias/dashboard HTTP/1.1" 301 0
+INFO 2025-09-30 14:07:26,510 basehttp 21460 32760 "GET /auditorias/dashboard/ HTTP/1.1" 200 44827
+INFO 2025-09-30 14:07:32,953 basehttp 21460 32760 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38095
+INFO 2025-09-30 14:07:33,848 basehttp 21460 32760 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-30 14:07:36,700 basehttp 21460 32760 "GET /auditorias/pilares/ HTTP/1.1" 200 41978
+INFO 2025-09-30 14:07:38,512 basehttp 21460 32760 "GET /organizacao/subsetores/ HTTP/1.1" 200 39184
+INFO 2025-09-30 14:07:39,812 basehttp 21460 32760 "GET /auditorias/normas/ HTTP/1.1" 200 37976
+INFO 2025-09-30 14:07:40,271 basehttp 21460 32760 "GET /auditorias/categorias/ HTTP/1.1" 200 39190
+INFO 2025-09-30 14:07:40,652 basehttp 21460 32760 "GET /auditorias/pilares/ HTTP/1.1" 200 41978
+INFO 2025-09-30 14:07:40,980 basehttp 21460 32760 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-30 14:07:42,849 basehttp 21460 32760 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 79978
+INFO 2025-09-30 14:20:28,911 basehttp 21460 24796 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 78612
+WARNING 2025-09-30 14:20:30,294 log 21460 24796 Not Found: /favicon.ico
+WARNING 2025-09-30 14:20:30,295 basehttp 21460 24796 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 14:31:35,691 basehttp 21460 28740 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 79266
+WARNING 2025-09-30 14:31:37,269 log 21460 28740 Not Found: /favicon.ico
+WARNING 2025-09-30 14:31:37,270 basehttp 21460 28740 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 14:32:46,043 basehttp 21460 28740 "GET /auditorias/checklists/ HTTP/1.1" 200 41780
+INFO 2025-09-30 15:00:13,471 basehttp 21460 34340 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 79266
+INFO 2025-09-30 15:01:17,988 basehttp 21460 34340 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 78990
+WARNING 2025-09-30 15:01:19,758 log 21460 34340 Not Found: /favicon.ico
+WARNING 2025-09-30 15:01:19,758 basehttp 21460 34340 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 15:02:10,981 basehttp 21460 34340 "GET /auditorias/checklists/5/editar/ HTTP/1.1" 200 79012
+WARNING 2025-09-30 15:02:11,483 log 21460 34340 Not Found: /favicon.ico
+WARNING 2025-09-30 15:02:11,484 basehttp 21460 34340 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 15:02:18,906 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:02:20,367 basehttp 21460 34340 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 70555
+INFO 2025-09-30 15:02:23,127 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:06:24,994 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+WARNING 2025-09-30 15:06:26,553 log 21460 34340 Not Found: /favicon.ico
+WARNING 2025-09-30 15:06:26,553 basehttp 21460 34340 "GET /favicon.ico HTTP/1.1" 404 4097
+INFO 2025-09-30 15:06:42,169 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:42,333 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:42,523 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:43,325 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:43,515 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:43,666 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:44,339 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38040
+INFO 2025-09-30 15:06:44,682 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41725
+INFO 2025-09-30 15:06:46,975 basehttp 21460 34340 "GET /auditorias/pilares/ HTTP/1.1" 200 41923
+INFO 2025-09-30 15:06:50,195 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 39135
+INFO 2025-09-30 15:07:00,742 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:00,872 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:01,055 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:01,217 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:01,371 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:04,158 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:07:07,201 basehttp 21460 34340 "GET /auditorias/auditorias/ HTTP/1.1" 200 37764
+INFO 2025-09-30 15:07:07,781 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37819
+INFO 2025-09-30 15:07:08,830 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:07:11,185 basehttp 21460 34340 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 70555
+INFO 2025-09-30 15:07:13,582 basehttp 21460 34340 "GET /auditorias/categorias/ HTTP/1.1" 200 38914
+INFO 2025-09-30 15:07:16,061 basehttp 21460 34340 "GET /auditorias/normas/ HTTP/1.1" 200 37700
+INFO 2025-09-30 15:07:17,302 basehttp 21460 34340 "GET /auditorias/ferramentas-digitais/ HTTP/1.1" 200 38641
+INFO 2025-09-30 15:08:05,156 basehttp 21460 34340 "GET /auditorias/pilares/ HTTP/1.1" 200 41702
+INFO 2025-09-30 15:08:05,915 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:08:08,760 basehttp 21460 34340 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 70555
+INFO 2025-09-30 15:08:20,652 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 41504
+INFO 2025-09-30 15:08:21,469 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 37819
+INFO 2025-09-30 15:09:38,537 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:38,634 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:38,809 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:38,981 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:39,752 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:40,170 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 42045
+INFO 2025-09-30 15:09:40,515 basehttp 21460 34340 "GET /auditorias/pilares/ HTTP/1.1" 200 42243
+INFO 2025-09-30 15:09:45,463 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 42045
+INFO 2025-09-30 15:09:48,373 basehttp 21460 34340 "GET /auditorias/pilares/ HTTP/1.1" 200 42243
+INFO 2025-09-30 15:09:49,010 basehttp 21460 34340 "GET /auditorias/modelos-auditoria/ HTTP/1.1" 200 38360
+INFO 2025-09-30 15:09:50,051 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 42045
+INFO 2025-09-30 15:09:52,141 basehttp 21460 34340 "GET /auditorias/checklists/4/editar/ HTTP/1.1" 200 71096
+INFO 2025-09-30 15:09:57,880 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 42045
+INFO 2025-09-30 15:10:07,347 basehttp 21460 34340 "GET /auditorias/pilares/ HTTP/1.1" 200 42243
+INFO 2025-09-30 15:10:08,539 basehttp 21460 34340 "GET /auditorias/checklists/ HTTP/1.1" 200 42045

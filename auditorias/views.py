@@ -479,10 +479,9 @@ def lista_checklists(request):
     }
     return render(request, 'auditorias/checklists/lista.html', context)
 
-
 @login_required
 def criar_checklist(request):
-    """Cria um novo checklist e redireciona para a tela de edição detalhada."""
+    """Cria um novo checklist com estrutura completa."""
     if request.method == 'POST':
         nome = request.POST.get('nome')
         ferramenta_id = request.POST.get('ferramenta')
@@ -490,24 +489,31 @@ def criar_checklist(request):
         
         if nome:
             try:
+                # Criar o checklist básico
                 checklist = Checklist.objects.create(
                     nome=nome,
                     ativo=ativo
                 )
                 
                 if ferramenta_id:
-                    checklist.ferramenta = FerramentaDigital.objects.get(pk=ferramenta_id)
+                    checklist.ferramenta_id = ferramenta_id
+                    checklist.save()
                 
-                checklist.save()
-                messages.success(request, 'Checklist criado com sucesso! Agora adicione os tópicos e perguntas.')
-                return redirect('auditorias:editar_checklist', pk=checklist.pk)
+                # Processar tópicos e perguntas
+                processar_estrutura_checklist(request, checklist)
+                
+                messages.success(request, 'Checklist criado com sucesso!')
+                return redirect('auditorias:lista_checklists')
             except Exception as e:
                 messages.error(request, f'Erro ao criar checklist: {str(e)}')
+                import traceback
+                print(traceback.format_exc())
         else:
             messages.error(request, 'Nome é obrigatório!')
     
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
+        'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': 'Criar Checklist',
         'back_url': 'auditorias:lista_checklists'
     }
@@ -515,7 +521,7 @@ def criar_checklist(request):
 
 @login_required
 def editar_checklist(request, pk):
-    """Edita um checklist existente, incluindo seus tópicos, perguntas e opções em uma única tela."""
+    """Edita um checklist existente, incluindo seus tópicos, perguntas e opções."""
     checklist = get_object_or_404(Checklist.objects.prefetch_related(
         'topicos__perguntas__opcoes_resposta', 
         'topicos__perguntas__opcoes_porcentagem'
@@ -530,121 +536,20 @@ def editar_checklist(request, pk):
             checklist.ferramenta_id = ferramenta_id if ferramenta_id else None
             checklist.save()
 
-            # IDs de itens que foram enviados no formulário (para saber quais deletar)
-            topicos_ids_enviados = []
-            perguntas_ids_enviadas = []
-            opcoes_resposta_ids_enviadas = []
-            opcoes_porcentagem_ids_enviadas = []
-
-            # 2. PROCESSAR TÓPICOS
-            for key, descricao in request.POST.items():
-                if not key.startswith('topico-descricao['):
-                    continue
-                
-                id_str = key.split('[')[1].split(']')[0]
-                ordem = request.POST.get(f'topico-ordem[{id_str}]', 0)
-                
-                if id_str.startswith('new-'):
-                    topico = Topico.objects.create(checklist=checklist, descricao=descricao, ordem=ordem)
-                else:
-                    topico = get_object_or_404(Topico, pk=int(id_str), checklist=checklist)
-                    topico.descricao, topico.ordem = descricao, ordem
-                    topico.save()
-                
-                topicos_ids_enviados.append(topico.id)
-
-                # 3. PROCESSAR PERGUNTAS DO TÓPICO
-                for p_key, p_descricao in request.POST.items():
-                    if not p_key.startswith(f'pergunta-descricao[{id_str}-'):
-                        continue
-
-                    p_id_str_full = p_key.split('[')[1].split(']')[0]
-                    p_id_str = p_id_str_full.replace(f'{id_str}-', '')
-                    
-                    p_ordem = request.POST.get(f'pergunta-ordem[{p_id_str_full}]', 0)
-                    p_obrigatorio = request.POST.get(f'pergunta-obrigatorio[{p_id_str_full}]') == 'on'
-                    
-                    # Capturar os tipos de resposta
-                    p_resposta_livre = request.POST.get(f'pergunta-resposta_livre[{p_id_str_full}]') == 'on'
-                    p_foto = request.POST.get(f'pergunta-foto[{p_id_str_full}]') == 'on'
-                    p_criar_opcao = request.POST.get(f'pergunta-criar_opcao[{p_id_str_full}]') == 'on'
-                    p_porcentagem = request.POST.get(f'pergunta-porcentagem[{p_id_str_full}]') == 'on'
-
-                    if p_id_str.startswith('new-'):
-                        pergunta = Pergunta.objects.create(
-                            topico=topico, descricao=p_descricao,
-                            ordem=p_ordem, obrigatoria=p_obrigatorio,
-                            resposta_livre=p_resposta_livre, foto=p_foto,
-                            criar_opcao=p_criar_opcao, porcentagem=p_porcentagem
-                        )
-                    else:
-                        pergunta = get_object_or_404(Pergunta, pk=int(p_id_str), topico=topico)
-                        pergunta.descricao = p_descricao
-                        pergunta.ordem, pergunta.obrigatoria = p_ordem, p_obrigatorio
-                        pergunta.resposta_livre, pergunta.foto = p_resposta_livre, p_foto
-                        pergunta.criar_opcao, pergunta.porcentagem = p_criar_opcao, p_porcentagem
-                        pergunta.save()
-                    
-                    perguntas_ids_enviadas.append(pergunta.id)
-
-                    # 4. PROCESSAR OPÇÕES DE RESPOSTA
-                    for or_key, or_descricao in request.POST.items():
-                        if not or_key.startswith(f'opcao-resposta-descricao[{p_id_str_full}-'):
-                            continue
-                        
-                        or_id_str_full = or_key.split('[')[1].split(']')[0]
-                        or_id_str = or_id_str_full.replace(f'{p_id_str_full}-', '')
-
-                        or_status = request.POST.get(f'opcao-resposta-status[{or_id_str_full}]')
-                        
-                        if or_id_str.startswith('new-'):
-                            opcao_resposta = OpcaoResposta.objects.create(
-                                pergunta=pergunta, descricao=or_descricao, status=or_status
-                            )
-                        else:
-                            opcao_resposta = get_object_or_404(OpcaoResposta, pk=int(or_id_str), pergunta=pergunta)
-                            opcao_resposta.descricao, opcao_resposta.status = or_descricao, or_status
-                            opcao_resposta.save()
-                        
-                        opcoes_resposta_ids_enviadas.append(opcao_resposta.id)
-
-                    # 5. PROCESSAR OPÇÕES DE PORCENTAGEM
-                    for op_key, op_descricao in request.POST.items():
-                        if not op_key.startswith(f'opcao-porcentagem-descricao[{p_id_str_full}-'):
-                            continue
-                        
-                        op_id_str_full = op_key.split('[')[1].split(']')[0]
-                        op_id_str = op_id_str_full.replace(f'{p_id_str_full}-', '')
-
-                        op_peso = request.POST.get(f'opcao-porcentagem-peso[{op_id_str_full}]')
-                        op_cor = request.POST.get(f'opcao-porcentagem-cor[{op_id_str_full}]')
-                        
-                        if op_id_str.startswith('new-'):
-                            opcao_porcentagem = OpcaoPorcentagem.objects.create(
-                                pergunta=pergunta, descricao=op_descricao, peso=op_peso, cor=op_cor
-                            )
-                        else:
-                            opcao_porcentagem = get_object_or_404(OpcaoPorcentagem, pk=int(op_id_str), pergunta=pergunta)
-                            opcao_porcentagem.descricao, opcao_porcentagem.peso, opcao_porcentagem.cor = op_descricao, op_peso, op_cor
-                            opcao_porcentagem.save()
-                        
-                        opcoes_porcentagem_ids_enviadas.append(opcao_porcentagem.id)
-
-            # 6. DELETAR ITENS QUE NÃO ESTAVAM NO FORMULÁRIO
-            OpcaoResposta.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_resposta_ids_enviadas).delete()
-            OpcaoPorcentagem.objects.filter(pergunta__topico__checklist=checklist).exclude(id__in=opcoes_porcentagem_ids_enviadas).delete()
-            Pergunta.objects.filter(topico__checklist=checklist).exclude(id__in=perguntas_ids_enviadas).delete()
-            Topico.objects.filter(checklist=checklist).exclude(id__in=topicos_ids_enviados).delete()
+            # Processar estrutura completa
+            processar_estrutura_checklist(request, checklist)
 
             messages.success(request, 'Checklist atualizado com sucesso!')
             return redirect('auditorias:lista_checklists')
             
         except Exception as e:
             messages.error(request, f'Erro ao atualizar checklist: {str(e)}')
+            import traceback
+            print(traceback.format_exc())
 
     context = {
         'checklist': checklist,
-        'object': checklist, # Para compatibilidade com o form_generico
+        'object': checklist,
         'ferramentas': FerramentaDigital.objects.all(),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': 'Editar Checklist',
@@ -652,6 +557,201 @@ def editar_checklist(request, pk):
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
+def processar_estrutura_checklist(request, checklist):
+    """Processa e salva toda a estrutura de tópicos, perguntas e opções do checklist."""
+    
+    # Rastrear IDs processados para identificar o que deve ser deletado
+    topicos_ids_processados = set()
+    perguntas_ids_processadas = set()
+    opcoes_resposta_ids_processadas = set()
+    opcoes_porcentagem_ids_processadas = set()
+    
+    # Coletar todos os tópicos do POST
+    topicos_data = {}
+    for key in request.POST:
+        if key.startswith('topico-descricao['):
+            topico_id = key.split('[')[1].split(']')[0]
+            topicos_data[topico_id] = {
+                'descricao': request.POST.get(key),
+                'ordem': request.POST.get(f'topico-ordem[{topico_id}]', 0)
+            }
+    
+    print(f"Processando {len(topicos_data)} tópicos")
+    
+    # Processar cada tópico
+    for topico_id_str, topico_info in topicos_data.items():
+        # Criar ou atualizar tópico
+        if topico_id_str.startswith('new-'):
+            topico = Topico.objects.create(
+                checklist=checklist,
+                descricao=topico_info['descricao'],
+                ordem=int(topico_info['ordem']) if topico_info['ordem'] else 0
+            )
+            print(f"Novo tópico criado: {topico.id}")
+        else:
+            try:
+                topico = Topico.objects.get(pk=int(topico_id_str), checklist=checklist)
+                topico.descricao = topico_info['descricao']
+                topico.ordem = int(topico_info['ordem']) if topico_info['ordem'] else 0
+                topico.save()
+                print(f"Tópico atualizado: {topico.id}")
+            except Topico.DoesNotExist:
+                print(f"Tópico {topico_id_str} não encontrado, pulando...")
+                continue
+        
+        topicos_ids_processados.add(topico.id)
+        
+        # Processar perguntas do tópico
+        perguntas_data = {}
+        for key in request.POST:
+            if key.startswith(f'pergunta-descricao[{topico_id_str}-'):
+                pergunta_id_full = key.split('[')[1].split(']')[0]
+                pergunta_id = pergunta_id_full.replace(f'{topico_id_str}-', '')
+                perguntas_data[pergunta_id] = {
+                    'descricao': request.POST.get(key),
+                    'ordem': request.POST.get(f'pergunta-ordem[{pergunta_id_full}]', 0),
+                    'obrigatoria': request.POST.get(f'pergunta-obrigatorio[{pergunta_id_full}]') == 'on',
+                    'resposta_livre': request.POST.get(f'pergunta-resposta_livre[{pergunta_id_full}]') == 'on',
+                    'foto': request.POST.get(f'pergunta-foto[{pergunta_id_full}]') == 'on',
+                    'criar_opcao': request.POST.get(f'pergunta-criar_opcao[{pergunta_id_full}]') == 'on',
+                    'porcentagem': request.POST.get(f'pergunta-porcentagem[{pergunta_id_full}]') == 'on',
+                    'id_full': pergunta_id_full
+                }
+        
+        print(f"  Processando {len(perguntas_data)} perguntas do tópico {topico.id}")
+        
+        for pergunta_id_str, pergunta_info in perguntas_data.items():
+            # Criar ou atualizar pergunta
+            if pergunta_id_str.startswith('new-'):
+                pergunta = Pergunta.objects.create(
+                    topico=topico,
+                    descricao=pergunta_info['descricao'],
+                    ordem=int(pergunta_info['ordem']) if pergunta_info['ordem'] else 0,
+                    obrigatoria=pergunta_info['obrigatoria'],
+                    resposta_livre=pergunta_info['resposta_livre'],
+                    foto=pergunta_info['foto'],
+                    criar_opcao=pergunta_info['criar_opcao'],
+                    porcentagem=pergunta_info['porcentagem']
+                )
+                print(f"    Nova pergunta criada: {pergunta.id}")
+            else:
+                try:
+                    pergunta = Pergunta.objects.get(pk=int(pergunta_id_str), topico=topico)
+                    pergunta.descricao = pergunta_info['descricao']
+                    pergunta.ordem = int(pergunta_info['ordem']) if pergunta_info['ordem'] else 0
+                    pergunta.obrigatoria = pergunta_info['obrigatoria']
+                    pergunta.resposta_livre = pergunta_info['resposta_livre']
+                    pergunta.foto = pergunta_info['foto']
+                    pergunta.criar_opcao = pergunta_info['criar_opcao']
+                    pergunta.porcentagem = pergunta_info['porcentagem']
+                    pergunta.save()
+                    print(f"    Pergunta atualizada: {pergunta.id}")
+                except Pergunta.DoesNotExist:
+                    print(f"    Pergunta {pergunta_id_str} não encontrada, pulando...")
+                    continue
+            
+            perguntas_ids_processadas.add(pergunta.id)
+            
+            # Processar opções de resposta
+            if pergunta_info['criar_opcao']:
+                opcoes_resposta_data = {}
+                for key in request.POST:
+                    if key.startswith(f'opcao-resposta-descricao[{pergunta_info["id_full"]}-'):
+                        opcao_id_full = key.split('[')[1].split(']')[0]
+                        opcao_id = opcao_id_full.replace(f'{pergunta_info["id_full"]}-', '')
+                        opcoes_resposta_data[opcao_id] = {
+                            'descricao': request.POST.get(key),
+                            'status': request.POST.get(f'opcao-resposta-status[{opcao_id_full}]', 'CONFORME')
+                        }
+                
+                print(f"      Processando {len(opcoes_resposta_data)} opções de resposta")
+                
+                for opcao_id_str, opcao_info in opcoes_resposta_data.items():
+                    if opcao_id_str.startswith('new-'):
+                        opcao = OpcaoResposta.objects.create(
+                            pergunta=pergunta,
+                            descricao=opcao_info['descricao'],
+                            status=opcao_info['status']
+                        )
+                        print(f"        Nova opção de resposta criada: {opcao.id}")
+                    else:
+                        try:
+                            opcao = OpcaoResposta.objects.get(pk=int(opcao_id_str), pergunta=pergunta)
+                            opcao.descricao = opcao_info['descricao']
+                            opcao.status = opcao_info['status']
+                            opcao.save()
+                            print(f"        Opção de resposta atualizada: {opcao.id}")
+                        except OpcaoResposta.DoesNotExist:
+                            print(f"        Opção de resposta {opcao_id_str} não encontrada")
+                            continue
+                    
+                    opcoes_resposta_ids_processadas.add(opcao.id)
+            
+            # Processar opções de porcentagem
+            if pergunta_info['porcentagem']:
+                opcoes_porcentagem_data = {}
+                for key in request.POST:
+                    if key.startswith(f'opcao-porcentagem-descricao[{pergunta_info["id_full"]}-'):
+                        opcao_id_full = key.split('[')[1].split(']')[0]
+                        opcao_id = opcao_id_full.replace(f'{pergunta_info["id_full"]}-', '')
+                        opcoes_porcentagem_data[opcao_id] = {
+                            'descricao': request.POST.get(key),
+                            'peso': request.POST.get(f'opcao-porcentagem-peso[{opcao_id_full}]', 0),
+                            'cor': request.POST.get(f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
+                        }
+                
+                print(f"      Processando {len(opcoes_porcentagem_data)} opções de porcentagem")
+                
+                for opcao_id_str, opcao_info in opcoes_porcentagem_data.items():
+                    if opcao_id_str.startswith('new-'):
+                        opcao = OpcaoPorcentagem.objects.create(
+                            pergunta=pergunta,
+                            descricao=opcao_info['descricao'],
+                            peso=int(opcao_info['peso']) if opcao_info['peso'] else 0,
+                            cor=opcao_info['cor']
+                        )
+                        print(f"        Nova opção de porcentagem criada: {opcao.id}")
+                    else:
+                        try:
+                            opcao = OpcaoPorcentagem.objects.get(pk=int(opcao_id_str), pergunta=pergunta)
+                            opcao.descricao = opcao_info['descricao']
+                            opcao.peso = int(opcao_info['peso']) if opcao_info['peso'] else 0
+                            opcao.cor = opcao_info['cor']
+                            opcao.save()
+                            print(f"        Opção de porcentagem atualizada: {opcao.id}")
+                        except OpcaoPorcentagem.DoesNotExist:
+                            print(f"        Opção de porcentagem {opcao_id_str} não encontrada")
+                            continue
+                    
+                    opcoes_porcentagem_ids_processadas.add(opcao.id)
+    
+    # Deletar itens que foram removidos do formulário
+    print("\nRemovendo itens não processados...")
+    
+    # Deletar opções não processadas
+    opcoes_resposta_deletadas = OpcaoResposta.objects.filter(
+        pergunta__topico__checklist=checklist
+    ).exclude(id__in=opcoes_resposta_ids_processadas).delete()
+    print(f"Opções de resposta deletadas: {opcoes_resposta_deletadas}")
+    
+    opcoes_porcentagem_deletadas = OpcaoPorcentagem.objects.filter(
+        pergunta__topico__checklist=checklist
+    ).exclude(id__in=opcoes_porcentagem_ids_processadas).delete()
+    print(f"Opções de porcentagem deletadas: {opcoes_porcentagem_deletadas}")
+    
+    # Deletar perguntas não processadas
+    perguntas_deletadas = Pergunta.objects.filter(
+        topico__checklist=checklist
+    ).exclude(id__in=perguntas_ids_processadas).delete()
+    print(f"Perguntas deletadas: {perguntas_deletadas}")
+    
+    # Deletar tópicos não processados
+    topicos_deletados = Topico.objects.filter(
+        checklist=checklist
+    ).exclude(id__in=topicos_ids_processados).delete()
+    print(f"Tópicos deletados: {topicos_deletados}")
+    
+    print(f"\nProcessamento concluído para checklist {checklist.id}")
 
 @login_required
 def deletar_checklist(request, pk):

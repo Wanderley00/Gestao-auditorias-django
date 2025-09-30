@@ -2,269 +2,981 @@
 
 {% block content %}
 <style>
-    /* Estilos CSS (sem alterações, mantidos para consistência) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
     :root {
-        --primary-color: #3b82f6;
-        --primary-light: #dbeafe;
-        --primary-dark: #1e40af;
-        --success-color: #10b981;
-        --danger-color: #ef4444;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-800: #1f2937;
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        --radius-lg: 0.75rem;
-        --radius-xl: 1rem;
-        --transition-all: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --primary-light: #3b82f6;
+        --secondary: #f8fafc;
+        --accent: #059669;
+        --error: #dc2626;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        --border: rgba(255, 255, 255, 0.2);
+        --border-focus: #93c5fd;
+        --bg-primary: rgba(255, 255, 255, 0.95);
+        --bg-secondary: #f1f5f9;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
     }
-    .checklist-manager {
-        background: var(--gray-50);
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: 100vh;
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
         border-radius: var(--radius-xl);
-        padding: 2rem;
-        margin-top: 2rem;
-        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 20px;
+        overflow: hidden;
     }
+
+    .content-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .content-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    .content-header .header-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .content-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.03em;
+        color: white;
+    }
+
+    .content-subtitle {
+        font-size: 1rem;
+        color: white;
+        opacity: 0.9;
+        font-weight: 400;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-danger:hover {
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    .card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-row.single {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group {
+        position: relative;
+    }
+
+    .form-group.required .form-label::after {
+        content: '*';
+        color: var(--error);
+        margin-left: 4px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        letter-spacing: -0.01em;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        color: var(--text-primary);
+        font-size: 15px;
+        font-weight: 500;
+        width: 100%;
+        outline: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 20px rgba(37, 99, 235, 0.1);
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .form-control.error {
+        border-color: var(--error);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #ccc;
+        border-radius: 34px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .toggle-slider {
+        background: var(--primary);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    /* Tabs styling */
+    .tabs-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: var(--radius-xl);
+        padding: 0;
+        margin-top: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .tabs-header {
+        display: flex;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 1.5rem 2rem;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: none;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .tab-btn:hover {
+        background: rgba(37, 99, 235, 0.05);
+    }
+
+    .tab-btn.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+    }
+
+    .tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: white;
+    }
+
+    .tab-content {
+        display: none;
+        padding: 2rem;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .checklist-manager {
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: var(--radius-xl);
+        padding: 2.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .checklist-manager::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.03) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
     .manager-header {
         margin-bottom: 2.5rem;
         padding-bottom: 1.5rem;
-        border-bottom: 2px solid var(--gray-200);
+        border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+        position: relative;
+        z-index: 2;
     }
+
+    .manager-header h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+
     .checklist-body {
         display: flex;
         flex-direction: column;
         gap: 2rem;
         align-items: center;
-        max-width: 1000px;
+        max-width: 1200px;
         margin: 0 auto;
+        position: relative;
+        z-index: 2;
     }
+
     .topic-wrapper {
         width: 100%;
-        background: white;
+        background: rgba(255, 255, 255, 0.95);
         border-radius: var(--radius-xl);
         box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        overflow: hidden;
     }
+
+    .topic-wrapper:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
     .topic-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         color: white;
         padding: 1.5rem 2rem;
+        position: relative;
+        overflow: hidden;
     }
+
+    .topic-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    .topic-header-controls {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .topic-header .form-control {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        flex: 1;
+    }
+
+    .topic-header .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .topic-header .form-control:focus {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
     .questions-container {
         padding: 2rem;
-        background: var(--gray-50);
+        background: rgba(248, 250, 252, 0.8);
     }
+
     .question-card {
-        background: white;
-        border: 2px solid var(--gray-200);
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: var(--radius-lg);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
     }
+
+    .question-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    }
+
+    .question-card:hover {
+        transform: translateX(2px);
+        box-shadow: var(--shadow-md);
+        border-color: rgba(37, 99, 235, 0.2);
+    }
+
+    .question-card textarea {
+        resize: vertical;
+        min-height: 80px;
+        margin-bottom: 1rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: rgba(248, 250, 252, 0.6);
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+    }
+
+    .checkbox-item label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        margin: 0;
+    }
+
     .question-footer {
         margin-top: 1.5rem;
         padding-top: 1.5rem;
-        border-top: 2px dashed var(--gray-200);
+        border-top: 2px dashed rgba(37, 99, 235, 0.2);
     }
+
+    .options-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: rgba(248, 250, 252, 0.7);
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .options-section h5 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .options-section h5::before {
+        content: '⚙️';
+        font-size: 16px;
+    }
+
     .option-item {
         display: grid;
-        grid-template-columns: 2fr 1fr 2fr auto;
+        grid-template-columns: 2fr 1fr auto;
         gap: 1rem;
         align-items: center;
         padding: 1rem;
-        background: var(--gray-50);
-        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: var(--radius-md);
+        margin-bottom: 0.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .option-item:hover {
+        background: rgba(255, 255, 255, 0.98);
+        transform: translateX(2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    @media (max-width: 768px) {
+        .form-container {
+            margin: 10px;
+        }
+
+        .content-header {
+            padding: 1.5rem;
+        }
+
+        .content-header .header-content {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .content-title {
+            font-size: 1.5rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .checklist-manager {
+            padding: 1.5rem;
+        }
+
+        .topic-header {
+            padding: 1rem;
+        }
+
+        .topic-header-controls {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .questions-container {
+            padding: 1rem;
+        }
+
+        .question-card {
+            padding: 1rem;
+        }
+
+        .option-item {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .checkbox-group {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+
+    .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .btn.loading::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+
+    .field-error {
+        color: var(--error);
+        font-size: 0.85rem;
+        margin-top: 8px;
+        font-weight: 500;
+        padding-left: 5px;
+    }
+
+    .form-control,
+    .btn,
+    .card,
+    .topic-wrapper,
+    .question-card,
+    .checkbox-item,
+    .option-item {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 </style>
 
-<form method="post" enctype="multipart/form-data" id="mainForm" novalidate>
-    {% csrf_token %}
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" id="mainForm" novalidate>
+        {% csrf_token %}
 
-    <div class="content-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h2 class="content-title">{{ title }}</h2>
-                <p class="content-subtitle">Preencha os campos abaixo para configurar o checklist e sua estrutura.</p>
+        <div class="content-header">
+            <div class="header-content">
+                <div>
+                    <h2 class="content-title">{{ title }}</h2>
+                    <p class="content-subtitle">Configure seu checklist de forma completa e organizada</p>
+                </div>
+                <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
             </div>
-            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
         </div>
-    </div>
 
-    <div class="card" style="margin-bottom: 32px;">
-        <div class="card-body" style="padding: 24px;">
-            <div class="form-row single">
-                <div class="form-group required">
-                    <label for="nome" class="form-label">Nome do Checklist</label>
-                    <input type="text" id="nome" name="nome" class="form-control" value="{{ checklist.nome|default:'' }}" required maxlength="255">
+        <!-- ESTRUTURA DE ABAS -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button type="button" class="tab-btn active" onclick="switchTab(event, 'checklist-info')">
+                    <i class="fas fa-info-circle"></i> Informações do Checklist
+                </button>
+                <button type="button" class="tab-btn" onclick="switchTab(event, 'checklist-structure')">
+                    <i class="fas fa-sitemap"></i> Estrutura do Checklist
+                </button>
+            </div>
+            
+            <!-- ABA 1: Informações do Checklist -->
+            <div class="tab-content active" id="checklist-info">
+                <div class="card">
+                    <div class="card-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 15px;">
+                            Preencha os campos abaixo para configurar as informações básicas do checklist.
+                        </p>
+
+                        <div class="form-row single">
+                            <div class="form-group required">
+                                <label for="nome" class="form-label">Nome do Checklist</label>
+                                <input type="text" id="nome" name="nome" class="form-control" value="{{ checklist.nome|default:'' }}" required maxlength="255" placeholder="Digite o nome do checklist">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ferramenta" class="form-label">Ferramenta Digital</label>
+                                <select id="ferramenta" name="ferramenta" class="form-control form-select">
+                                    <option value="">Selecione uma ferramenta...</option>
+                                    {% for f in ferramentas %}
+                                    <option value="{{ f.pk }}" {% if checklist.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status do Checklist</label>
+                                <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="ativo" {% if checklist.ativo|default:True %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span style="color: var(--text-secondary); font-size: 14px; font-weight: 500;">Checklist ativo no sistema</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <!-- ABA 2: Estrutura do Checklist -->
+            <div class="tab-content" id="checklist-structure">
+                <div class="checklist-manager">
+                    <div class="manager-header">
+                        <h4>🔧 Estrutura do Checklist</h4>
+                        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 14px;">Configure os tópicos e perguntas que compõem seu checklist</p>
+                    </div>
+                    
+                    <div class="checklist-body" id="topics-container">
+                        {% for topico in checklist.topicos.all %}
+                        <div class="topic-wrapper" data-topic-id="{{ topico.id }}">
+                            <div class="topic-header">
+                                <div class="topic-header-controls">
+                                    <input type="text" name="topico-descricao[{{ topico.id }}]" class="form-control" value="{{ topico.descricao }}" placeholder="Descrição do Tópico">
+                                    <button type="button" class="btn btn-danger js-remove-topic">
+                                        <i class="fas fa-trash"></i> Excluir Tópico
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="questions-container">
+                                {% for pergunta in topico.perguntas.all %}
+                                <div class="question-card" data-question-id="{{ pergunta.id }}">
+                                    <textarea name="pergunta-descricao[{{ topico.id }}-{{ pergunta.id }}]" class="form-control" rows="3" placeholder="Digite a descrição da pergunta">{{ pergunta.descricao }}</textarea>
+                                    
+                                    <div class="checkbox-group">
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" class="js-response-type" name="pergunta-resposta_livre[{{ topico.id }}-{{ pergunta.id }}]" id="resposta_livre_{{ topico.id }}_{{ pergunta.id }}" {% if pergunta.resposta_livre %}checked{% endif %}>
+                                            <label for="resposta_livre_{{ topico.id }}_{{ pergunta.id }}">📝 Resposta Livre</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" class="js-response-type" name="pergunta-foto[{{ topico.id }}-{{ pergunta.id }}]" id="foto_{{ topico.id }}_{{ pergunta.id }}" {% if pergunta.foto %}checked{% endif %}>
+                                            <label for="foto_{{ topico.id }}_{{ pergunta.id }}">📷 Foto</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" class="js-response-type" data-controls="options-resposta-section" name="pergunta-criar_opcao[{{ topico.id }}-{{ pergunta.id }}]" id="criar_opcao_{{ topico.id }}_{{ pergunta.id }}" {% if pergunta.criar_opcao %}checked{% endif %}>
+                                            <label for="criar_opcao_{{ topico.id }}_{{ pergunta.id }}">✅ Criar uma Opção</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" class="js-response-type" data-controls="options-porcentagem-section" name="pergunta-porcentagem[{{ topico.id }}-{{ pergunta.id }}]" id="porcentagem_{{ topico.id }}_{{ pergunta.id }}" {% if pergunta.porcentagem %}checked{% endif %}>
+                                            <label for="porcentagem_{{ topico.id }}_{{ pergunta.id }}">📊 Porcentagem</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" name="pergunta-obrigatorio[{{ topico.id }}-{{ pergunta.id }}]" id="obrigatorio_{{ topico.id }}_{{ pergunta.id }}" {% if pergunta.obrigatoria %}checked{% endif %}>
+                                            <label for="obrigatorio_{{ topico.id }}_{{ pergunta.id }}">⚠️ Obrigatória</label>
+                                        </div>
+                                    </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="ferramenta" class="form-label">Ferramenta Digital</label>
-                    <select id="ferramenta" name="ferramenta" class="form-control form-select">
-                        <option value="">Selecione...</option>
-                        {% for f in ferramentas %}
-                        <option value="{{ f.pk }}" {% if checklist.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
+                                    <div class="question-footer">
+                                        <div class="options-section options-resposta-section" style="display: {% if pergunta.criar_opcao %}block{% else %}none{% endif %};">
+                                            <h5>Opções de Resposta</h5>
+                                            <div class="options-container">
+                                                {% for opcao in pergunta.opcoes_resposta.all %}
+                                                <div class="option-item">
+                                                    <input type="text" name="opcao-resposta-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.descricao }}" placeholder="Descrição da opção">
+                                                    <select name="opcao-resposta-status[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control">
+                                                        {% for value, text in status_opcoes %}
+                                                        <option value="{{ value }}" {% if opcao.status == value %}selected{% endif %}>{{ text }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <button type="button" class="btn btn-danger js-remove-option">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            <button type="button" class="btn btn-secondary js-add-option-resposta">
+                                                <i class="fas fa-plus"></i> Adicionar Opção
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="options-section options-porcentagem-section" style="display: {% if pergunta.porcentagem %}block{% else %}none{% endif %};">
+                                            <h5>Opções de Porcentagem</h5>
+                                            <div class="options-container">
+                                                {% for opcao in pergunta.opcoes_porcentagem.all %}
+                                                <div class="option-item">
+                                                    <input type="text" name="opcao-porcentagem-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.descricao }}" placeholder="Descrição da opção">
+                                                    <input type="number" name="opcao-porcentagem-peso[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.peso }}" min="0" max="100" placeholder="Peso %">
+                                                    <input type="color" name="opcao-porcentagem-cor[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" class="form-control" value="{{ opcao.cor }}" style="width: 60px; height: 40px; padding: 4px;">
+                                                    <button type="button" class="btn btn-danger js-remove-option">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            <button type="button" class="btn btn-secondary js-add-option-porcentagem">
+                                                <i class="fas fa-plus"></i> Adicionar Opção
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.3);">
+                                        <button type="button" class="btn btn-danger js-remove-question">
+                                            <i class="fas fa-trash"></i> Excluir Pergunta
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="btn btn-primary js-add-question">
+                                    <i class="fas fa-plus"></i> Adicionar Pergunta
+                                </button>
+                            </div>
+                        </div>
                         {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-row single">
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="ativo" {% if checklist.ativo|default:True %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span style="color: var(--text-secondary); font-size: 14px;">Checklist ativo no sistema</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: center; margin-top: 2rem;">
+                        <button type="button" id="add-topic-btn" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Adicionar Novo Tópico
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="checklist-manager">
-        <div class="manager-header">
-            <h4>Estrutura do Checklist</h4>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin: 2rem; padding-top: 2rem; border-top: 2px solid rgba(37, 99, 235, 0.1);">
+            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="fas fa-save"></i> Salvar Alterações
+            </button>
         </div>
-        
-        <div class="checklist-body" id="topics-container">
-            {% for topico in checklist.topicos.all %}
-            <div class="topic-wrapper" data-topic-id="{{ topico.id }}">
-                <div class="topic-header">
-                    <div class="topic-header-controls">
-                        <input type="text" name="topico-descricao[{{ topico.id }}]" class="form-control" value="{{ topico.descricao }}" placeholder="Descrição do Tópico">
-                        <button type="button" class="btn btn-danger js-remove-topic">Excluir Tópico</button>
-                    </div>
-                </div>
-                <div class="questions-container">
-                    {% for pergunta in topico.perguntas.all %}
-                    <div class="question-card" data-question-id="{{ pergunta.id }}">
-                        <textarea name="pergunta-descricao[{{ topico.id }}-{{ pergunta.id }}]" class="form-control" rows="2">{{ pergunta.descricao }}</textarea>
-                        
-                        <div>
-                            <input type="checkbox" class="js-response-type" name="pergunta-resposta_livre[{{ topico.id }}-{{ pergunta.id }}]" {% if pergunta.resposta_livre %}checked{% endif %}> Resposta Livre
-                            <input type="checkbox" class="js-response-type" name="pergunta-foto[{{ topico.id }}-{{ pergunta.id }}]" {% if pergunta.foto %}checked{% endif %}> Foto
-                            <input type="checkbox" class="js-response-type" data-controls="options-resposta-section" name="pergunta-criar_opcao[{{ topico.id }}-{{ pergunta.id }}]" {% if pergunta.criar_opcao %}checked{% endif %}> Criar uma Opção
-                            <input type="checkbox" class="js-response-type" data-controls="options-porcentagem-section" name="pergunta-porcentagem[{{ topico.id }}-{{ pergunta.id }}]" {% if pergunta.porcentagem %}checked{% endif %}> Porcentagem
-                            <input type="checkbox" name="pergunta-obrigatorio[{{ topico.id }}-{{ pergunta.id }}]" {% if pergunta.obrigatoria %}checked{% endif %}> Obrigatória
-                        </div>
-
-                        <div class="question-footer">
-                            <div class="options-section options-resposta-section" style="display: {% if pergunta.criar_opcao %}block{% else %}none{% endif %};">
-                                <h5>Opções de Resposta</h5>
-                                <div class="options-container">
-                                    {% for opcao in pergunta.opcoes_resposta.all %}
-                                    <div class="option-item">
-                                        <input type="text" name="opcao-resposta-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" value="{{ opcao.descricao }}">
-                                        <select name="opcao-resposta-status[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]">
-                                            {% for value, text in status_opcoes %}
-                                            <option value="{{ value }}" {% if opcao.status == value %}selected{% endif %}>{{ text }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="button" class="btn btn-danger js-remove-option">Remover</button>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                <button type="button" class="btn btn-secondary js-add-option-resposta">Adicionar Opção</button>
-                            </div>
-                            <div class="options-section options-porcentagem-section" style="display: {% if pergunta.porcentagem %}block{% else %}none{% endif %};">
-                                <h5>Opções de Porcentagem</h5>
-                                <div class="options-container">
-                                    {% for opcao in pergunta.opcoes_porcentagem.all %}
-                                    <div class="option-item">
-                                        <input type="text" name="opcao-porcentagem-descricao[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" value="{{ opcao.descricao }}">
-                                        <input type="number" name="opcao-porcentagem-peso[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" value="{{ opcao.peso }}" min="0" max="100">
-                                        <input type="color" name="opcao-porcentagem-cor[{{ topico.id }}-{{ pergunta.id }}-{{ opcao.id }}]" value="{{ opcao.cor }}">
-                                        <button type="button" class="btn btn-danger js-remove-option">Remover</button>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                <button type="button" class="btn btn-secondary js-add-option-porcentagem">Adicionar Opção</button>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-danger js-remove-question">Excluir Pergunta</button>
-                    </div>
-                    {% endfor %}
-                    <button type="button" class="btn btn-primary js-add-question">Adicionar Pergunta</button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <button type="button" id="add-topic-btn" class="btn btn-secondary">Adicionar Novo Tópico</button>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; margin-top: 32px;">
-        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-    </div>
-</form>
+    </form>
+</div>
 
 {{ status_opcoes|json_script:"status-opcoes-data" }}
 
 <template id="topic-template">
     <div class="topic-wrapper" data-topic-id="new-id">
         <div class="topic-header">
-            <input type="text" name="topico-descricao[new-id]" class="form-control" placeholder="Descrição do Novo Tópico">
-            <button type="button" class="btn btn-danger js-remove-topic">Excluir Tópico</button>
+            <div class="topic-header-controls">
+                <input type="text" name="topico-descricao[new-id]" class="form-control" placeholder="Descrição do Novo Tópico">
+                <button type="button" class="btn btn-danger js-remove-topic">
+                    <i class="fas fa-trash"></i> Excluir Tópico
+                </button>
+            </div>
         </div>
-        <div class="questions-container"></div>
-        <button type="button" class="btn btn-primary js-add-question">Adicionar Pergunta</button>
+        <div class="questions-container">
+            <button type="button" class="btn btn-primary js-add-question">
+                <i class="fas fa-plus"></i> Adicionar Pergunta
+            </button>
+        </div>
     </div>
 </template>
 
 <template id="question-template">
     <div class="question-card" data-question-id="new-question-id">
-        <textarea name="pergunta-descricao[topic-id-question-id]" class="form-control" rows="2" placeholder="Digite a descrição da pergunta"></textarea>
-        <div>
-            <input type="checkbox" class="js-response-type" name="pergunta-resposta_livre[topic-id-question-id]"> Resposta Livre
-            <input type="checkbox" class="js-response-type" name="pergunta-foto[topic-id-question-id]"> Foto
-            <input type="checkbox" class="js-response-type" data-controls="options-resposta-section" name="pergunta-criar_opcao[topic-id-question-id]" checked> Criar uma Opção
-            <input type="checkbox" class="js-response-type" data-controls="options-porcentagem-section" name="pergunta-porcentagem[topic-id-question-id]"> Porcentagem
-            <input type="checkbox" name="pergunta-obrigatorio[topic-id-question-id]"> Obrigatória
+        <textarea name="pergunta-descricao[topic-id-question-id]" class="form-control" rows="3" placeholder="Digite a descrição da pergunta"></textarea>
+        
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" class="js-response-type" name="pergunta-resposta_livre[topic-id-question-id]" id="resposta_livre_new">
+                <label for="resposta_livre_new">📝 Resposta Livre</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" class="js-response-type" name="pergunta-foto[topic-id-question-id]" id="foto_new">
+                <label for="foto_new">📷 Foto</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" class="js-response-type" data-controls="options-resposta-section" name="pergunta-criar_opcao[topic-id-question-id]" id="criar_opcao_new" checked>
+                <label for="criar_opcao_new">✅ Criar uma Opção</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" class="js-response-type" data-controls="options-porcentagem-section" name="pergunta-porcentagem[topic-id-question-id]" id="porcentagem_new">
+                <label for="porcentagem_new">📊 Porcentagem</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" name="pergunta-obrigatorio[topic-id-question-id]" id="obrigatorio_new">
+                <label for="obrigatorio_new">⚠️ Obrigatória</label>
+            </div>
         </div>
+        
         <div class="question-footer">
             <div class="options-section options-resposta-section">
                 <h5>Opções de Resposta</h5>
                 <div class="options-container"></div>
-                <button type="button" class="btn btn-secondary js-add-option-resposta">Adicionar Opção</button>
+                <button type="button" class="btn btn-secondary js-add-option-resposta">
+                    <i class="fas fa-plus"></i> Adicionar Opção
+                </button>
             </div>
             <div class="options-section options-porcentagem-section" style="display: none;">
                 <h5>Opções de Porcentagem</h5>
                 <div class="options-container"></div>
-                <button type="button" class="btn btn-secondary js-add-option-porcentagem">Adicionar Opção</button>
+                <button type="button" class="btn btn-secondary js-add-option-porcentagem">
+                    <i class="fas fa-plus"></i> Adicionar Opção
+                </button>
             </div>
         </div>
-        <button type="button" class="btn btn-danger js-remove-question">Excluir Pergunta</button>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.3);">
+            <button type="button" class="btn btn-danger js-remove-question">
+                <i class="fas fa-trash"></i> Excluir Pergunta
+            </button>
+        </div>
     </div>
 </template>
 
 <template id="option-resposta-template">
     <div class="option-item">
-        <input type="text" name="opcao-resposta-descricao[question-id-option-id]" placeholder="Descrição da opção">
-        <select name="opcao-resposta-status[question-id-option-id]"></select>
-        <button type="button" class="btn btn-danger js-remove-option">Remover</button>
+        <input type="text" name="opcao-resposta-descricao[question-id-option-id]" class="form-control" placeholder="Descrição da opção">
+        <select name="opcao-resposta-status[question-id-option-id]" class="form-control"></select>
+        <button type="button" class="btn btn-danger js-remove-option">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </template>
 
 <template id="option-porcentagem-template">
     <div class="option-item">
-        <input type="text" name="opcao-porcentagem-descricao[question-id-option-id]" placeholder="Descrição da opção">
-        <input type="number" name="opcao-porcentagem-peso[question-id-option-id]" min="0" max="100" placeholder="Peso %">
-        <input type="color" name="opcao-porcentagem-cor[question-id-option-id]">
-        <button type="button" class="btn btn-danger js-remove-option">Remover</button>
+        <input type="text" name="opcao-porcentagem-descricao[question-id-option-id]" class="form-control" placeholder="Descrição da opção">
+        <input type="number" name="opcao-porcentagem-peso[question-id-option-id]" class="form-control" min="0" max="100" placeholder="Peso %">
+        <input type="color" name="opcao-porcentagem-cor[question-id-option-id]" class="form-control" value="#3b82f6" style="width: 60px; height: 40px; padding: 4px;">
+        <button type="button" class="btn btn-danger js-remove-option">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </template>
 
 <script>
+// Função para trocar de aba
+function switchTab(event, tabId) {
+    event.preventDefault();
+    
+    // Remover active de todos os botões e conteúdos
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Ativar a aba selecionada
+    event.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Script iniciado');
+    
     const topicsContainer = document.getElementById('topics-container');
-    const statusOpcoes = JSON.parse(document.getElementById('status-opcoes-data').textContent);
+    const statusOpcoesElement = document.getElementById('status-opcoes-data');
+    let statusOpcoes = [];
+    
+    if (statusOpcoesElement) {
+        try {
+            statusOpcoes = JSON.parse(statusOpcoesElement.textContent);
+            console.log('Status opções carregadas:', statusOpcoes);
+        } catch (e) {
+            console.error('Erro ao parsear status opções:', e);
+            statusOpcoes = [
+                ['CONFORME', 'Conforme'],
+                ['NAO_CONFORME', 'Não Conforme'],
+                ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'],
+                ['NA', 'N/A']
+            ];
+        }
+    } else {
+        statusOpcoes = [
+            ['CONFORME', 'Conforme'],
+            ['NAO_CONFORME', 'Não Conforme'],
+            ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'],
+            ['NA', 'N/A']
+        ];
+    }
 
     let newTopicCounter = 0;
     let newQuestionCounter = 0;
@@ -285,115 +997,218 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Event Delegation for all dynamic actions
+    function throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        }
+    }
+
     document.body.addEventListener('click', function(e) {
         const target = e.target;
-
-        // ==========================================================
-        // CORREÇÃO: Usar .closest() para todos os botões de ADICIONAR
-        // ==========================================================
-        const addTopicBtn = target.closest('#add-topic-btn');
-        const addQuestionBtn = target.closest('.js-add-question');
-        const addOptionRespostaBtn = target.closest('.js-add-option-resposta');
-        const addOptionPorcentagemBtn = target.closest('.js-add-option-porcentagem');
-
-        // REMOVE ACTIONS (Já estavam corretos)
-        const removeTopicBtn = target.closest('.js-remove-topic');
-        const removeQuestionBtn = target.closest('.js-remove-question');
-        const removeOptionBtn = target.closest('.js-remove-option');
-
-        // ADD TOPIC
-        if (addTopicBtn) {
-            const topicTemplate = document.getElementById('topic-template');
-            const newTopicElement = topicTemplate.content.cloneNode(true);
-            const topicWrapper = newTopicElement.querySelector('.topic-wrapper');
-            const newId = getNewId('topic');
-            topicWrapper.dataset.topicId = newId;
-            topicWrapper.innerHTML = topicWrapper.innerHTML.replace(/new-id/g, newId);
-            topicsContainer.appendChild(newTopicElement);
+        const closest = target.closest.bind(target);
+        
+        if (target.id === 'add-topic-btn' || closest('#add-topic-btn')) {
+            e.preventDefault();
+            addTopic();
+            return;
         }
 
-        // ADD QUESTION
-        if (addQuestionBtn) {
-            const questionTemplate = document.getElementById('question-template');
-            const newQuestionElement = questionTemplate.content.cloneNode(true);
-            const questionCard = newQuestionElement.querySelector('.question-card');
-            const topicWrapper = addQuestionBtn.closest('.topic-wrapper');
-            const questionsContainer = topicWrapper.querySelector('.questions-container');
-            const topicId = topicWrapper.dataset.topicId;
-            const newQuestionId = getNewId('question');
-
-            questionCard.dataset.questionId = newQuestionId;
-            questionCard.innerHTML = questionCard.innerHTML.replace(/topic-id-question-id/g, `${topicId}-${newQuestionId}`);
-            questionsContainer.appendChild(newQuestionElement);
+        if (target.classList.contains('js-remove-topic') || closest('.js-remove-topic')) {
+            e.preventDefault();
+            removeTopic(target);
+            return;
         }
 
-        // ADD OPTION RESPOSTA
-        if (addOptionRespostaBtn) {
-            const optionTemplate = document.getElementById('option-resposta-template');
-            const newOptionElement = optionTemplate.content.cloneNode(true);
-            const optionItem = newOptionElement.querySelector('.option-item');
-            const questionCard = addOptionRespostaBtn.closest('.question-card');
-            const optionsContainer = addOptionRespostaBtn.closest('.options-section').querySelector('.options-container');
-            const topicId = questionCard.closest('.topic-wrapper').dataset.topicId;
-            const questionId = questionCard.dataset.questionId;
-            const newOptionId = getNewId('option');
+        if (target.classList.contains('js-add-question') || closest('.js-add-question')) {
+            e.preventDefault();
+            addQuestion(target);
+            return;
+        }
 
-            optionItem.querySelectorAll('[name]').forEach(el => {
-                el.name = el.name.replace('question-id-option-id', `${topicId}-${questionId}-${newOptionId}`);
-            });
+        if (target.classList.contains('js-remove-question') || closest('.js-remove-question')) {
+            e.preventDefault();
+            removeQuestion(target);
+            return;
+        }
 
-            const selectElement = optionItem.querySelector('select');
-            if (selectElement) {
-                statusOpcoes.forEach(optionData => {
-                    const option = document.createElement('option');
-                    option.value = optionData[0];
-                    option.textContent = optionData[1];
-                    selectElement.appendChild(option);
+        if (target.classList.contains('js-add-option-resposta') || closest('.js-add-option-resposta')) {
+            e.preventDefault();
+            addOptionResposta(target);
+            return;
+        }
+
+        if (target.classList.contains('js-add-option-porcentagem') || closest('.js-add-option-porcentagem')) {
+            e.preventDefault();
+            addOptionPorcentagem(target);
+            return;
+        }
+
+        if (target.classList.contains('js-remove-option') || closest('.js-remove-option')) {
+            e.preventDefault();
+            removeOption(target);
+            return;
+        }
+    });
+
+    function addTopic() {
+        const topicTemplate = document.getElementById('topic-template');
+        const newTopicElement = topicTemplate.content.cloneNode(true);
+        const topicWrapper = newTopicElement.querySelector('.topic-wrapper');
+        const newId = getNewId('topic');
+        
+        topicWrapper.dataset.topicId = newId;
+        topicWrapper.innerHTML = topicWrapper.innerHTML.replace(/new-id/g, newId);
+        topicWrapper.classList.add('new-item');
+        
+        topicsContainer.appendChild(newTopicElement);
+        
+        setTimeout(() => {
+            const addedTopic = topicsContainer.querySelector(`[data-topic-id="${newId}"]`);
+            if (addedTopic) addedTopic.classList.remove('new-item');
+        }, 300);
+    }
+
+    function removeTopic(target) {
+        const topicWrapper = target.closest('.topic-wrapper');
+        if (topicWrapper && confirm('Tem certeza que deseja excluir este tópico?')) {
+            topicWrapper.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            topicWrapper.style.opacity = '0';
+            topicWrapper.style.transform = 'translateY(-10px)';
+            setTimeout(() => topicWrapper.remove(), 200);
+        }
+    }
+
+    function addQuestion(target) {
+        const questionsContainer = target.closest('.questions-container');
+        const topicWrapper = target.closest('.topic-wrapper');
+        const topicId = topicWrapper.dataset.topicId;
+        
+        const questionTemplate = document.getElementById('question-template');
+        const newQuestionElement = questionTemplate.content.cloneNode(true);
+        const questionCard = newQuestionElement.querySelector('.question-card');
+        const newQuestionId = getNewId('question');
+        
+        questionCard.dataset.questionId = newQuestionId;
+        questionCard.innerHTML = questionCard.innerHTML.replace(/topic-id-question-id/g, `${topicId}-${newQuestionId}`);
+        questionCard.innerHTML = questionCard.innerHTML.replace(/resposta_livre_new/g, `resposta_livre_${topicId}_${newQuestionId}`);
+        questionCard.innerHTML = questionCard.innerHTML.replace(/foto_new/g, `foto_${topicId}_${newQuestionId}`);
+        questionCard.innerHTML = questionCard.innerHTML.replace(/criar_opcao_new/g, `criar_opcao_${topicId}_${newQuestionId}`);
+        questionCard.innerHTML = questionCard.innerHTML.replace(/porcentagem_new/g, `porcentagem_${topicId}_${newQuestionId}`);
+        questionCard.innerHTML = questionCard.innerHTML.replace(/obrigatorio_new/g, `obrigatorio_${topicId}_${newQuestionId}`);
+        
+        questionCard.classList.add('new-item');
+        questionsContainer.insertBefore(newQuestionElement, target);
+        
+        setTimeout(() => {
+            const addedQuestion = questionsContainer.querySelector(`[data-question-id="${newQuestionId}"]`);
+            if (addedQuestion) addedQuestion.classList.remove('new-item');
+        }, 300);
+    }
+
+    function removeQuestion(target) {
+        const questionCard = target.closest('.question-card');
+        if (questionCard && confirm('Tem certeza que deseja excluir esta pergunta?')) {
+            questionCard.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            questionCard.style.opacity = '0';
+            questionCard.style.transform = 'translateX(-10px)';
+            setTimeout(() => questionCard.remove(), 200);
+        }
+    }
+
+    function addOptionResposta(target) {
+        const optionsContainer = target.closest('.options-section').querySelector('.options-container');
+        const questionCard = target.closest('.question-card');
+        const questionId = questionCard.dataset.questionId;
+        const topicWrapper = target.closest('.topic-wrapper');
+        const topicId = topicWrapper.dataset.topicId;
+        
+        const optionTemplate = document.getElementById('option-resposta-template');
+        const newOptionElement = optionTemplate.content.cloneNode(true);
+        const optionItem = newOptionElement.querySelector('.option-item');
+        const newOptionId = getNewId('option');
+        
+        optionItem.innerHTML = optionItem.innerHTML.replace(/question-id-option-id/g, `${topicId}-${questionId}-${newOptionId}`);
+        
+        const select = optionItem.querySelector('select');
+        const fragment = document.createDocumentFragment();
+        statusOpcoes.forEach(([value, text]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = text;
+            fragment.appendChild(option);
+        });
+        select.appendChild(fragment);
+        
+        optionsContainer.appendChild(newOptionElement);
+    }
+
+    function addOptionPorcentagem(target) {
+        const optionsContainer = target.closest('.options-section').querySelector('.options-container');
+        const questionCard = target.closest('.question-card');
+        const questionId = questionCard.dataset.questionId;
+        const topicWrapper = target.closest('.topic-wrapper');
+        const topicId = topicWrapper.dataset.topicId;
+        
+        const optionTemplate = document.getElementById('option-porcentagem-template');
+        const newOptionElement = optionTemplate.content.cloneNode(true);
+        const optionItem = newOptionElement.querySelector('.option-item');
+        const newOptionId = getNewId('option');
+        
+        optionItem.innerHTML = optionItem.innerHTML.replace(/question-id-option-id/g, `${topicId}-${questionId}-${newOptionId}`);
+        
+        optionsContainer.appendChild(newOptionElement);
+    }
+
+    function removeOption(target) {
+        const optionItem = target.closest('.option-item');
+        if (optionItem && confirm('Tem certeza que deseja remover esta opção?')) {
+            optionItem.style.transition = 'opacity 0.15s ease';
+            optionItem.style.opacity = '0';
+            setTimeout(() => optionItem.remove(), 150);
+        }
+    }
+
+    const handleCheckboxChange = throttle(function(e) {
+        const target = e.target;
+        
+        if (target.classList.contains('js-response-type') && target.dataset.controls) {
+            const questionCard = target.closest('.question-card');
+            const sectionClass = target.dataset.controls;
+            const section = questionCard.querySelector(`.${sectionClass}`);
+            
+            if (section) {
+                requestAnimationFrame(() => {
+                    section.style.display = target.checked ? 'block' : 'none';
                 });
             }
-            optionsContainer.appendChild(newOptionElement);
         }
+    }, 100);
 
-        // ADD OPTION PORCENTAGEM
-        if (addOptionPorcentagemBtn) {
-            const optionTemplate = document.getElementById('option-porcentagem-template');
-            const newOptionElement = optionTemplate.content.cloneNode(true);
-            const optionItem = newOptionElement.querySelector('.option-item');
-            const questionCard = addOptionPorcentagemBtn.closest('.question-card');
-            const optionsContainer = addOptionPorcentagemBtn.closest('.options-section').querySelector('.options-container');
-            const topicId = questionCard.closest('.topic-wrapper').dataset.topicId;
-            const questionId = questionCard.dataset.questionId;
-            const newOptionId = getNewId('option');
-            optionItem.querySelectorAll('[name]').forEach(el => {
-                el.name = el.name.replace('question-id-option-id', `${topicId}-${questionId}-${newOptionId}`);
-            });
-            optionsContainer.appendChild(newOptionElement);
-        }
+    document.body.addEventListener('change', handleCheckboxChange);
 
-        // REMOVE ACTIONS
-        if (removeTopicBtn) {
-            removeTopicBtn.closest('.topic-wrapper').remove();
-        }
-        if (removeQuestionBtn) {
-            removeQuestionBtn.closest('.question-card').remove();
-        }
-        if (removeOptionBtn) {
-            removeOptionBtn.closest('.option-item').remove();
-        }
-    });
+    const form = document.getElementById('mainForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (form && submitBtn) {
+        let submitTimeout;
+        form.addEventListener('submit', function(e) {
+            clearTimeout(submitTimeout);
+            submitTimeout = setTimeout(() => {
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+            }, 100);
+        });
+    }
 
-    // Event delegation for showing/hiding option sections
-    document.body.addEventListener('change', function(e) {
-        if (e.target && e.target.classList.contains('js-response-type') && e.target.dataset.controls) {
-            const sectionClass = e.target.dataset.controls;
-            const questionCard = e.target.closest('.question-card');
-            const section = questionCard.querySelector(`.${sectionClass}`);
-            if (section) {
-                section.style.display = e.target.checked ? 'block' : 'none';
-            }
-        }
-    });
+    console.log('Script carregado completamente');
 });
 </script>
+
 {% endblock %}

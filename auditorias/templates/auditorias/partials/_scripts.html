@@ -1,4 +1,21 @@
 <script>
+
+    // Função para confirmar exclusão
+    function confirmDelete(url, itemName) {
+        document.getElementById('confirmDeleteBtn').href = url;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Fechar modal clicando fora
+    document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         sidebar.classList.toggle('collapsed'); 
