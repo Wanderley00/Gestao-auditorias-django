@@ -10,11 +10,24 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from .serializers import RespostaSerializer
+
+# Altere ListAPIView para incluir RetrieveAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
+# Altere a importação dos serializers
+from .serializers import AuditoriaInstanciaListSerializer, AuditoriaInstanciaDetailSerializer
 
 from .models import (
     Pilar, CategoriaAuditoria, Norma, RequisitoNorma, FerramentaDigital,
     Checklist, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem,
-    FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia
+    FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia, Resposta
 )
 from organizacao.models import Empresa, Area, Setor, SubSetor
 from ativos.models import Ativo
@@ -49,16 +62,16 @@ def lista_pilares(request):
     """Lista todos os pilares com busca e paginação"""
     search = request.GET.get('search', '')
     pilares = Pilar.objects.all()
-    
+
     if search:
         pilares = pilares.filter(
             Q(nome__icontains=search) | Q(descricao__icontains=search)
         )
-    
+
     paginator = Paginator(pilares, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -72,6 +85,7 @@ def lista_pilares(request):
     }
     return render(request, 'auditorias/pilares/lista.html', context)
 
+
 @login_required
 def criar_pilar(request):
     """Cria um novo pilar"""
@@ -79,7 +93,7 @@ def criar_pilar(request):
         nome = request.POST.get('nome')
         descricao = request.POST.get('descricao', '')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if nome:
             try:
                 Pilar.objects.create(
@@ -90,33 +104,34 @@ def criar_pilar(request):
                 messages.success(request, 'Pilar criado com sucesso!')
                 return redirect('auditorias:lista_pilares')
             except Exception as e:
-                messages.error(request, f'Erro ao criar pilar: {str(e)}')
+                messages.error(request, f'Erro ao criar pilar: {repr(e)}')
         else:
             messages.error(request, 'Nome é obrigatório!')
-    
+
     context = {
         'title': 'Criar Pilar',
         'back_url': 'auditorias:lista_pilares'
     }
     return render(request, 'auditorias/pilares/form.html', context)
 
+
 @login_required
 def editar_pilar(request, pk):
     """Edita um pilar existente"""
     pilar = get_object_or_404(Pilar, pk=pk)
-    
+
     if request.method == 'POST':
         pilar.nome = request.POST.get('nome')
         pilar.descricao = request.POST.get('descricao', '')
         pilar.ativo = request.POST.get('ativo') == 'on'
-        
+
         try:
             pilar.save()
             messages.success(request, 'Pilar atualizado com sucesso!')
             return redirect('auditorias:lista_pilares')
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar pilar: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar pilar: {repr(e)}')
+
     context = {
         'pilar': pilar,
         'title': 'Editar Pilar',
@@ -124,19 +139,20 @@ def editar_pilar(request, pk):
     }
     return render(request, 'auditorias/pilares/form.html', context)
 
+
 @login_required
 def deletar_pilar(request, pk):
     """Deleta um pilar"""
     pilar = get_object_or_404(Pilar, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             pilar.delete()
             messages.success(request, 'Pilar deletado com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar pilar: {str(e)}')
+            messages.error(request, f'Erro ao deletar pilar: {repr(e)}')
         return redirect('auditorias:lista_pilares')
-    
+
     context = {
         'object': pilar,
         'title': 'Pilar'
@@ -153,16 +169,16 @@ def lista_categorias_auditoria(request):
     """Lista todas as categorias de auditoria"""
     search = request.GET.get('search', '')
     categorias = CategoriaAuditoria.objects.select_related('pilar').all()
-    
+
     if search:
         categorias = categorias.filter(
             Q(descricao__icontains=search) | Q(pilar__nome__icontains=search)
         )
-    
+
     paginator = Paginator(categorias, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -184,7 +200,7 @@ def criar_categoria_auditoria(request):
         pilar_id = request.POST.get('pilar')
         descricao = request.POST.get('descricao')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if pilar_id and descricao:
             try:
                 pilar = Pilar.objects.get(pk=pilar_id)
@@ -196,10 +212,10 @@ def criar_categoria_auditoria(request):
                 messages.success(request, 'Categoria criada com sucesso!')
                 return redirect('auditorias:lista_categorias_auditoria')
             except Exception as e:
-                messages.error(request, f'Erro ao criar categoria: {str(e)}')
+                messages.error(request, f'Erro ao criar categoria: {repr(e)}')
         else:
             messages.error(request, 'Pilar e descrição são obrigatórios!')
-    
+
     context = {
         'pilares': Pilar.objects.filter(ativo=True),
         'title': 'Criar Categoria de Auditoria',
@@ -207,26 +223,27 @@ def criar_categoria_auditoria(request):
     }
     return render(request, 'auditorias/categorias/form.html', context)
 
+
 @login_required
 def editar_categoria_auditoria(request, pk):
     """Edita uma categoria de auditoria existente"""
     categoria = get_object_or_404(CategoriaAuditoria, pk=pk)
-    
+
     if request.method == 'POST':
         pilar_id = request.POST.get('pilar')
         categoria.descricao = request.POST.get('descricao')
         categoria.ativo = request.POST.get('ativo') == 'on'
-        
+
         if pilar_id:
             categoria.pilar = Pilar.objects.get(pk=pilar_id)
-        
+
         try:
             categoria.save()
             messages.success(request, 'Categoria atualizada com sucesso!')
             return redirect('auditorias:lista_categorias_auditoria')
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar categoria: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar categoria: {repr(e)}')
+
     context = {
         'categoria': categoria,
         'pilares': Pilar.objects.filter(ativo=True),
@@ -235,19 +252,20 @@ def editar_categoria_auditoria(request, pk):
     }
     return render(request, 'auditorias/categorias/form.html', context)
 
+
 @login_required
 def deletar_categoria_auditoria(request, pk):
     """Deleta uma categoria de auditoria"""
     categoria = get_object_or_404(CategoriaAuditoria, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             categoria.delete()
             messages.success(request, 'Categoria deletada com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar categoria: {str(e)}')
+            messages.error(request, f'Erro ao deletar categoria: {repr(e)}')
         return redirect('auditorias:lista_categorias_auditoria')
-    
+
     context = {
         'object': categoria,
         'title': 'Categoria de Auditoria'
@@ -264,16 +282,16 @@ def lista_normas(request):
     """Lista todas as normas"""
     search = request.GET.get('search', '')
     normas = Norma.objects.all()
-    
+
     if search:
         normas = normas.filter(
             Q(descricao__icontains=search) | Q(revisao__icontains=search)
         )
-    
+
     paginator = Paginator(normas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -287,6 +305,7 @@ def lista_normas(request):
     }
     return render(request, 'auditorias/normas/lista.html', context)
 
+
 @login_required
 def criar_norma(request):
     """Cria uma nova norma"""
@@ -294,7 +313,7 @@ def criar_norma(request):
         descricao = request.POST.get('descricao')
         revisao = request.POST.get('revisao')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if descricao and revisao:
             try:
                 Norma.objects.create(
@@ -305,33 +324,34 @@ def criar_norma(request):
                 messages.success(request, 'Norma criada com sucesso!')
                 return redirect('auditorias:lista_normas')
             except Exception as e:
-                messages.error(request, f'Erro ao criar norma: {str(e)}')
+                messages.error(request, f'Erro ao criar norma: {repr(e)}')
         else:
             messages.error(request, 'Descrição e revisão são obrigatórios!')
-    
+
     context = {
         'title': 'Criar Norma',
         'back_url': 'auditorias:lista_normas'
     }
     return render(request, 'auditorias/normas/form.html', context)
 
+
 @login_required
 def editar_norma(request, pk):
     """Edita uma norma existente"""
     norma = get_object_or_404(Norma, pk=pk)
-    
+
     if request.method == 'POST':
         norma.descricao = request.POST.get('descricao')
         norma.revisao = request.POST.get('revisao')
         norma.ativo = request.POST.get('ativo') == 'on'
-        
+
         try:
             norma.save()
             messages.success(request, 'Norma atualizada com sucesso!')
             return redirect('auditorias:lista_normas')
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar norma: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar norma: {repr(e)}')
+
     context = {
         'norma': norma,
         'title': 'Editar Norma',
@@ -339,19 +359,20 @@ def editar_norma(request, pk):
     }
     return render(request, 'auditorias/normas/form.html', context)
 
+
 @login_required
 def deletar_norma(request, pk):
     """Deleta uma norma"""
     norma = get_object_or_404(Norma, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             norma.delete()
             messages.success(request, 'Norma deletada com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar norma: {str(e)}')
+            messages.error(request, f'Erro ao deletar norma: {repr(e)}')
         return redirect('auditorias:lista_normas')
-    
+
     context = {
         'object': norma,
         'title': 'Norma'
@@ -368,14 +389,14 @@ def lista_ferramentas_digitais(request):
     """Lista todas as ferramentas digitais"""
     search = request.GET.get('search', '')
     ferramentas = FerramentaDigital.objects.all()
-    
+
     if search:
         ferramentas = ferramentas.filter(nome__icontains=search)
-    
+
     paginator = Paginator(ferramentas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -389,43 +410,47 @@ def lista_ferramentas_digitais(request):
     }
     return render(request, 'auditorias/ferramentas_digitais/lista.html', context)
 
+
 @login_required
 def criar_ferramenta_digital(request):
     """Cria uma nova ferramenta digital"""
     if request.method == 'POST':
         nome = request.POST.get('nome')
-        
+
         if nome:
             try:
                 FerramentaDigital.objects.create(nome=nome)
-                messages.success(request, 'Ferramenta digital criada com sucesso!')
+                messages.success(
+                    request, 'Ferramenta digital criada com sucesso!')
                 return redirect('auditorias:lista_ferramentas_digitais')
             except Exception as e:
-                messages.error(request, f'Erro ao criar ferramenta: {str(e)}')
+                messages.error(request, f'Erro ao criar ferramenta: {repr(e)}')
         else:
             messages.error(request, 'Nome é obrigatório!')
-    
+
     context = {
         'title': 'Criar Ferramenta Digital',
         'back_url': 'auditorias:lista_ferramentas_digitais'
     }
     return render(request, 'auditorias/ferramentas_digitais/form.html', context)
 
+
 @login_required
 def editar_ferramenta_digital(request, pk):
     """Edita uma ferramenta digital existente"""
     ferramenta = get_object_or_404(FerramentaDigital, pk=pk)
-    
+
     if request.method == 'POST':
         ferramenta.nome = request.POST.get('nome')
-        
+
         try:
             ferramenta.save()
-            messages.success(request, 'Ferramenta digital atualizada com sucesso!')
+            messages.success(
+                request, 'Ferramenta digital atualizada com sucesso!')
             return redirect('auditorias:lista_ferramentas_digitais')
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar ferramenta: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar ferramenta: {repr(e)}')
+
     context = {
         'ferramenta': ferramenta,
         'title': 'Editar Ferramenta Digital',
@@ -438,15 +463,16 @@ def editar_ferramenta_digital(request, pk):
 def deletar_ferramenta_digital(request, pk):
     """Deleta uma ferramenta digital"""
     ferramenta = get_object_or_404(FerramentaDigital, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             ferramenta.delete()
-            messages.success(request, 'Ferramenta digital deletada com sucesso!')
+            messages.success(
+                request, 'Ferramenta digital deletada com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar ferramenta: {str(e)}')
+            messages.error(request, f'Erro ao deletar ferramenta: {repr(e)}')
         return redirect('auditorias:lista_ferramentas_digitais')
-    
+
     context = {
         'object': ferramenta,
         'title': 'Ferramenta Digital'
@@ -463,14 +489,14 @@ def lista_checklists(request):
     """Lista todos os checklists"""
     search = request.GET.get('search', '')
     checklists = Checklist.objects.select_related('ferramenta').all()
-    
+
     if search:
         checklists = checklists.filter(nome__icontains=search)
-    
+
     paginator = Paginator(checklists, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -479,6 +505,7 @@ def lista_checklists(request):
     }
     return render(request, 'auditorias/checklists/lista.html', context)
 
+
 @login_required
 def criar_checklist(request):
     """Cria um novo checklist com estrutura completa."""
@@ -486,7 +513,7 @@ def criar_checklist(request):
         nome = request.POST.get('nome')
         ferramenta_id = request.POST.get('ferramenta')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if nome:
             try:
                 # Criar o checklist básico
@@ -494,23 +521,23 @@ def criar_checklist(request):
                     nome=nome,
                     ativo=ativo
                 )
-                
+
                 if ferramenta_id:
                     checklist.ferramenta_id = ferramenta_id
                     checklist.save()
-                
+
                 # Processar tópicos e perguntas
                 processar_estrutura_checklist(request, checklist)
-                
+
                 messages.success(request, 'Checklist criado com sucesso!')
                 return redirect('auditorias:lista_checklists')
             except Exception as e:
-                messages.error(request, f'Erro ao criar checklist: {str(e)}')
+                messages.error(request, f'Erro ao criar checklist: {repr(e)}')
                 import traceback
                 print(traceback.format_exc())
         else:
             messages.error(request, 'Nome é obrigatório!')
-    
+
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
@@ -519,14 +546,15 @@ def criar_checklist(request):
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
+
 @login_required
 def editar_checklist(request, pk):
     """Edita um checklist existente, incluindo seus tópicos, perguntas e opções."""
     checklist = get_object_or_404(Checklist.objects.prefetch_related(
-        'topicos__perguntas__opcoes_resposta', 
+        'topicos__perguntas__opcoes_resposta',
         'topicos__perguntas__opcoes_porcentagem'
     ), pk=pk)
-    
+
     if request.method == 'POST':
         try:
             # 1. ATUALIZAR DADOS DO CHECKLIST
@@ -541,9 +569,9 @@ def editar_checklist(request, pk):
 
             messages.success(request, 'Checklist atualizado com sucesso!')
             return redirect('auditorias:lista_checklists')
-            
+
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar checklist: {str(e)}')
+            messages.error(request, f'Erro ao atualizar checklist: {repr(e)}')
             import traceback
             print(traceback.format_exc())
 
@@ -557,15 +585,16 @@ def editar_checklist(request, pk):
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
+
 def processar_estrutura_checklist(request, checklist):
     """Processa e salva toda a estrutura de tópicos, perguntas e opções do checklist."""
-    
+
     # Rastrear IDs processados para identificar o que deve ser deletado
     topicos_ids_processados = set()
     perguntas_ids_processadas = set()
     opcoes_resposta_ids_processadas = set()
     opcoes_porcentagem_ids_processadas = set()
-    
+
     # Coletar todos os tópicos do POST
     topicos_data = {}
     for key in request.POST:
@@ -575,9 +604,9 @@ def processar_estrutura_checklist(request, checklist):
                 'descricao': request.POST.get(key),
                 'ordem': request.POST.get(f'topico-ordem[{topico_id}]', 0)
             }
-    
+
     print(f"Processando {len(topicos_data)} tópicos")
-    
+
     # Processar cada tópico
     for topico_id_str, topico_info in topicos_data.items():
         # Criar ou atualizar tópico
@@ -590,17 +619,19 @@ def processar_estrutura_checklist(request, checklist):
             print(f"Novo tópico criado: {topico.id}")
         else:
             try:
-                topico = Topico.objects.get(pk=int(topico_id_str), checklist=checklist)
+                topico = Topico.objects.get(
+                    pk=int(topico_id_str), checklist=checklist)
                 topico.descricao = topico_info['descricao']
-                topico.ordem = int(topico_info['ordem']) if topico_info['ordem'] else 0
+                topico.ordem = int(
+                    topico_info['ordem']) if topico_info['ordem'] else 0
                 topico.save()
                 print(f"Tópico atualizado: {topico.id}")
             except Topico.DoesNotExist:
                 print(f"Tópico {topico_id_str} não encontrado, pulando...")
                 continue
-        
+
         topicos_ids_processados.add(topico.id)
-        
+
         # Processar perguntas do tópico
         perguntas_data = {}
         for key in request.POST:
@@ -617,16 +648,18 @@ def processar_estrutura_checklist(request, checklist):
                     'porcentagem': request.POST.get(f'pergunta-porcentagem[{pergunta_id_full}]') == 'on',
                     'id_full': pergunta_id_full
                 }
-        
-        print(f"  Processando {len(perguntas_data)} perguntas do tópico {topico.id}")
-        
+
+        print(
+            f"  Processando {len(perguntas_data)} perguntas do tópico {topico.id}")
+
         for pergunta_id_str, pergunta_info in perguntas_data.items():
             # Criar ou atualizar pergunta
             if pergunta_id_str.startswith('new-'):
                 pergunta = Pergunta.objects.create(
                     topico=topico,
                     descricao=pergunta_info['descricao'],
-                    ordem=int(pergunta_info['ordem']) if pergunta_info['ordem'] else 0,
+                    ordem=int(pergunta_info['ordem']
+                              ) if pergunta_info['ordem'] else 0,
                     obrigatoria=pergunta_info['obrigatoria'],
                     resposta_livre=pergunta_info['resposta_livre'],
                     foto=pergunta_info['foto'],
@@ -636,9 +669,11 @@ def processar_estrutura_checklist(request, checklist):
                 print(f"    Nova pergunta criada: {pergunta.id}")
             else:
                 try:
-                    pergunta = Pergunta.objects.get(pk=int(pergunta_id_str), topico=topico)
+                    pergunta = Pergunta.objects.get(
+                        pk=int(pergunta_id_str), topico=topico)
                     pergunta.descricao = pergunta_info['descricao']
-                    pergunta.ordem = int(pergunta_info['ordem']) if pergunta_info['ordem'] else 0
+                    pergunta.ordem = int(
+                        pergunta_info['ordem']) if pergunta_info['ordem'] else 0
                     pergunta.obrigatoria = pergunta_info['obrigatoria']
                     pergunta.resposta_livre = pergunta_info['resposta_livre']
                     pergunta.foto = pergunta_info['foto']
@@ -647,25 +682,28 @@ def processar_estrutura_checklist(request, checklist):
                     pergunta.save()
                     print(f"    Pergunta atualizada: {pergunta.id}")
                 except Pergunta.DoesNotExist:
-                    print(f"    Pergunta {pergunta_id_str} não encontrada, pulando...")
+                    print(
+                        f"    Pergunta {pergunta_id_str} não encontrada, pulando...")
                     continue
-            
+
             perguntas_ids_processadas.add(pergunta.id)
-            
+
             # Processar opções de resposta
             if pergunta_info['criar_opcao']:
                 opcoes_resposta_data = {}
                 for key in request.POST:
                     if key.startswith(f'opcao-resposta-descricao[{pergunta_info["id_full"]}-'):
                         opcao_id_full = key.split('[')[1].split(']')[0]
-                        opcao_id = opcao_id_full.replace(f'{pergunta_info["id_full"]}-', '')
+                        opcao_id = opcao_id_full.replace(
+                            f'{pergunta_info["id_full"]}-', '')
                         opcoes_resposta_data[opcao_id] = {
                             'descricao': request.POST.get(key),
                             'status': request.POST.get(f'opcao-resposta-status[{opcao_id_full}]', 'CONFORME')
                         }
-                
-                print(f"      Processando {len(opcoes_resposta_data)} opções de resposta")
-                
+
+                print(
+                    f"      Processando {len(opcoes_resposta_data)} opções de resposta")
+
                 for opcao_id_str, opcao_info in opcoes_resposta_data.items():
                     if opcao_id_str.startswith('new-'):
                         opcao = OpcaoResposta.objects.create(
@@ -673,99 +711,112 @@ def processar_estrutura_checklist(request, checklist):
                             descricao=opcao_info['descricao'],
                             status=opcao_info['status']
                         )
-                        print(f"        Nova opção de resposta criada: {opcao.id}")
+                        print(
+                            f"        Nova opção de resposta criada: {opcao.id}")
                     else:
                         try:
-                            opcao = OpcaoResposta.objects.get(pk=int(opcao_id_str), pergunta=pergunta)
+                            opcao = OpcaoResposta.objects.get(
+                                pk=int(opcao_id_str), pergunta=pergunta)
                             opcao.descricao = opcao_info['descricao']
                             opcao.status = opcao_info['status']
                             opcao.save()
-                            print(f"        Opção de resposta atualizada: {opcao.id}")
+                            print(
+                                f"        Opção de resposta atualizada: {opcao.id}")
                         except OpcaoResposta.DoesNotExist:
-                            print(f"        Opção de resposta {opcao_id_str} não encontrada")
+                            print(
+                                f"        Opção de resposta {opcao_id_str} não encontrada")
                             continue
-                    
+
                     opcoes_resposta_ids_processadas.add(opcao.id)
-            
+
             # Processar opções de porcentagem
             if pergunta_info['porcentagem']:
                 opcoes_porcentagem_data = {}
                 for key in request.POST:
                     if key.startswith(f'opcao-porcentagem-descricao[{pergunta_info["id_full"]}-'):
                         opcao_id_full = key.split('[')[1].split(']')[0]
-                        opcao_id = opcao_id_full.replace(f'{pergunta_info["id_full"]}-', '')
+                        opcao_id = opcao_id_full.replace(
+                            f'{pergunta_info["id_full"]}-', '')
                         opcoes_porcentagem_data[opcao_id] = {
                             'descricao': request.POST.get(key),
                             'peso': request.POST.get(f'opcao-porcentagem-peso[{opcao_id_full}]', 0),
                             'cor': request.POST.get(f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
                         }
-                
-                print(f"      Processando {len(opcoes_porcentagem_data)} opções de porcentagem")
-                
+
+                print(
+                    f"      Processando {len(opcoes_porcentagem_data)} opções de porcentagem")
+
                 for opcao_id_str, opcao_info in opcoes_porcentagem_data.items():
                     if opcao_id_str.startswith('new-'):
                         opcao = OpcaoPorcentagem.objects.create(
                             pergunta=pergunta,
                             descricao=opcao_info['descricao'],
-                            peso=int(opcao_info['peso']) if opcao_info['peso'] else 0,
+                            peso=int(opcao_info['peso']
+                                     ) if opcao_info['peso'] else 0,
                             cor=opcao_info['cor']
                         )
-                        print(f"        Nova opção de porcentagem criada: {opcao.id}")
+                        print(
+                            f"        Nova opção de porcentagem criada: {opcao.id}")
                     else:
                         try:
-                            opcao = OpcaoPorcentagem.objects.get(pk=int(opcao_id_str), pergunta=pergunta)
+                            opcao = OpcaoPorcentagem.objects.get(
+                                pk=int(opcao_id_str), pergunta=pergunta)
                             opcao.descricao = opcao_info['descricao']
-                            opcao.peso = int(opcao_info['peso']) if opcao_info['peso'] else 0
+                            opcao.peso = int(
+                                opcao_info['peso']) if opcao_info['peso'] else 0
                             opcao.cor = opcao_info['cor']
                             opcao.save()
-                            print(f"        Opção de porcentagem atualizada: {opcao.id}")
+                            print(
+                                f"        Opção de porcentagem atualizada: {opcao.id}")
                         except OpcaoPorcentagem.DoesNotExist:
-                            print(f"        Opção de porcentagem {opcao_id_str} não encontrada")
+                            print(
+                                f"        Opção de porcentagem {opcao_id_str} não encontrada")
                             continue
-                    
+
                     opcoes_porcentagem_ids_processadas.add(opcao.id)
-    
+
     # Deletar itens que foram removidos do formulário
     print("\nRemovendo itens não processados...")
-    
+
     # Deletar opções não processadas
     opcoes_resposta_deletadas = OpcaoResposta.objects.filter(
         pergunta__topico__checklist=checklist
     ).exclude(id__in=opcoes_resposta_ids_processadas).delete()
     print(f"Opções de resposta deletadas: {opcoes_resposta_deletadas}")
-    
+
     opcoes_porcentagem_deletadas = OpcaoPorcentagem.objects.filter(
         pergunta__topico__checklist=checklist
     ).exclude(id__in=opcoes_porcentagem_ids_processadas).delete()
     print(f"Opções de porcentagem deletadas: {opcoes_porcentagem_deletadas}")
-    
+
     # Deletar perguntas não processadas
     perguntas_deletadas = Pergunta.objects.filter(
         topico__checklist=checklist
     ).exclude(id__in=perguntas_ids_processadas).delete()
     print(f"Perguntas deletadas: {perguntas_deletadas}")
-    
+
     # Deletar tópicos não processados
     topicos_deletados = Topico.objects.filter(
         checklist=checklist
     ).exclude(id__in=topicos_ids_processados).delete()
     print(f"Tópicos deletados: {topicos_deletados}")
-    
+
     print(f"\nProcessamento concluído para checklist {checklist.id}")
+
 
 @login_required
 def deletar_checklist(request, pk):
     """Deleta um checklist"""
     checklist = get_object_or_404(Checklist, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             checklist.delete()
             messages.success(request, 'Checklist deletado com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar checklist: {str(e)}')
+            messages.error(request, f'Erro ao deletar checklist: {repr(e)}')
         return redirect('auditorias:lista_checklists')
-    
+
     context = {
         'object': checklist,
         'title': 'Checklist'
@@ -776,19 +827,21 @@ def deletar_checklist(request, pk):
 # VIEWS PARA MODELOS DE AUDITORIA
 # ============================================================================
 
+
 @login_required
 def lista_modelos_auditoria(request):
     """Lista todos os modelos de auditoria"""
     search = request.GET.get('search', '')
-    modelos = ModeloAuditoria.objects.select_related('checklist', 'categoria', 'ferramenta_causa_raiz').all()
-    
+    modelos = ModeloAuditoria.objects.select_related(
+        'checklist', 'categoria', 'ferramenta_causa_raiz').all()
+
     if search:
         modelos = modelos.filter(descricao__icontains=search)
-    
+
     paginator = Paginator(modelos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -802,17 +855,19 @@ def lista_modelos_auditoria(request):
     }
     return render(request, 'auditorias/modelos_auditoria/lista.html', context)
 
+
 @login_required
 def criar_modelo_auditoria(request):
     """Cria um novo modelo de auditoria"""
     if request.method == 'POST':
         descricao = request.POST.get('descricao')
         ativo = request.POST.get('ativo') == 'on'
-        iniciar_por_codigo_qr = request.POST.get('iniciar_por_codigo_qr') == 'on'
+        iniciar_por_codigo_qr = request.POST.get(
+            'iniciar_por_codigo_qr') == 'on'
         checklist_id = request.POST.get('checklist')
         categoria_id = request.POST.get('categoria')
         ferramenta_causa_raiz_id = request.POST.get('ferramenta_causa_raiz')
-        
+
         if descricao:
             try:
                 modelo = ModeloAuditoria.objects.create(
@@ -820,22 +875,25 @@ def criar_modelo_auditoria(request):
                     ativo=ativo,
                     iniciar_por_codigo_qr=iniciar_por_codigo_qr
                 )
-                
+
                 if checklist_id:
                     modelo.checklist = Checklist.objects.get(pk=checklist_id)
                 if categoria_id:
-                    modelo.categoria = CategoriaAuditoria.objects.get(pk=categoria_id)
+                    modelo.categoria = CategoriaAuditoria.objects.get(
+                        pk=categoria_id)
                 if ferramenta_causa_raiz_id:
-                    modelo.ferramenta_causa_raiz = FerramentaCausaRaiz.objects.get(pk=ferramenta_causa_raiz_id)
-                
+                    modelo.ferramenta_causa_raiz = FerramentaCausaRaiz.objects.get(
+                        pk=ferramenta_causa_raiz_id)
+
                 modelo.save()
-                messages.success(request, 'Modelo de auditoria criado com sucesso!')
+                messages.success(
+                    request, 'Modelo de auditoria criado com sucesso!')
                 return redirect('auditorias:lista_modelos_auditoria')
             except Exception as e:
-                messages.error(request, f'Erro ao criar modelo: {str(e)}')
+                messages.error(request, f'Erro ao criar modelo: {repr(e)}')
         else:
             messages.error(request, 'Descrição é obrigatória!')
-    
+
     context = {
         'checklists': Checklist.objects.filter(ativo=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
@@ -845,42 +903,46 @@ def criar_modelo_auditoria(request):
     }
     return render(request, 'auditorias/modelos_auditoria/form.html', context)
 
+
 @login_required
 def editar_modelo_auditoria(request, pk):
     """Edita um modelo de auditoria existente"""
     modelo = get_object_or_404(ModeloAuditoria, pk=pk)
-    
+
     if request.method == 'POST':
         modelo.descricao = request.POST.get('descricao')
         modelo.ativo = request.POST.get('ativo') == 'on'
-        modelo.iniciar_por_codigo_qr = request.POST.get('iniciar_por_codigo_qr') == 'on'
-        
+        modelo.iniciar_por_codigo_qr = request.POST.get(
+            'iniciar_por_codigo_qr') == 'on'
+
         checklist_id = request.POST.get('checklist')
         categoria_id = request.POST.get('categoria')
         ferramenta_causa_raiz_id = request.POST.get('ferramenta_causa_raiz')
-        
+
         if checklist_id:
             modelo.checklist = Checklist.objects.get(pk=checklist_id)
         else:
             modelo.checklist = None
-            
+
         if categoria_id:
             modelo.categoria = CategoriaAuditoria.objects.get(pk=categoria_id)
         else:
             modelo.categoria = None
-            
+
         if ferramenta_causa_raiz_id:
-            modelo.ferramenta_causa_raiz = FerramentaCausaRaiz.objects.get(pk=ferramenta_causa_raiz_id)
+            modelo.ferramenta_causa_raiz = FerramentaCausaRaiz.objects.get(
+                pk=ferramenta_causa_raiz_id)
         else:
             modelo.ferramenta_causa_raiz = None
-        
+
         try:
             modelo.save()
-            messages.success(request, 'Modelo de auditoria atualizado com sucesso!')
+            messages.success(
+                request, 'Modelo de auditoria atualizado com sucesso!')
             return redirect('auditorias:lista_modelos_auditoria')
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar modelo: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar modelo: {repr(e)}')
+
     context = {
         'modelo': modelo,
         'checklists': Checklist.objects.filter(ativo=True),
@@ -896,15 +958,16 @@ def editar_modelo_auditoria(request, pk):
 def deletar_modelo_auditoria(request, pk):
     """Deleta um modelo de auditoria"""
     modelo = get_object_or_404(ModeloAuditoria, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             modelo.delete()
-            messages.success(request, 'Modelo de auditoria deletado com sucesso!')
+            messages.success(
+                request, 'Modelo de auditoria deletado com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar modelo: {str(e)}')
+            messages.error(request, f'Erro ao deletar modelo: {repr(e)}')
         return redirect('auditorias:lista_modelos_auditoria')
-    
+
     context = {
         'object': modelo,
         'title': 'Modelo de Auditoria'
@@ -920,19 +983,20 @@ def deletar_modelo_auditoria(request, pk):
 def lista_auditorias(request):
     """Lista todas as auditorias agendadas"""
     search = request.GET.get('search', '')
-    auditorias = Auditoria.objects.select_related('responsavel', 'ferramenta').prefetch_related('modelos').all()
-    
+    auditorias = Auditoria.objects.select_related(
+        'responsavel', 'ferramenta').prefetch_related('modelos').all()
+
     if search:
         auditorias = auditorias.filter(
             Q(responsavel__first_name__icontains=search) |
             Q(responsavel__last_name__icontains=search) |
             Q(ferramenta__nome__icontains=search)
         )
-    
+
     paginator = Paginator(auditorias, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -946,83 +1010,81 @@ def lista_auditorias(request):
     }
     return render(request, 'auditorias/auditorias/lista.html', context)
 
+
 @login_required
 def criar_auditoria(request):
     """Cria uma nova auditoria agendada"""
     if request.method == 'POST':
-        # Dados básicos
+        # --- Captura todos os dados do formulário primeiro ---
         ferramenta_id = request.POST.get('ferramenta')
         responsavel_id = request.POST.get('responsavel')
         nivel_organizacional = request.POST.get('nivel_organizacional')
-        categoria_auditoria = request.POST.get('categoria_auditoria')
-        data_inicio = request.POST.get('data_inicio')
-        data_fim = request.POST.get('data_fim')
-        
-        # Dados de programação
-        por_frequencia = request.POST.get('por_frequencia') == 'on'
-        por_intervalo = request.POST.get('por_intervalo') == 'on'
-        frequencia = request.POST.get('frequencia')
-        intervalo = request.POST.get('intervalo')
-        numero_repeticoes = request.POST.get('numero_repeticoes')
-        pular_finais_semana = request.POST.get('pular_finais_semana') == 'on'
-        contem_turnos = request.POST.get('contem_turnos') == 'on'
-        
-        # Locais organizacionais
-        local_empresa_id = request.POST.get('local_empresa')
-        local_area_id = request.POST.get('local_area')
-        local_setor_id = request.POST.get('local_setor')
-        local_subsetor_id = request.POST.get('local_subsetor')
-        
-        # Modelos e ativos
+        data_inicio_str = request.POST.get('data_inicio')
+        data_fim_str = request.POST.get('data_fim')
+
+        local_empresa_id = request.POST.get('local_empresa') or None
+        local_area_id = request.POST.get('local_area') or None
+        local_setor_id = request.POST.get('local_setor') or None
+        local_subsetor_id = request.POST.get('local_subsetor') or None
+
         modelos_ids = request.POST.getlist('modelos')
         ativos_ids = request.POST.getlist('ativos_auditados')
         turnos_ids = request.POST.getlist('turnos')
-        
-        if ferramenta_id and responsavel_id and nivel_organizacional and data_inicio:
+
+        if ferramenta_id and responsavel_id and nivel_organizacional and data_inicio_str:
             try:
-                auditoria = Auditoria.objects.create(
-                    ferramenta=FerramentaDigital.objects.get(pk=ferramenta_id),
-                    responsavel=Usuario.objects.get(pk=responsavel_id),
+                data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                data_fim = datetime.strptime(
+                    data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
+
+                # --- Monta o objeto com TODOS os dados ANTES de salvar ---
+                auditoria = Auditoria(
+                    ferramenta_id=ferramenta_id,
+                    responsavel_id=responsavel_id,
                     nivel_organizacional=nivel_organizacional,
-                    categoria_auditoria=categoria_auditoria,
                     data_inicio=data_inicio,
-                    data_fim=data_fim if data_fim else None,
-                    por_frequencia=por_frequencia,
-                    por_intervalo=por_intervalo,
-                    frequencia=frequencia if frequencia else None,
-                    intervalo=int(intervalo) if intervalo else None,
-                    numero_repeticoes=int(numero_repeticoes) if numero_repeticoes else None,
-                    pular_finais_semana=pular_finais_semana,
-                    contem_turnos=contem_turnos
+                    data_fim=data_fim,
+                    # Atribui todos os locais aqui
+                    local_empresa_id=local_empresa_id,
+                    local_area_id=local_area_id,
+                    local_setor_id=local_setor_id,
+                    local_subsetor_id=local_subsetor_id,
+                    # Outros campos...
+                    categoria_auditoria=request.POST.get(
+                        'categoria_auditoria'),
+                    por_frequencia=request.POST.get('por_frequencia') == 'on',
+                    por_intervalo=request.POST.get('por_intervalo') == 'on',
+                    frequencia=request.POST.get('frequencia') or None,
+                    intervalo=int(request.POST.get('intervalo')
+                                  ) if request.POST.get('intervalo') else None,
+                    numero_repeticoes=int(request.POST.get('numero_repeticoes')) if request.POST.get(
+                        'numero_repeticoes') else None,
+                    pular_finais_semana=request.POST.get(
+                        'pular_finais_semana') == 'on',
+                    contem_turnos=request.POST.get('contem_turnos') == 'on'
                 )
-                
-                # Definir locais organizacionais
-                if local_empresa_id:
-                    auditoria.local_empresa = Empresa.objects.get(pk=local_empresa_id)
-                if local_area_id:
-                    auditoria.local_area = Area.objects.get(pk=local_area_id)
-                if local_setor_id:
-                    auditoria.local_setor = Setor.objects.get(pk=local_setor_id)
-                if local_subsetor_id:
-                    auditoria.local_subsetor = SubSetor.objects.get(pk=local_subsetor_id)
-                
+
+                # --- Salva TUDO de uma vez (isso também dispara a criação das instâncias) ---
                 auditoria.save()
-                
-                # Adicionar modelos e ativos
+
+                # Define as relações ManyToMany DEPOIS do primeiro save
                 if modelos_ids:
                     auditoria.modelos.set(modelos_ids)
                 if ativos_ids:
                     auditoria.ativos_auditados.set(ativos_ids)
                 if turnos_ids:
                     auditoria.turnos.set(turnos_ids)
-                
+
                 messages.success(request, 'Auditoria criada com sucesso!')
                 return redirect('auditorias:lista_auditorias')
+
             except Exception as e:
-                messages.error(request, f'Erro ao criar auditoria: {str(e)}')
+                messages.error(request, f'Erro ao criar auditoria: {repr(e)}')
         else:
             messages.error(request, 'Campos obrigatórios não preenchidos!')
-    
+
+    # O contexto para o método GET continua o mesmo
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
         'usuarios': Usuario.objects.filter(is_active=True),
@@ -1043,59 +1105,64 @@ def criar_auditoria(request):
 def editar_auditoria(request, pk):
     """Edita uma auditoria existente"""
     auditoria = get_object_or_404(Auditoria, pk=pk)
-    
+
     if request.method == 'POST':
-        # Atualizar dados básicos
-        ferramenta_id = request.POST.get('ferramenta')
-        responsavel_id = request.POST.get('responsavel')
-        
-        auditoria.nivel_organizacional = request.POST.get('nivel_organizacional')
-        auditoria.categoria_auditoria = request.POST.get('categoria_auditoria')
-        auditoria.data_inicio = request.POST.get('data_inicio')
-        auditoria.data_fim = request.POST.get('data_fim') if request.POST.get('data_fim') else None
-        
-        # Dados de programação
-        auditoria.por_frequencia = request.POST.get('por_frequencia') == 'on'
-        auditoria.por_intervalo = request.POST.get('por_intervalo') == 'on'
-        auditoria.frequencia = request.POST.get('frequencia') if request.POST.get('frequencia') else None
-        auditoria.intervalo = int(request.POST.get('intervalo')) if request.POST.get('intervalo') else None
-        auditoria.numero_repeticoes = int(request.POST.get('numero_repeticoes')) if request.POST.get('numero_repeticoes') else None
-        auditoria.pular_finais_semana = request.POST.get('pular_finais_semana') == 'on'
-        auditoria.contem_turnos = request.POST.get('contem_turnos') == 'on'
-        
-        if ferramenta_id:
-            auditoria.ferramenta = FerramentaDigital.objects.get(pk=ferramenta_id)
-        if responsavel_id:
-            auditoria.responsavel = Usuario.objects.get(pk=responsavel_id)
-        
-        # Locais organizacionais
-        local_empresa_id = request.POST.get('local_empresa')
-        local_area_id = request.POST.get('local_area')
-        local_setor_id = request.POST.get('local_setor')
-        local_subsetor_id = request.POST.get('local_subsetor')
-        
-        auditoria.local_empresa = Empresa.objects.get(pk=local_empresa_id) if local_empresa_id else None
-        auditoria.local_area = Area.objects.get(pk=local_area_id) if local_area_id else None
-        auditoria.local_setor = Setor.objects.get(pk=local_setor_id) if local_setor_id else None
-        auditoria.local_subsetor = SubSetor.objects.get(pk=local_subsetor_id) if local_subsetor_id else None
-        
         try:
+            # --- Captura todos os dados do formulário primeiro ---
+            data_inicio_str = request.POST.get('data_inicio')
+            data_fim_str = request.POST.get('data_fim')
+
+            # --- Atualiza todos os campos do objeto ANTES de salvar ---
+            auditoria.ferramenta_id = request.POST.get('ferramenta')
+            auditoria.responsavel_id = request.POST.get('responsavel')
+            auditoria.nivel_organizacional = request.POST.get(
+                'nivel_organizacional')
+            auditoria.categoria_auditoria = request.POST.get(
+                'categoria_auditoria')
+
+            # Converte as datas de string para objeto de data
+            auditoria.data_inicio = datetime.strptime(
+                data_inicio_str, '%Y-%m-%d').date()
+            auditoria.data_fim = datetime.strptime(
+                data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
+
+            # Atualiza todos os locais
+            auditoria.local_empresa_id = request.POST.get(
+                'local_empresa') or None
+            auditoria.local_area_id = request.POST.get('local_area') or None
+            auditoria.local_setor_id = request.POST.get('local_setor') or None
+            auditoria.local_subsetor_id = request.POST.get(
+                'local_subsetor') or None
+
+            # Atualiza os dados de programação
+            auditoria.por_frequencia = request.POST.get(
+                'por_frequencia') == 'on'
+            auditoria.por_intervalo = request.POST.get('por_intervalo') == 'on'
+            auditoria.frequencia = request.POST.get('frequencia') or None
+            auditoria.intervalo = int(request.POST.get(
+                'intervalo')) if request.POST.get('intervalo') else None
+            auditoria.numero_repeticoes = int(request.POST.get(
+                'numero_repeticoes')) if request.POST.get('numero_repeticoes') else None
+            auditoria.pular_finais_semana = request.POST.get(
+                'pular_finais_semana') == 'on'
+            auditoria.contem_turnos = request.POST.get('contem_turnos') == 'on'
+
+            # --- Salva TUDO de uma vez (isso também vai recriar as instâncias futuras) ---
             auditoria.save()
-            
-            # Atualizar modelos e ativos
-            modelos_ids = request.POST.getlist('modelos')
-            ativos_ids = request.POST.getlist('ativos_auditados')
-            turnos_ids = request.POST.getlist('turnos')
-            
-            auditoria.modelos.set(modelos_ids)
-            auditoria.ativos_auditados.set(ativos_ids)
-            auditoria.turnos.set(turnos_ids)
-            
+
+            # Atualiza as relações ManyToMany
+            auditoria.modelos.set(request.POST.getlist('modelos'))
+            auditoria.ativos_auditados.set(
+                request.POST.getlist('ativos_auditados'))
+            auditoria.turnos.set(request.POST.getlist('turnos'))
+
             messages.success(request, 'Auditoria atualizada com sucesso!')
             return redirect('auditorias:lista_auditorias')
+
         except Exception as e:
-            messages.error(request, f'Erro ao atualizar auditoria: {str(e)}')
-    
+            messages.error(request, f'Erro ao atualizar auditoria: {repr(e)}')
+
+    # O contexto para o método GET (para exibir o formulário preenchido)
     context = {
         'auditoria': auditoria,
         'ferramentas': FerramentaDigital.objects.all(),
@@ -1117,15 +1184,15 @@ def editar_auditoria(request, pk):
 def deletar_auditoria(request, pk):
     """Deleta uma auditoria"""
     auditoria = get_object_or_404(Auditoria, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             auditoria.delete()
             messages.success(request, 'Auditoria deletada com sucesso!')
         except Exception as e:
-            messages.error(request, f'Erro ao deletar auditoria: {str(e)}')
+            messages.error(request, f'Erro ao deletar auditoria: {repr(e)}')
         return redirect('auditorias:lista_auditorias')
-    
+
     context = {
         'object': auditoria,
         'title': 'Auditoria'
@@ -1141,7 +1208,8 @@ def deletar_auditoria(request, pk):
 def get_areas_por_empresa(request):
     """Retorna áreas de uma empresa via AJAX"""
     empresa_id = request.GET.get('empresa_id')
-    areas = Area.objects.filter(empresa_id=empresa_id, ativo=True).values('id', 'nome')
+    areas = Area.objects.filter(
+        empresa_id=empresa_id, ativo=True).values('id', 'nome')
     return JsonResponse(list(areas), safe=False)
 
 
@@ -1149,7 +1217,8 @@ def get_areas_por_empresa(request):
 def get_setores_por_area(request):
     """Retorna setores de uma área via AJAX"""
     area_id = request.GET.get('area_id')
-    setores = Setor.objects.filter(area_id=area_id, ativo=True).values('id', 'nome')
+    setores = Setor.objects.filter(
+        area_id=area_id, ativo=True).values('id', 'nome')
     return JsonResponse(list(setores), safe=False)
 
 
@@ -1157,7 +1226,8 @@ def get_setores_por_area(request):
 def get_subsetores_por_setor(request):
     """Retorna subsetores de um setor via AJAX"""
     setor_id = request.GET.get('setor_id')
-    subsetores = SubSetor.objects.filter(setor_id=setor_id, ativo=True).values('id', 'nome')
+    subsetores = SubSetor.objects.filter(
+        setor_id=setor_id, ativo=True).values('id', 'nome')
     return JsonResponse(list(subsetores), safe=False)
 
 
@@ -1166,26 +1236,30 @@ def get_ativos_por_local(request):
     """Retorna ativos filtrados por localização via AJAX"""
     nivel = request.GET.get('nivel')
     local_id = request.GET.get('local_id')
-    
+
     ativos = Ativo.objects.filter(ativo=True)
-    
+
     if nivel == 'EMPRESA' and local_id:
-        ativos = ativos.filter(estrutura_organizacional__setor__area__empresa_id=local_id)
+        ativos = ativos.filter(
+            estrutura_organizacional__setor__area__empresa_id=local_id)
     elif nivel == 'AREA' and local_id:
-        ativos = ativos.filter(estrutura_organizacional__setor__area_id=local_id)
+        ativos = ativos.filter(
+            estrutura_organizacional__setor__area_id=local_id)
     elif nivel == 'SETOR' and local_id:
         ativos = ativos.filter(estrutura_organizacional__setor_id=local_id)
     elif nivel == 'SUBSETOR' and local_id:
         ativos = ativos.filter(estrutura_organizacional_id=local_id)
-    
+
     ativos_data = ativos.values('id', 'tag', 'descricao')
     return JsonResponse(list(ativos_data), safe=False)
+
 
 @login_required
 def lista_perguntas(request, checklist_pk):
     """Lista todas as perguntas de um checklist, agrupadas por tópico."""
     checklist = get_object_or_404(Checklist, pk=checklist_pk)
-    topicos_com_perguntas = checklist.topicos.prefetch_related('perguntas').order_by('ordem')
+    topicos_com_perguntas = checklist.topicos.prefetch_related(
+        'perguntas').order_by('ordem')
 
     context = {
         'checklist': checklist,
@@ -1200,18 +1274,20 @@ def lista_perguntas(request, checklist_pk):
 def criar_pergunta(request, checklist_pk):
     """Cria uma nova pergunta para um tópico dentro de um checklist."""
     checklist = get_object_or_404(Checklist, pk=checklist_pk)
-    
+
     if request.method == 'POST':
         topico_id = request.POST.get('topico')
         descricao = request.POST.get('descricao')
-        
+
         if topico_id and descricao:
             try:
                 Pergunta.objects.create(
                     topico_id=topico_id,
                     descricao=descricao,
-                    campo_obrigatorio=request.POST.get('campo_obrigatorio') == 'on',
-                    campo_desabilitado=request.POST.get('campo_desabilitado') == 'on',
+                    campo_obrigatorio=request.POST.get(
+                        'campo_obrigatorio') == 'on',
+                    campo_desabilitado=request.POST.get(
+                        'campo_desabilitado') == 'on',
                     ordem=int(request.POST.get('ordem', 0))
                 )
                 messages.success(request, 'Pergunta criada com sucesso!')
@@ -1229,10 +1305,12 @@ def criar_pergunta(request, checklist_pk):
     }
     return render(request, 'auditorias/perguntas/form.html', context)
 
+
 @login_required
 def editar_pergunta(request, pk):
     """Edita uma pergunta existente."""
-    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist').prefetch_related('opcoes_resposta', 'opcoes_porcentagem'), pk=pk)
+    pergunta = get_object_or_404(Pergunta.objects.select_related(
+        'topico__checklist').prefetch_related('opcoes_resposta', 'opcoes_porcentagem'), pk=pk)
     checklist = pergunta.topico.checklist
 
     if request.method == 'POST':
@@ -1243,8 +1321,10 @@ def editar_pergunta(request, pk):
             try:
                 pergunta.topico_id = topico_id
                 pergunta.descricao = descricao
-                pergunta.campo_obrigatorio = request.POST.get('campo_obrigatorio') == 'on'
-                pergunta.campo_desabilitado = request.POST.get('campo_desabilitado') == 'on'
+                pergunta.campo_obrigatorio = request.POST.get(
+                    'campo_obrigatorio') == 'on'
+                pergunta.campo_desabilitado = request.POST.get(
+                    'campo_desabilitado') == 'on'
                 pergunta.ordem = int(request.POST.get('ordem', 0))
                 pergunta.save()
 
@@ -1264,10 +1344,12 @@ def editar_pergunta(request, pk):
     }
     return render(request, 'auditorias/perguntas/form.html', context)
 
+
 @login_required
 def deletar_pergunta(request, pk):
     """Deleta uma pergunta."""
-    pergunta = get_object_or_404(Pergunta.objects.select_related('topico__checklist'), pk=pk)
+    pergunta = get_object_or_404(
+        Pergunta.objects.select_related('topico__checklist'), pk=pk)
     checklist_pk = pergunta.topico.checklist.pk
 
     if request.method == 'POST':
@@ -1285,15 +1367,18 @@ def deletar_pergunta(request, pk):
     }
     return render(request, 'auditorias/deletar_pergunta.html', context)
 
+
 @login_required
 def lista_topicos(request):
     """Lista todos os tópicos com busca e paginação."""
     search = request.GET.get('search', '')
-    topicos = Topico.objects.select_related('checklist').order_by('checklist__nome', 'ordem')
+    topicos = Topico.objects.select_related(
+        'checklist').order_by('checklist__nome', 'ordem')
 
     if search:
         topicos = topicos.filter(
-            Q(descricao__icontains=search) | Q(checklist__nome__icontains=search)
+            Q(descricao__icontains=search) | Q(
+                checklist__nome__icontains=search)
         )
 
     paginator = Paginator(topicos, 10)
@@ -1389,3 +1474,237 @@ def deletar_topico(request, pk):
         'title': 'Tópico'
     }
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+class AuditoriasPendentesAPIView(ListAPIView):
+    """
+    Endpoint da API que retorna a lista de instâncias de auditoria
+    pendentes para o usuário autenticado.
+    """
+    serializer_class = AuditoriaInstanciaListSerializer
+    # Garante que apenas usuários logados acessem
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Este método é sobrescrito para retornar apenas os objetos
+        relevantes para o usuário que fez a requisição.
+        """
+        user = self.request.user
+        # Filtra as instâncias não executadas
+        # E que a auditoria pai tenha o usuário logado como responsável
+        return AuditoriaInstancia.objects.filter(
+            executada=False,
+            auditoria_agendada__responsavel=user
+        ).select_related(  # Otimiza a consulta ao banco de dados
+            'auditoria_agendada__local_empresa',
+            'auditoria_agendada__local_area',
+            'auditoria_agendada__local_setor',
+            'auditoria_agendada__local_subsetor'
+        ).order_by('data_execucao')
+
+
+class AuditoriaInstanciaDetailAPIView(RetrieveAPIView):
+    """
+    Endpoint da API que retorna os detalhes completos de uma
+    única instância de auditoria, incluindo o checklist.
+    """
+    serializer_class = AuditoriaInstanciaDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Garante que o usuário só possa ver instâncias de auditorias
+        pelas quais ele é o responsável.
+        """
+        user = self.request.user
+        return AuditoriaInstancia.objects.filter(auditoria_agendada__responsavel=user)
+
+
+class SubmeterAuditoriaAPIView(APIView):
+    """
+    Endpoint para submeter as respostas de uma instância de auditoria.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            instancia = AuditoriaInstancia.objects.get(
+                pk=pk,
+                auditoria_agendada__responsavel=request.user,
+                executada=False
+            )
+        except AuditoriaInstancia.DoesNotExist:
+            return Response(
+                {"detail": "Instância de auditoria não encontrada ou já finalizada."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        respostas_data = request.data.get('respostas', [])
+
+        # Passamos a instância para o serializer através do "contexto"
+        contexto = {'auditoria_instancia': instancia}
+
+        respostas_serializer = RespostaSerializer(
+            data=respostas_data, many=True, context=contexto)
+
+        if respostas_serializer.is_valid():
+            # O método .save() agora vai chamar o método .create() que escrevemos no serializer
+            respostas_serializer.save()
+
+            # Marcamos a auditoria como executada
+            instancia.executada = True
+            instancia.save()
+
+            return Response(
+                {"detail": "Auditoria submetida com sucesso!"},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(respostas_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AuditoriasConcluidasAPIView(ListAPIView):
+    """
+    Endpoint da API que retorna o histórico de instâncias de auditoria
+    concluídas pelo usuário autenticado.
+    """
+    serializer_class = AuditoriaInstanciaListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Filtra as instâncias para retornar apenas as que foram executadas
+        pelo usuário que fez a requisição, ordenadas pela mais recente.
+        """
+        user = self.request.user
+        return AuditoriaInstancia.objects.filter(
+            executada=True,  # <-- A ÚNICA MUDANÇA É AQUI
+            auditoria_agendada__responsavel=user
+        ).select_related(
+            'auditoria_agendada__local_empresa',
+            'auditoria_agendada__local_area',
+            'auditoria_agendada__local_setor',
+            'auditoria_agendada__local_subsetor'
+            # Ordena da mais recente para a mais antiga
+        ).order_by('-data_execucao')
+
+
+@login_required
+def preview_audit_dates(request):
+    """
+    Endpoint AJAX que calcula e retorna as datas de auditoria com base
+    nos parâmetros do formulário. (VERSÃO FINAL COM REPETIÇÃO AJUSTADA)
+    """
+    try:
+        start_date_str = request.GET.get('data_inicio')
+        end_date_str = request.GET.get('ate_dia')
+        schedule_type = request.GET.get('schedule_type')
+        frequency = request.GET.get('frequencia')
+        interval_str = request.GET.get('intervalo')
+        repetitions_str = request.GET.get('numero_repeticoes')
+        skip_weekends = request.GET.get('pular_fins_semana') == 'true'
+
+        if not start_date_str:
+            return JsonResponse({'dates': []})
+
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(
+            end_date_str, '%Y-%m-%d').date() if end_date_str else None
+
+        # AQUI ESTÁ A MUDANÇA: Capturamos o número de repetições
+        repetitions = int(repetitions_str) if repetitions_str and repetitions_str.isdigit(
+        ) and int(repetitions_str) > 0 else 1
+
+        dates = []
+        current_date = start_date
+        loop_limit = 365 * 5
+        loops = 0
+
+        if not end_date:
+            if not (skip_weekends and start_date.weekday() >= 5):
+                # AQUI ESTÁ A MUDANÇA: Adicionamos a data apenas UMA vez
+                dates.append(start_date)
+        else:
+            while current_date <= end_date and loops < loop_limit:
+                loops += 1
+
+                if not (skip_weekends and current_date.weekday() >= 5):
+                    # AQUI ESTÁ A MUDANÇA: Adicionamos a data apenas UMA vez
+                    dates.append(current_date)
+
+                # A lógica de cálculo da próxima data permanece a mesma
+                if schedule_type == 'por_intervalo':
+                    interval = int(
+                        interval_str) if interval_str and interval_str.isdigit() else 0
+                    current_date += timedelta(days=interval + 1)
+                elif schedule_type == 'por_frequencia':
+                    if frequency == 'DIARIO':
+                        current_date += timedelta(days=1)
+                    # ... (resto da lógica de frequência)
+                    elif frequency == 'SEMANAL':
+                        current_date += timedelta(weeks=1)
+                    elif frequency == 'QUINZENAL':
+                        current_date += timedelta(weeks=2)
+                    elif frequency == 'MENSAL':
+                        current_date += relativedelta(months=1)
+                    elif frequency == 'ANUAL':
+                        current_date += relativedelta(years=1)
+                else:
+                    current_date += timedelta(days=1)
+
+        # Formatação final para a resposta JSON
+        dias_semana = ["seg.", "ter.", "qua.", "qui.", "sex.", "sáb.", "dom."]
+        meses = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.",
+                 "jul.", "ago.", "set.", "out.", "nov.", "dez."]
+
+        formatted_dates = [{
+            'auditoria_num': i + 1,
+            # <-- AQUI ESTÁ A MUDANÇA: Usamos o número de repetições para todas as linhas
+            'repeticao_num': repetitions,
+            'dia_semana': dias_semana[date.weekday()],
+            'dia': date.strftime('%d'),
+            'mes': meses[date.month - 1],
+            'ano': date.year
+        } for i, date in enumerate(dates)]
+
+        return JsonResponse({'dates': formatted_dates})
+
+    except (ValueError, TypeError) as e:
+        return JsonResponse({'error': f'Parâmetros inválidos: {repr(e)}'}, status=400)
+
+
+@login_required
+def historico_auditorias(request):
+    """Exibe o histórico de todas as instâncias de auditoria."""
+
+    # Query otimizada para buscar todos os dados relacionados de uma vez
+    instancias_list = AuditoriaInstancia.objects.select_related(
+        'auditoria_agendada__responsavel',
+        'auditoria_agendada__ferramenta',
+        # Exemplo de otimização profunda
+        'auditoria_agendada__local_subsetor__setor__area__empresa'
+    ).prefetch_related(
+        'auditoria_agendada__modelos',
+        'respostas'  # Pré-carrega as respostas para a contagem
+    ).order_by('-data_execucao')  # Ordena pelas mais recentes
+
+    # Lógica de busca (opcional, mas recomendada)
+    search = request.GET.get('search', '')
+    if search:
+        instancias_list = instancias_list.filter(
+            Q(auditoria_agendada__responsavel__first_name__icontains=search) |
+            Q(auditoria_agendada__local_subsetor__nome__icontains=search) |
+            Q(auditoria_agendada__modelos__descricao__icontains=search)
+        ).distinct()
+
+    paginator = Paginator(instancias_list, 15)  # Exibe 15 por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'title': 'Histórico de Execuções'
+    }
+    return render(request, 'auditorias/historico.html', context)

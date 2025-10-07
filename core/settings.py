@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
 
     # Apps locais (adicione todos os seus apps aqui)
     'auditorias',
@@ -34,13 +35,15 @@ INSTALLED_APPS = [
     'planos_de_acao',       # <-- ADICIONADO
 
     # Apps de terceiros (se necessário)
-    # 'rest_framework',
-    # 'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -302,4 +305,22 @@ if not DEBUG:
 
 # teste wanderley add informações
 # teste add informações 2
-### teste de arquivo adicionado algos
+# teste de arquivo adicionado algos
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API do Sistema de Gestão de Auditorias',
+    'DESCRIPTION': 'Documentação detalhada da API para o sistema de auditorias, '
+                   'utilizada pelo aplicativo web e mobile.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}

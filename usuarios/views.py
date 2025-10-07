@@ -13,10 +13,22 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.contenttypes.models import ContentType
 import json
 
+from .serializers import UsuarioSerializer
+
 from .models import Usuario
 
+from .serializers import AlterarSenhaSerializer
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.generics import RetrieveUpdateAPIView, UpdateAPIView
 
 # Decorator para verificar se o usuário é administrador
+
+
 def admin_required(user):
     return user.is_superuser or user.is_staff
 
@@ -39,22 +51,24 @@ def dashboard_usuarios(request):
     }
     return render(request, 'usuarios/dashboard.html', context)
 
+
 @login_required
 @user_passes_test(admin_required)
 def alterar_senha_usuario(request, pk):
     """Altera a senha de um usuário específico"""
     usuario = get_object_or_404(Usuario, pk=pk)
-    
+
     if request.method == 'POST':
         password = request.POST.get('password')
         password_confirm = request.POST.get('password_confirm')
-        
+
         if not password:
             messages.error(request, 'A senha é obrigatória!')
         elif password != password_confirm:
             messages.error(request, 'As senhas não coincidem!')
         elif len(password) < 8:
-            messages.error(request, 'A senha deve ter pelo menos 8 caracteres!')
+            messages.error(
+                request, 'A senha deve ter pelo menos 8 caracteres!')
         else:
             try:
                 usuario.set_password(password)
@@ -63,12 +77,13 @@ def alterar_senha_usuario(request, pk):
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao alterar senha: {str(e)}')
-    
+
     context = {
         'usuario': usuario,
         'title': f'Alterar Senha - {usuario.get_full_name() or usuario.username}'
     }
     return render(request, 'usuarios/alterar_senha.html', context)
+
 
 @login_required
 @user_passes_test(admin_required)
@@ -77,9 +92,9 @@ def lista_usuarios(request):
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
     grupo = request.GET.get('grupo', '')
-    
+
     usuarios = Usuario.objects.all()
-    
+
     if search:
         usuarios = usuarios.filter(
             Q(username__icontains=search) |
@@ -87,23 +102,23 @@ def lista_usuarios(request):
             Q(last_name__icontains=search) |
             Q(email__icontains=search)
         )
-    
+
     if status == 'ativo':
         usuarios = usuarios.filter(is_active=True)
     elif status == 'inativo':
         usuarios = usuarios.filter(is_active=False)
     elif status == 'staff':
         usuarios = usuarios.filter(is_staff=True)
-    
+
     if grupo:
         usuarios = usuarios.filter(groups__id=grupo)
-    
+
     usuarios = usuarios.order_by('-date_joined')
-    
+
     paginator = Paginator(usuarios, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -113,7 +128,7 @@ def lista_usuarios(request):
         'title': 'Usuários',
         'singular': 'Usuário',
         'button_text': 'Novo Usuário',
-        'create_url': 'usuarios:criar_usuario', # <-- Chave que faltava
+        'create_url': 'usuarios:criar_usuario',  # <-- Chave que faltava
         'artigo': 'o'
     }
     return render(request, 'usuarios/lista.html', context)
@@ -134,10 +149,11 @@ def criar_usuario(request):
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
         grupos_ids = request.POST.getlist('grupos')
-        
+
         # Validações
         if not username or not email or not password:
-            messages.error(request, 'Username, email e senha são obrigatórios!')
+            messages.error(
+                request, 'Username, email e senha são obrigatórios!')
         elif password != password_confirm:
             messages.error(request, 'As senhas não coincidem!')
         elif Usuario.objects.filter(username=username).exists():
@@ -156,16 +172,16 @@ def criar_usuario(request):
                     is_staff=is_staff,
                     is_superuser=is_superuser
                 )
-                
+
                 # Adicionar aos grupos
                 if grupos_ids:
                     usuario.groups.set(grupos_ids)
-                
+
                 messages.success(request, 'Usuário criado com sucesso!')
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao criar usuário: {str(e)}')
-    
+
     context = {
         'grupos': Group.objects.all(),
         'title': 'Criar Usuário'
@@ -178,7 +194,7 @@ def criar_usuario(request):
 def editar_usuario(request, pk):
     """Edita um usuário existente"""
     usuario = get_object_or_404(Usuario, pk=pk)
-    
+
     if request.method == 'POST':
         usuario.username = request.POST.get('username')
         usuario.email = request.POST.get('email')
@@ -188,7 +204,7 @@ def editar_usuario(request, pk):
         usuario.is_staff = request.POST.get('is_staff') == 'on'
         usuario.is_superuser = request.POST.get('is_superuser') == 'on'
         grupos_ids = request.POST.getlist('grupos')
-        
+
         # Validar username único (exceto o próprio usuário)
         if Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
             messages.error(request, 'Este username já está em uso!')
@@ -203,7 +219,7 @@ def editar_usuario(request, pk):
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar usuário: {str(e)}')
-    
+
     context = {
         'usuario': usuario,
         'grupos': Group.objects.all(),
@@ -217,12 +233,12 @@ def editar_usuario(request, pk):
 def deletar_usuario(request, pk):
     """Deleta um usuário"""
     usuario = get_object_or_404(Usuario, pk=pk)
-    
+
     # Não permitir deletar o próprio usuário
     if usuario == request.user:
         messages.error(request, 'Você não pode deletar sua própria conta!')
         return redirect('usuarios:lista_usuarios')
-    
+
     if request.method == 'POST':
         try:
             usuario.delete()
@@ -230,7 +246,7 @@ def deletar_usuario(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar usuário: {str(e)}')
         return redirect('usuarios:lista_usuarios')
-    
+
     context = {
         'usuario': usuario,
         'title': 'Deletar Usuário'
@@ -243,17 +259,18 @@ def deletar_usuario(request, pk):
 def alterar_senha_usuario(request, pk):
     """Altera a senha de um usuário"""
     usuario = get_object_or_404(Usuario, pk=pk)
-    
+
     if request.method == 'POST':
         nova_senha = request.POST.get('nova_senha')
         confirmar_senha = request.POST.get('confirmar_senha')
-        
+
         if not nova_senha:
             messages.error(request, 'Nova senha é obrigatória!')
         elif nova_senha != confirmar_senha:
             messages.error(request, 'As senhas não coincidem!')
         elif len(nova_senha) < 8:
-            messages.error(request, 'A senha deve ter pelo menos 8 caracteres!')
+            messages.error(
+                request, 'A senha deve ter pelo menos 8 caracteres!')
         else:
             try:
                 usuario.set_password(nova_senha)
@@ -262,7 +279,7 @@ def alterar_senha_usuario(request, pk):
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao alterar senha: {str(e)}')
-    
+
     context = {
         'usuario': usuario,
         'title': 'Alterar Senha'
@@ -280,14 +297,14 @@ def lista_grupos(request):
     """Lista todos os grupos"""
     search = request.GET.get('search', '')
     grupos = Group.objects.all()
-    
+
     if search:
         grupos = grupos.filter(name__icontains=search)
-    
+
     paginator = Paginator(grupos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -303,7 +320,7 @@ def criar_grupo(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         permissoes_ids = request.POST.getlist('permissions')
-        
+
         if not name:
             messages.error(request, 'Nome do grupo é obrigatório!')
         elif Group.objects.filter(name=name).exists():
@@ -313,12 +330,12 @@ def criar_grupo(request):
                 grupo = Group.objects.create(name=name)
                 if permissoes_ids:
                     grupo.permissions.set(permissoes_ids)
-                
+
                 messages.success(request, 'Grupo criado com sucesso!')
                 return redirect('usuarios:lista_grupos')
             except Exception as e:
                 messages.error(request, f'Erro ao criar grupo: {str(e)}')
-    
+
     # Organizar permissões por app
     permissoes_por_app = {}
     for permission in Permission.objects.select_related('content_type').all():
@@ -326,7 +343,7 @@ def criar_grupo(request):
         if app_label not in permissoes_por_app:
             permissoes_por_app[app_label] = []
         permissoes_por_app[app_label].append(permission)
-    
+
     context = {
         'permissoes_por_app': permissoes_por_app,
         'title': 'Criar Grupo'
@@ -339,11 +356,11 @@ def criar_grupo(request):
 def editar_grupo(request, pk):
     """Edita um grupo existente"""
     grupo = get_object_or_404(Group, pk=pk)
-    
+
     if request.method == 'POST':
         grupo.name = request.POST.get('name')
         permissoes_ids = request.POST.getlist('permissions')
-        
+
         if not grupo.name:
             messages.error(request, 'Nome do grupo é obrigatório!')
         elif Group.objects.filter(name=grupo.name).exclude(pk=pk).exists():
@@ -356,7 +373,7 @@ def editar_grupo(request, pk):
                 return redirect('usuarios:lista_grupos')
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar grupo: {str(e)}')
-    
+
     # Organizar permissões por app
     permissoes_por_app = {}
     for permission in Permission.objects.select_related('content_type').all():
@@ -364,7 +381,7 @@ def editar_grupo(request, pk):
         if app_label not in permissoes_por_app:
             permissoes_por_app[app_label] = []
         permissoes_por_app[app_label].append(permission)
-    
+
     context = {
         'grupo': grupo,
         'permissoes_por_app': permissoes_por_app,
@@ -378,7 +395,7 @@ def editar_grupo(request, pk):
 def deletar_grupo(request, pk):
     """Deleta um grupo"""
     grupo = get_object_or_404(Group, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             grupo.delete()
@@ -386,7 +403,7 @@ def deletar_grupo(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar grupo: {str(e)}')
         return redirect('usuarios:lista_grupos')
-    
+
     context = {
         'grupo': grupo,
         'title': 'Deletar Grupo'
@@ -403,35 +420,36 @@ def verificar_username(request):
     """Verifica se um username está disponível"""
     username = request.GET.get('username')
     user_id = request.GET.get('user_id')
-    
+
     if not username:
         return JsonResponse({'available': False, 'message': 'Username é obrigatório'})
-    
+
     query = Usuario.objects.filter(username=username)
     if user_id:
         query = query.exclude(pk=user_id)
-    
+
     if query.exists():
         return JsonResponse({'available': False, 'message': 'Este username já está em uso'})
-    
+
     return JsonResponse({'available': True, 'message': 'Username disponível'})
+
 
 @require_http_methods(["GET"])
 def verificar_email(request):
     """Verifica se um email está disponível"""
     email = request.GET.get('email')
     user_id = request.GET.get('user_id')
-    
+
     if not email:
         return JsonResponse({'available': False, 'message': 'Email é obrigatório'})
-    
+
     query = Usuario.objects.filter(email=email)
     if user_id:
         query = query.exclude(pk=user_id)
-    
+
     if query.exists():
         return JsonResponse({'available': False, 'message': 'Este email já está em uso'})
-    
+
     return JsonResponse({'available': True, 'message': 'Email disponível'})
 
 
@@ -439,36 +457,38 @@ def verificar_email(request):
 def toggle_usuario_status(request, pk):
     """Alterna o status ativo/inativo de um usuário"""
     usuario = get_object_or_404(Usuario, pk=pk)
-    
+
     if usuario == request.user:
         return JsonResponse({'success': False, 'message': 'Você não pode desativar sua própria conta'})
-    
+
     try:
         usuario.is_active = not usuario.is_active
         usuario.save()
-        
+
         status_text = 'ativado' if usuario.is_active else 'desativado'
         return JsonResponse({
-            'success': True, 
+            'success': True,
             'message': f'Usuário {status_text} com sucesso',
             'new_status': usuario.is_active
         })
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
+
 @require_http_methods(["POST"])
 def bulk_action_usuarios(request):
     """Executa ações em lote nos usuários"""
     action = request.POST.get('action')
     user_ids = request.POST.getlist('user_ids')
-    
+
     if not action or not user_ids:
         return JsonResponse({'success': False, 'message': 'Ação ou usuários não especificados'})
-    
+
     try:
-        usuarios = Usuario.objects.filter(id__in=user_ids).exclude(pk=request.user.pk)
+        usuarios = Usuario.objects.filter(
+            id__in=user_ids).exclude(pk=request.user.pk)
         count = usuarios.count()
-        
+
         if action == 'activate':
             usuarios.update(is_active=True)
             message = f'{count} usuário(s) ativado(s) com sucesso'
@@ -480,7 +500,7 @@ def bulk_action_usuarios(request):
             message = f'{count} usuário(s) excluído(s) com sucesso'
         else:
             return JsonResponse({'success': False, 'message': 'Ação inválida'})
-        
+
         return JsonResponse({'success': True, 'message': message})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
@@ -489,6 +509,7 @@ def bulk_action_usuarios(request):
 # VIEWS PARA PERFIL DO USUÁRIO
 # ============================================================================
 
+
 @login_required
 def meu_perfil(request):
     """Exibe e edita o perfil do usuário logado"""
@@ -496,13 +517,13 @@ def meu_perfil(request):
         request.user.first_name = request.POST.get('first_name', '')
         request.user.last_name = request.POST.get('last_name', '')
         request.user.email = request.POST.get('email', '')
-        
+
         try:
             request.user.save()
             messages.success(request, 'Perfil atualizado com sucesso!')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar perfil: {str(e)}')
-    
+
     context = {
         'title': 'Meu Perfil'
     }
@@ -524,10 +545,66 @@ def alterar_minha_senha(request):
                 messages.error(request, error[0])
     else:
         form = PasswordChangeForm(request.user)
-    
+
     context = {
         'form': form,
         'title': 'Alterar Senha'
     }
     return render(request, 'usuarios/alterar_minha_senha.html', context)
 
+
+class CustomAuthToken(ObtainAuthToken):
+    """
+    View de login personalizada para retornar mais dados além do token.
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        # Serializa os dados do usuário para incluir na resposta
+        user_serializer = UsuarioSerializer(user)
+
+        return Response({
+            'token': token.key,
+            'user': user_serializer.data
+        })
+
+
+class MeuPerfilAPIView(RetrieveUpdateAPIView):
+    """
+    Endpoint da API para ver e editar o perfil do usuário logado.
+    Permite requisições GET (buscar) e PUT/PATCH (atualizar).
+    """
+    serializer_class = UsuarioSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """
+        Retorna o objeto do próprio usuário que está fazendo a requisição.
+        """
+        return self.request.user
+
+
+class AlterarMinhaSenhaAPIView(UpdateAPIView):
+    """
+    Endpoint para o usuário alterar a própria senha.
+    """
+    serializer_class = AlterarSenhaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        usuario = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Senha alterada com sucesso!"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

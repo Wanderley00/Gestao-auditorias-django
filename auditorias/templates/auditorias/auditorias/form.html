@@ -90,22 +90,80 @@
 <h4 style="color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
     3. Programação
 </h4>
+
 <div class="form-row">
     <div class="form-group required">
         <label for="data_inicio" class="form-label">Data de Início</label>
-        <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ auditoria.data_inicio|date:'Y-m-d' }}" required>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control schedule-input" value="{{ auditoria.data_inicio|date:'Y-m-d' }}" required>
     </div>
     <div class="form-group">
-        <label for="data_fim" class="form-label">Data de Fim</label>
-        <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ auditoria.data_fim|date:'Y-m-d' }}">
+        <label for="data_fim" class="form-label">Até o Dia:</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control schedule-input" value="{{ auditoria.data_fim|date:'Y-m-d' }}">
+        <div class="field-help">*Se desejar fazer somente um dia, não preencha este campo.</div>
     </div>
 </div>
+
 <div class="form-row">
     <div class="form-group">
-        <label class="form-label">Turnos</label>
-        <select name="turnos" class="form-control form-select" multiple size="5">
-            {% for t in turnos %}<option value="{{ t.pk }}" {% if t in auditoria.turnos.all %}selected{% endif %}>{{ t.descricao }}</option>{% endfor %}
+        <input type="radio" id="por_frequencia" name="schedule_type" value="por_frequencia" class="schedule-input" {% if auditoria.por_frequencia %}checked{% endif %}>
+        <label for="por_frequencia">Por Frequência</label>
+    </div>
+    <div class="form-group">
+        <input type="radio" id="por_intervalo" name="schedule_type" value="por_intervalo" class="schedule-input" {% if auditoria.por_intervalo or not auditoria %}checked{% endif %}>
+        <label for="por_intervalo">Por Intervalo</label>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group" id="frequency-fields">
+        <label for="frequencia" class="form-label">Frequência</label>
+        <select id="frequencia" name="frequencia" class="form-control schedule-input">
+            <option value="DIARIO" {% if auditoria.frequencia == 'DIARIO' %}selected{% endif %}>Diário</option>
+            <option value="SEMANAL" {% if auditoria.frequencia == 'SEMANAL' %}selected{% endif %}>Semanal</option>
+            <option value="QUINZENAL" {% if auditoria.frequencia == 'QUINZENAL' %}selected{% endif %}>Quinzenal</option>
+            <option value="MENSAL" {% if auditoria.frequencia == 'MENSAL' %}selected{% endif %}>Mensal</option>
+            <option value="ANUAL" {% if auditoria.frequencia == 'ANUAL' %}selected{% endif %}>Anual</option>
         </select>
+    </div>
+    <div class="form-group" id="interval-fields">
+        <label for="intervalo" class="form-label">Intervalo (em dias)</label>
+        <input type="number" id="intervalo" name="intervalo" class="form-control schedule-input" value="{{ auditoria.intervalo|default:'1' }}" min="1">
+    </div>
+    <div class="form-group">
+        <label for="numero_repeticoes" class="form-label">Número de Repetições</label>
+        <input type="number" id="numero_repeticoes" name="numero_repeticoes" class="form-control schedule-input" value="{{ auditoria.numero_repeticoes|default:'1' }}" min="1">
+        <div class="field-help">Quantas vezes a auditoria deve ocorrer em cada data gerada.</div>
+    </div>
+</div>
+
+
+<div class="form-row single">
+     <div class="form-group">
+        <label class="toggle-switch">
+            <input type="checkbox" id="pular_finais_semana" name="pular_finais_semana" class="schedule-input" {% if auditoria.pular_finais_semana %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+        </label>
+        <span style="color: var(--text-secondary); font-size: 14px; margin-left: 12px;">Pular fins de semana</span>
+    </div>
+</div>
+
+<div id="date-preview-container" style="margin-top: 24px; display: none;">
+    <h5 style="color: var(--text-primary); margin-bottom: 12px;">Datas que serão geradas</h5>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Auditorias</th>
+                    <th>Repetição</th>
+                    <th>Dia da Semana</th>
+                    <th>Dia</th>
+                    <th>Mês</th>
+                    <th>Ano</th>
+                </tr>
+            </thead>
+            <tbody id="date-preview-body">
+                </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -114,7 +172,9 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Referências aos elementos do DOM
+    // ===================================================================
+    // LÓGICA 1: CARREGAMENTO DINÂMICO DE LOCAL, MODELO E ATIVO
+    // ===================================================================
     const nivelSelect = document.getElementById('nivel_organizacional');
     const empresaSelect = document.getElementById('local_empresa');
     const areaSelect = document.getElementById('local_area');
@@ -129,7 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'SUBSETOR': document.getElementById('container-subsetor')
     };
 
-    // Função para atualizar a visibilidade dos containers
     function atualizarVisibilidade() {
         const nivel = nivelSelect.value;
         Object.values(containers).forEach(c => c.style.display = 'none');
@@ -148,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
         carregarAtivos();
     }
 
-    // Função genérica para popular um select via AJAX
     function popularSelect(selectElement, url, placeholder) {
         selectElement.innerHTML = `<option value="">${placeholder}</option>`;
         fetch(url)
@@ -161,7 +219,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Carregar ativos com base na seleção
     function carregarAtivos() {
         const nivel = nivelSelect.value;
         let local_id = null;
@@ -183,11 +240,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 });
         } else {
-             ativosSelect.innerHTML = '<option value="">Selecione um local para ver os ativos</option>';
+            ativosSelect.innerHTML = '<option value="">Selecione um local para ver os ativos</option>';
         }
     }
 
-    // Event Listeners
     nivelSelect.addEventListener('change', atualizarVisibilidade);
     empresaSelect.addEventListener('change', () => {
         popularSelect(areaSelect, `{% url 'auditorias:get_areas_por_empresa' %}?empresa_id=${empresaSelect.value}`, 'Selecione uma área...');
@@ -203,8 +259,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     subsetorSelect.addEventListener('change', carregarAtivos);
 
-    // Inicializar o formulário
     atualizarVisibilidade();
+
+
+    // ===================================================================
+    // LÓGICA 2: PREVISÃO DINÂMICA DE DATAS DE AGENDAMENTO
+    // ===================================================================
+    const scheduleInputs = document.querySelectorAll('.schedule-input');
+    const frequencyContainer = document.getElementById('frequency-fields');
+    const intervalContainer = document.getElementById('interval-fields');
+    const porFrequenciaRadio = document.getElementById('por_frequencia');
+    const previewBody = document.getElementById('date-preview-body');
+    const previewContainer = document.getElementById('date-preview-container');
+
+    function toggleScheduleFields() {
+        if (porFrequenciaRadio.checked) {
+            frequencyContainer.style.display = 'block';
+            intervalContainer.style.display = 'none';
+        } else {
+            frequencyContainer.style.display = 'none';
+            intervalContainer.style.display = 'block';
+        }
+    }
+
+    function updateDatePreview() {
+        toggleScheduleFields();
+
+        const dataInicio = document.getElementById('data_inicio').value;
+        const dataFim = document.getElementById('data_fim').value;
+        const scheduleType = document.querySelector('input[name="schedule_type"]:checked').value;
+        const frequencia = document.getElementById('frequencia').value;
+        const intervalo = document.getElementById('intervalo').value;
+        const numeroRepeticoes = document.getElementById('numero_repeticoes').value;
+        const pularFinsSemana = document.getElementById('pular_finais_semana').checked;
+
+        if (!dataInicio) {
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        const params = new URLSearchParams({
+            data_inicio: dataInicio,
+            ate_dia: dataFim,
+            schedule_type: scheduleType,
+            frequencia: frequencia,
+            intervalo: intervalo,
+            numero_repeticoes: numeroRepeticoes,
+            pular_fins_semana: pularFinsSemana
+        });
+        
+        const url = `{% url 'auditorias:preview_audit_dates' %}?${params.toString()}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                previewBody.innerHTML = '';
+                
+                if (data.dates && data.dates.length > 0) {
+                    previewContainer.style.display = 'block';
+                    data.dates.forEach(date => {
+                        const row = `
+                            <tr>
+                                <td>${date.auditoria_num}</td>
+                                <td>${date.repeticao_num}x</td>
+                                <td>${date.dia_semana}</td>
+                                <td>${date.dia}</td>
+                                <td>${date.mes}</td>
+                                <td>${date.ano}</td>
+                            </tr>
+                        `;
+                        previewBody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    previewContainer.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+    }
+
+    scheduleInputs.forEach(input => {
+        input.addEventListener('change', updateDatePreview);
+    });
+
+    updateDatePreview();
 });
 </script>
 {% endblock %}

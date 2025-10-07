@@ -16,7 +16,42 @@ from .models import (
     Pergunta,
     OpcaoResposta,
     OpcaoPorcentagem,
+    Resposta,  # <-- ADICIONE ESTA LINHA
+    AnexoResposta  # <-- ADICIONE ESTA LINHA
 )
+
+# 1. Crie uma classe Inline para os Anexos
+
+
+class AnexoRespostaInline(admin.TabularInline):
+    model = AnexoResposta
+    extra = 0  # Não mostra campos de anexo extras para adicionar pelo admin
+    readonly_fields = ('arquivo', 'data_upload')  # Apenas visualização
+
+# 2. Crie uma classe ModelAdmin para as Respostas
+
+
+@admin.register(Resposta)
+class RespostaAdmin(admin.ModelAdmin):
+    list_display = ('pergunta', 'auditoria_instancia',
+                    'resposta_livre_texto', 'data_resposta')
+    list_filter = ('auditoria_instancia__data_execucao',
+                   'pergunta__topico__checklist')
+    search_fields = ('pergunta__descricao', 'resposta_livre_texto')
+    # Mostra os anexos dentro da página da resposta
+    inlines = [AnexoRespostaInline]
+
+# 3. Crie uma classe Inline para as Respostas
+
+
+class RespostaInline(admin.TabularInline):
+    model = Resposta
+    extra = 0  # Não permite adicionar novas respostas pelo admin
+    # Campos que você quer ver na lista de respostas
+    fields = ('pergunta', 'opcao_resposta',
+              'opcao_porcentagem', 'resposta_livre_texto')
+    readonly_fields = fields  # Torna todos os campos somente leitura
+
 
 @admin.register(Pilar)
 class PilarAdmin(admin.ModelAdmin):
@@ -29,6 +64,7 @@ class PilarAdmin(admin.ModelAdmin):
         }),
     )
 
+
 @admin.register(CategoriaAuditoria)
 class CategoriaAuditoriaAdmin(admin.ModelAdmin):
     list_display = ('id', 'pilar', 'descricao', 'ativo', 'data_cadastro')
@@ -40,11 +76,13 @@ class CategoriaAuditoriaAdmin(admin.ModelAdmin):
         }),
     )
 
+
 class RequisitoNormaInline(admin.TabularInline):
     model = RequisitoNorma
     extra = 0
     min_num = 1
     fields = ('codigo', 'requisito', 'descricao', 'ativo')
+
 
 @admin.register(Norma)
 class NormaAdmin(admin.ModelAdmin):
@@ -58,15 +96,18 @@ class NormaAdmin(admin.ModelAdmin):
         }),
     )
 
+
 @admin.register(FerramentaDigital)
 class FerramentaDigitalAdmin(admin.ModelAdmin):
     list_display = ('nome',)
     search_fields = ('nome',)
 
+
 @admin.register(FerramentaCausaRaiz)
 class FerramentaCausaRaizAdmin(admin.ModelAdmin):
     list_display = ('nome',)
     search_fields = ('nome',)
+
 
 @admin.register(ModeloAuditoria)
 class ModeloAuditoriaAdmin(admin.ModelAdmin):
@@ -97,6 +138,7 @@ class ModeloAuditoriaAdmin(admin.ModelAdmin):
             'fields': ('descricao', 'checklist', 'categoria', 'ferramenta_causa_raiz', 'ativo', 'iniciar_por_codigo_qr')
         }),
     )
+
 
 @admin.register(Auditoria)
 class AuditoriaAdmin(admin.ModelAdmin):
@@ -140,21 +182,27 @@ class AuditoriaAdmin(admin.ModelAdmin):
         }),
     )
 
+
 @admin.register(AuditoriaInstancia)
 class AuditoriaInstanciaAdmin(admin.ModelAdmin):
     list_display = ('auditoria_agendada', 'data_execucao', 'executada')
     list_filter = ('executada', 'data_execucao')
-    search_fields = ('auditoria_agendada__descricao',)
+    # Busca pelo ID da auditoria pai
+    search_fields = ('auditoria_agendada__id',)
+    inlines = [RespostaInline]
+
 
 class OpcaoRespostaInline(admin.TabularInline):
     model = OpcaoResposta
     extra = 0
     fields = ('descricao', 'status')
 
+
 class OpcaoPorcentagemInline(admin.TabularInline):
     model = OpcaoPorcentagem
     extra = 0
     fields = ('descricao', 'peso', 'cor')
+
 
 @admin.register(Pergunta)
 class PerguntaAdmin(admin.ModelAdmin):
@@ -163,10 +211,12 @@ class PerguntaAdmin(admin.ModelAdmin):
     search_fields = ('descricao',)
     inlines = [OpcaoRespostaInline, OpcaoPorcentagemInline]
 
+
 class PerguntaInline(admin.TabularInline):
     model = Pergunta
     extra = 0
     fields = ('descricao', 'obrigatoria', 'campo_desabilitado', 'ordem')
+
 
 @admin.register(Topico)
 class TopicoAdmin(admin.ModelAdmin):
@@ -175,10 +225,12 @@ class TopicoAdmin(admin.ModelAdmin):
     search_fields = ('descricao',)
     inlines = [PerguntaInline]
 
+
 class TopicoInline(admin.TabularInline):
     model = Topico
     extra = 0
     fields = ('descricao', 'ordem')
+
 
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
