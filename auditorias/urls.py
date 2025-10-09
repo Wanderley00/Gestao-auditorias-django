@@ -49,6 +49,12 @@ urlpatterns = [
          name='criar_modelo_auditoria'),
     path('modelos-auditoria/<int:pk>/editar/',
          views.editar_modelo_auditoria, name='editar_modelo_auditoria'),
+
+    path('agendamentos/<int:pk>/redirecionar/',
+         views.redirecionar_agendamento, name='redirecionar_agendamento'),
+    path('execucoes/<int:pk>/redirecionar/',
+         views.redirecionar_execucao, name='redirecionar_execucao'),
+
     path('modelos-auditoria/<int:pk>/deletar/',
          views.deletar_modelo_auditoria, name='deletar_modelo_auditoria'),
 
@@ -71,6 +77,11 @@ urlpatterns = [
     path('ajax/preview-dates/', views.preview_audit_dates,
          name='preview_audit_dates'),
 
-    path('historico/', views.historico_auditorias, name='historico_auditorias'),
+    path('execucoes/', views.lista_execucoes, name='lista_execucoes'),
+
+    path('historico/', views.historico_concluidas, name='historico_concluidas'),
+
+    path('execucoes/<int:pk>/deletar/',
+         views.deletar_execucao, name='deletar_execucao'),
 
 ]

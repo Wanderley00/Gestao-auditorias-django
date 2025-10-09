@@ -105,11 +105,11 @@
 
 <div class="form-row">
     <div class="form-group">
-        <input type="radio" id="por_frequencia" name="schedule_type" value="por_frequencia" class="schedule-input" {% if auditoria.por_frequencia %}checked{% endif %}>
+        <input type="radio" id="por_frequencia" name="schedule_type" value="por_frequencia" class="schedule-input" {% if auditoria.por_frequencia or not auditoria %}checked{% endif %}>
         <label for="por_frequencia">Por Frequência</label>
     </div>
     <div class="form-group">
-        <input type="radio" id="por_intervalo" name="schedule_type" value="por_intervalo" class="schedule-input" {% if auditoria.por_intervalo or not auditoria %}checked{% endif %}>
+        <input type="radio" id="por_intervalo" name="schedule_type" value="por_intervalo" class="schedule-input" {% if auditoria.por_intervalo %}checked{% endif %}>
         <label for="por_intervalo">Por Intervalo</label>
     </div>
 </div>

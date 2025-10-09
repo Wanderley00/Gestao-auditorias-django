@@ -1,12 +1,12 @@
 {% extends 'auditorias/base.html' %}
 
-{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 
 {% block content %}
 <div class="content-header">
     <h2 class="content-title">{{ title }}</h2>
-    <p class="content-subtitle">Visualize o status e o resultado de todas as auditorias executadas.</p>
+    <p class="content-subtitle">Visualize o resultado de todas as auditorias finalizadas.</p>
 </div>
 
 <div class="card" style="margin-bottom: 24px;">
@@ -15,22 +15,21 @@
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label class="form-label">Buscar</label>
                 <div class="search-container">
-                    <input type="text" name="search" value="{{ search }}" placeholder="Buscar por responsável, local, modelo..." class="form-control search-input">
+                    <input type="text" name="search" value="{{ search }}" placeholder="Buscar por auditor, local..." class="form-control search-input">
                 </div>
             </div>
             <button type="submit" class="btn btn-secondary">
-                <i class="fas fa-search"></i>
-                Buscar
+                <i class="fas fa-search"></i> Buscar
             </button>
             {% if search %}
-            <a href="{% url 'auditorias:historico_auditorias' %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i>
-                Limpar
+            <a href="{% url 'auditorias:historico_concluidas' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Limpar
             </a>
             {% endif %}
         </form>
     </div>
 </div>
+
 
 <div class="card">
     <div class="card-body">
@@ -38,48 +37,49 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Data Execução</th>
+                        <th>ID Execução</th>
+                        <th>ID Agendamento</th> <th>Data de Criação</th>
+                        <th>Data Programada</th> 
+                        <th>Data de Realização</th>
+                        <th>Criado por</th>
                         <th>Auditor</th>
                         <th>Local</th>
-                        <th>Modelo de Auditoria</th>
+                        <th>Modelo</th>
+                        <th>Ferramenta</th>
                         <th>Plataforma</th>
-                        <th>Conclusão</th>
+                        <th>Conclusão (%)</th>
+                        <th>Status</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for instancia in page_obj %}
                     <tr>
-                        <td><strong>{{ instancia.id }}</strong></td>
+                        <td><strong>#{{ instancia.id }}</strong></td>
+                        <td>#{{ instancia.auditoria_agendada.id }}</td> <td>{{ instancia.auditoria_agendada.data_criacao|date:"d/m/Y" }}</td>
                         <td>{{ instancia.data_execucao|date:"d/m/Y" }}</td>
-                        <td>{{ instancia.auditoria_agendada.responsavel.get_full_name|default:instancia.auditoria_agendada.responsavel.username }}</td>
+                        <td>{{ instancia.get_data_conclusao|date:"d/m/Y H:i"|default:"--" }}</td>
                         <td>
-                            {# Lógica para exibir o local correto #}
-                            {% with auditoria=instancia.auditoria_agendada %}
-                                {% if auditoria.local_subsetor %}
-                                    {{ auditoria.local_subsetor.nome }}
-                                {% elif auditoria.local_setor %}
-                                    {{ auditoria.local_setor.nome }}
-                                {% elif auditoria.local_area %}
-                                    {{ auditoria.local_area.nome }}
-                                {% elif auditoria.local_empresa %}
-                                    {{ auditoria.local_empresa.nome }}
-                                {% else %}
-                                    --
-                                {% endif %}
-                            {% endwith %}
+                            {% if instancia.auditoria_agendada.criado_por %}
+                                {{ instancia.auditoria_agendada.criado_por.get_full_name|default:instancia.auditoria_agendada.criado_por.username }}
+                            {% else %}
+                                <span style="color: var(--text-muted);">Sistema</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ instancia.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
+                        <td>
+                           {{ instancia.local_execucao.nome|default:"N/A" }}
                         </td>
                         <td>
-                            {# Lista os modelos associados #}
                             {% for modelo in instancia.auditoria_agendada.modelos.all %}
                                 {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}
-                                --
-                            {% endfor %}
+                            {% empty %}--{% endfor %}
                         </td>
                         <td>
-                            <span class="badge badge-info">{{ instancia.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
+                            <span class="badge badge-secondary">{{ instancia.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">{{ instancia.auditoria_agendada.get_categoria_auditoria_display|default:"N/A" }}</span>
                         </td>
                         <td>
                             <div style="font-weight: 600; color: var(--primary);">
@@ -87,20 +87,23 @@
                             </div>
                         </td>
                         <td>
-                            <a href="#" class="btn btn-secondary btn-icon" title="Ver Detalhes">
-                                <i class="fas fa-eye"></i>
+                            <span class="badge badge-success">{{ instancia.status }}</span>
+                        </td>
+                        <td>
+                            <a href="#" class="btn btn-secondary btn-icon" title="Ver Relatório">
+                                <i class="fas fa-chart-bar"></i>
                             </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 48px;">Nenhuma execução encontrada.</td>
+                        <td colspan="8" style="text-align: center; padding: 48px;">Nenhuma auditoria concluída encontrada.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
+        
         {% if page_obj.has_other_pages %}
         <div class="pagination">
             {% if page_obj.has_previous %}

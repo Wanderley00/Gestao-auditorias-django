@@ -34,10 +34,17 @@ from ativos.models import Ativo
 from cadastros_base.models import Turno
 from usuarios.models import Usuario
 
+import json
+
+from django.db.models import Q, F, Value
+from django.db.models.functions import Concat
+
+from django.utils import timezone
 
 # ============================================================================
 # VIEWS PRINCIPAIS - DASHBOARD E LISTAGENS
 # ============================================================================
+
 
 @login_required
 def dashboard_auditorias(request):
@@ -984,7 +991,12 @@ def lista_auditorias(request):
     """Lista todas as auditorias agendadas"""
     search = request.GET.get('search', '')
     auditorias = Auditoria.objects.select_related(
-        'responsavel', 'ferramenta').prefetch_related('modelos').all()
+        'responsavel',
+        'ferramenta',
+        'criado_por'
+    ).prefetch_related(
+        'modelos'
+    ).all()
 
     if search:
         auditorias = auditorias.filter(
@@ -997,16 +1009,24 @@ def lista_auditorias(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # --- INÍCIO DA CORREÇÃO ---
+    all_users_list = list(Usuario.objects.filter(is_active=True).annotate(
+        name=Concat('first_name', Value(' '), 'last_name')
+    ).values('id', 'name'))
+    # --- FIM DA CORREÇÃO ---
+
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Auditorias Agendadas',
+        'title': 'Agendamento de Auditorias',
         'singular': 'Auditoria',
         'button_text': 'Nova Auditoria',
         'create_url': 'auditorias:criar_auditoria',
         'artigo': 'a',
         'empty_message': 'Nenhuma auditoria agendada',
-        'empty_subtitle': 'Comece criando a primeira auditoria.'
+        'empty_subtitle': 'Comece criando a primeira auditoria.',
+        # Passa o JSON para o template
+        'all_users_json': json.dumps(all_users_list)
     }
     return render(request, 'auditorias/auditorias/lista.html', context)
 
@@ -1038,8 +1058,11 @@ def criar_auditoria(request):
                 data_fim = datetime.strptime(
                     data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
 
+                schedule_type = request.POST.get('schedule_type')
+
                 # --- Monta o objeto com TODOS os dados ANTES de salvar ---
                 auditoria = Auditoria(
+                    criado_por=request.user,
                     ferramenta_id=ferramenta_id,
                     responsavel_id=responsavel_id,
                     nivel_organizacional=nivel_organizacional,
@@ -1053,8 +1076,8 @@ def criar_auditoria(request):
                     # Outros campos...
                     categoria_auditoria=request.POST.get(
                         'categoria_auditoria'),
-                    por_frequencia=request.POST.get('por_frequencia') == 'on',
-                    por_intervalo=request.POST.get('por_intervalo') == 'on',
+                    por_frequencia=schedule_type == 'por_frequencia',
+                    por_intervalo=schedule_type == 'por_intervalo',
                     frequencia=request.POST.get('frequencia') or None,
                     intervalo=int(request.POST.get('intervalo')
                                   ) if request.POST.get('intervalo') else None,
@@ -1134,10 +1157,11 @@ def editar_auditoria(request, pk):
             auditoria.local_subsetor_id = request.POST.get(
                 'local_subsetor') or None
 
+            schedule_type = request.POST.get('schedule_type')
+
             # Atualiza os dados de programação
-            auditoria.por_frequencia = request.POST.get(
-                'por_frequencia') == 'on'
-            auditoria.por_intervalo = request.POST.get('por_intervalo') == 'on'
+            auditoria.por_frequencia = schedule_type == 'por_frequencia'
+            auditoria.por_intervalo = schedule_type == 'por_intervalo'
             auditoria.frequencia = request.POST.get('frequencia') or None
             auditoria.intervalo = int(request.POST.get(
                 'intervalo')) if request.POST.get('intervalo') else None
@@ -1675,36 +1699,130 @@ def preview_audit_dates(request):
 
 
 @login_required
-def historico_auditorias(request):
-    """Exibe o histórico de todas as instâncias de auditoria."""
-
-    # Query otimizada para buscar todos os dados relacionados de uma vez
-    instancias_list = AuditoriaInstancia.objects.select_related(
+def lista_execucoes(request):
+    """Exibe o histórico de todas as instâncias de auditoria PENDENTES e ATRASADAS."""
+    instancias_list = AuditoriaInstancia.objects.exclude(executada=True).select_related(
         'auditoria_agendada__responsavel',
         'auditoria_agendada__ferramenta',
-        # Exemplo de otimização profunda
-        'auditoria_agendada__local_subsetor__setor__area__empresa'
+        'auditoria_agendada__criado_por',  # Adicionado
+        'local_execucao'  # Adicionado
     ).prefetch_related(
-        'auditoria_agendada__modelos',
-        'respostas'  # Pré-carrega as respostas para a contagem
-    ).order_by('-data_execucao')  # Ordena pelas mais recentes
+        'auditoria_agendada__modelos'
+    ).order_by('data_execucao')
 
-    # Lógica de busca (opcional, mas recomendada)
     search = request.GET.get('search', '')
     if search:
         instancias_list = instancias_list.filter(
             Q(auditoria_agendada__responsavel__first_name__icontains=search) |
-            Q(auditoria_agendada__local_subsetor__nome__icontains=search) |
+            Q(local_execucao__nome__icontains=search) |
             Q(auditoria_agendada__modelos__descricao__icontains=search)
         ).distinct()
 
-    paginator = Paginator(instancias_list, 15)  # Exibe 15 por página
+    paginator = Paginator(instancias_list, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # --- INÍCIO DA CORREÇÃO ---
+    all_users_list = list(Usuario.objects.filter(is_active=True).annotate(
+        name=Concat('first_name', Value(' '), 'last_name')
+    ).values('id', 'name'))
+    # --- FIM DA CORREÇÃO ---
+
+    context = {
+        'page_obj': page_obj,
+        'search': search,
+        'title': 'Auditorias para Execução',
+        # Passa o JSON para o template
+        'all_users_json': json.dumps(all_users_list)
+    }
+    return render(request, 'auditorias/execucoes.html', context)
+
+
+@login_required
+def historico_concluidas(request):
+    """Exibe o histórico de todas as instâncias de auditoria CONCLUÍDAS."""
+
+    # A query agora filtra apenas as instâncias executadas
+    instancias_list = AuditoriaInstancia.objects.filter(executada=True).select_related(
+        'auditoria_agendada__responsavel',
+        'auditoria_agendada__criado_por',
+        'auditoria_agendada__ferramenta',
+    ).prefetch_related(
+        'auditoria_agendada__modelos',
+        'respostas'
+    ).order_by('-data_execucao')
+
+    search = request.GET.get('search', '')
+    if search:
+        # ... (lógica de busca pode ser adicionada aqui se necessário) ...
+        pass
+
+    paginator = Paginator(instancias_list, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Histórico de Execuções'
+        'title': 'Histórico de Auditorias Concluídas'
     }
-    return render(request, 'auditorias/historico.html', context)
+    return render(request, 'auditorias/historico_concluidas.html', context)
+
+
+@login_required
+def redirecionar_agendamento(request, pk):
+    """ Redireciona o auditor de um AGENDAMENTO PAI e de todas as suas execuções futuras. """
+    agendamento = get_object_or_404(Auditoria, pk=pk)
+    if request.method == 'POST':
+        novo_responsavel_id = request.POST.get('responsavel_id')
+        if novo_responsavel_id:
+            try:
+                # 1. Atualiza o responsável do agendamento pai
+                agendamento.responsavel_id = novo_responsavel_id
+                agendamento.save(update_fields=['responsavel'])
+
+                # 2. Atualiza o responsável de todas as execuções filhas NÃO CONCLUÍDAS
+                agendamento.instancias.filter(executada=False).update(
+                    responsavel_id=novo_responsavel_id)
+
+                messages.success(
+                    request, f'Agendamento #{agendamento.id} e suas execuções foram redirecionados.')
+            except Exception as e:
+                messages.error(request, f'Erro ao redirecionar: {e}')
+
+    return redirect(request.META.get('HTTP_REFERER', 'auditorias:lista_auditorias'))
+
+
+@login_required
+def redirecionar_execucao(request, pk):
+    """ Redireciona o auditor de uma ÚNICA EXECUÇÃO. """
+    execucao = get_object_or_404(AuditoriaInstancia, pk=pk)
+    if request.method == 'POST':
+        novo_responsavel_id = request.POST.get('responsavel_id')
+        if novo_responsavel_id:
+            try:
+                # Atualiza o responsável apenas desta execução
+                execucao.responsavel_id = novo_responsavel_id
+                execucao.save(update_fields=['responsavel'])
+                messages.success(
+                    request, f'Execução #{execucao.id} foi redirecionada com sucesso.')
+            except Exception as e:
+                messages.error(request, f'Erro ao redirecionar: {e}')
+
+    return redirect(request.META.get('HTTP_REFERER', 'auditorias:lista_execucoes'))
+
+
+@login_required
+def deletar_execucao(request, pk):
+    """ Deleta uma única instância de auditoria. """
+    instancia = get_object_or_404(AuditoriaInstancia, pk=pk)
+    if request.method == 'POST':
+        try:
+            instancia.delete()
+            messages.success(
+                request, f'Execução #{instancia.id} deletada com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao deletar a execução: {e}')
+
+    # Redireciona de volta para a lista de execuções
+    return redirect('auditorias:lista_execucoes')

@@ -318,6 +318,14 @@ FREQUENCIAS_AGENDAMENTO = [
 
 
 class Auditoria(models.Model):
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Criado por",
+        related_name='auditorias_criadas',  # 'related_name' para evitar conflito
+        editable=False  # Impede que seja editado pelo painel de admin)
+    )
     ferramenta = models.ForeignKey(
         FerramentaDigital,
         on_delete=models.SET_NULL,
@@ -412,45 +420,68 @@ class Auditoria(models.Model):
     def __str__(self):
         return f"Auditoria agendada para {self.get_nivel_organizacional_display()} - {self.data_inicio}"
 
+    @property
+    def get_programacao_display(self):
+        """ Retorna uma string descrevendo o tipo de agendamento. """
+        if self.por_frequencia and self.frequencia:
+            # get_frequencia_display() pega o nome legível (ex: 'Semanal')
+            return f"Frequência ({self.get_frequencia_display()})"
+        elif self.por_intervalo and self.intervalo:
+            return f"Intervalo de {self.intervalo} dia(s)"
+        else:
+            # Se não for por frequência nem intervalo, é uma auditoria de data única
+            return "Dia Único"
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs)  # Salva o objeto 'pai' primeiro
 
+        # Se for uma edição, apaga as instâncias futuras não executadas para recriá-las
         if not is_new:
             self.instancias.filter(
                 executada=False,
                 data_execucao__gte=timezone.now().date()
             ).delete()
 
-        # Lógica de geração de instâncias (VERSÃO CORRIGIDA)
+        # 1. Determinar a lista de locais de execução (sempre no nível de Subsetor)
+        target_locations = []
+        if self.nivel_organizacional == 'SUBSETOR' and self.local_subsetor:
+            target_locations.append(self.local_subsetor)
+        elif self.nivel_organizacional == 'SETOR' and self.local_setor:
+            target_locations = list(
+                self.local_setor.subsetor_set.filter(ativo=True))
+        elif self.nivel_organizacional == 'AREA' and self.local_area:
+            target_locations = list(SubSetor.objects.filter(
+                setor__area=self.local_area, ativo=True))
+        elif self.nivel_organizacional == 'EMPRESA' and self.local_empresa:
+            target_locations = list(SubSetor.objects.filter(
+                setor__area__empresa=self.local_empresa, ativo=True))
+
+        # Se não encontrou locais específicos (ou não se aplica), cria uma instância sem local
+        if not target_locations:
+            target_locations.append(None)
+
+        # 2. Gerar a lista de datas programadas (lógica que já tínhamos)
+        dates_to_create = []
         if self.data_inicio:
-            dates_to_create = []
             current_date = self.data_inicio
-            repetitions = self.numero_repeticoes if self.numero_repeticoes and self.numero_repeticoes > 0 else 1
+            end_date = self.data_fim
 
-            # CASO 1: SEM DATA FINAL (AUDITORIA ÚNICA)
-            if not self.data_fim:
+            if not end_date:  # Auditoria de dia único
                 if not (self.pular_finais_semana and current_date.weekday() >= 5):
-                    for _ in range(repetitions):
-                        dates_to_create.append(current_date)
-
-            # CASO 2: COM DATA FINAL
-            else:
+                    dates_to_create.append(current_date)
+            else:  # Auditoria com período
                 loop_limit = 365 * 5
                 loops = 0
-                while current_date <= self.data_fim and loops < loop_limit:
+                while current_date <= end_date and loops < loop_limit:
                     loops += 1
-
                     if not (self.pular_finais_semana and current_date.weekday() >= 5):
-                        for _ in range(repetitions):
-                            dates_to_create.append(current_date)
+                        dates_to_create.append(current_date)
 
-                    # Calcula a próxima data
-                    if self.por_intervalo:
-                        # LÓGICA DE INTERVALO CORRIGIDA
-                        interval = self.intervalo if self.intervalo else 0
-                        current_date += timedelta(days=interval + 1)
-                    elif self.por_frequencia:
+                    # Lógica de incremento da data
+                    if self.por_intervalo and self.intervalo:
+                        current_date += timedelta(days=self.intervalo + 1)
+                    elif self.por_frequencia and self.frequencia:
                         if self.frequencia == 'DIARIO':
                             current_date += timedelta(days=1)
                         elif self.frequencia == 'SEMANAL':
@@ -461,17 +492,23 @@ class Auditoria(models.Model):
                             current_date += relativedelta(months=1)
                         elif self.frequencia == 'ANUAL':
                             current_date += relativedelta(years=1)
-                        else:  # Fallback para diário se frequência for inválida
-                            current_date += timedelta(days=1)
-                    else:  # Intervalo simples de datas
-                        current_date += timedelta(days=1)
+                        else:
+                            break  # Frequência inválida, para o loop
+                    else:
+                        break  # Sem regra de repetição, para o loop
 
-            # Cria as instâncias no banco de uma forma otimizada
-            for dt in dates_to_create:
-                AuditoriaInstancia.objects.get_or_create(
-                    auditoria_agendada=self,
-                    data_execucao=dt
-                )
+        # 3. Criar as instâncias cruzando DATAS vs LOCAIS vs REPETIÇÕES
+        repetitions = self.numero_repeticoes if self.numero_repeticoes and self.numero_repeticoes > 0 else 1
+
+        for dt in dates_to_create:
+            for location in target_locations:
+                for _ in range(repetitions):
+                    AuditoriaInstancia.objects.create(
+                        auditoria_agendada=self,
+                        data_execucao=dt,
+                        local_execucao=location,
+                        responsavel=self.responsavel  # <-- ADICIONE ESTA LINHA
+                    )
 
 
 class AuditoriaInstancia(models.Model):
@@ -481,8 +518,88 @@ class AuditoriaInstancia(models.Model):
         verbose_name="Auditoria Agendada",
         related_name='instancias'
     )
+
+    responsavel = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Auditor da Execução")
+
+    local_execucao = models.ForeignKey(
+        SubSetor,
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        verbose_name="Local de Execução (Subsetor)")
+
     data_execucao = models.DateField(verbose_name="Data de Execução")
     executada = models.BooleanField(default=False, verbose_name="Executada?")
+
+    @property
+    def status(self):
+        """Calcula o status desta instância específica."""
+        if self.executada:
+            return "Concluída"
+
+        if self.data_execucao < timezone.now().date():
+            return "Atrasada"
+
+        return "Pendente"
+    # --- FIM DA ADIÇÃO ---
+
+    @property
+    def status_execucao(self):
+        """ Retorna o status específico para a tela de execuções, considerando a frequência. """
+        today = timezone.now().date()
+
+        if self.executada:
+            return "Concluída"
+
+        # Se a data de execução ainda está no futuro, está 'Agendada'
+        if self.data_execucao > today:
+            return "Agendada"
+
+        # Se a data de execução é hoje, está 'Pendente'
+        if self.data_execucao == today:
+            return "Pendente"
+
+        # Se a data de execução já passou, verificamos se está em atraso real
+        if self.data_execucao < today:
+            agendamento = self.auditoria_agendada
+            # Padrão de 1 dia para auditorias únicas
+            grace_period = timedelta(days=1)
+
+            if agendamento.por_frequencia and agendamento.frequencia:
+                if agendamento.frequencia == 'DIARIO':
+                    grace_period = timedelta(days=1)
+                elif agendamento.frequencia == 'SEMANAL':
+                    grace_period = timedelta(weeks=1)
+                elif agendamento.frequencia == 'QUINZENAL':
+                    grace_period = timedelta(weeks=2)
+                elif agendamento.frequencia == 'MENSAL':
+                    grace_period = relativedelta(months=1)
+                elif agendamento.frequencia == 'ANUAL':
+                    grace_period = relativedelta(years=1)
+
+            elif agendamento.por_intervalo and agendamento.intervalo:
+                grace_period = timedelta(days=agendamento.intervalo + 1)
+
+            # A data limite é a data programada + o período de carência
+            data_limite = self.data_execucao + grace_period
+
+            if today >= data_limite:
+                return "Atraso"
+            else:
+                # Se a data de hoje ainda está dentro do período de carência, continua pendente
+                return "Pendente"
+
+        return "Pendente"  # Fallback para o dia de hoje
+
+    def get_data_conclusao(self):
+        """Retorna a data e hora da última resposta enviada para esta instância."""
+        ultima_resposta = self.respostas.order_by('-data_resposta').first()
+        if ultima_resposta:
+            return ultima_resposta.data_resposta
+        return None
 
     def get_total_perguntas(self):
         """Calcula o número total de perguntas de todos os checklists associados à auditoria pai."""

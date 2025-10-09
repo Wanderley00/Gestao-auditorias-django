@@ -1,0 +1,85 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}Auditorias para Execução{% endblock %}
+{% block page_title %}Auditorias para Execução{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2 class="content-title">Auditorias para Execução</h2>
+    <p class="content-subtitle">Visualize todas as auditorias pendentes, atrasadas ou em andamento.</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID Execução</th>
+                        <th>ID Agendamento</th> <th>Data Programada</th>
+                        <th>Auditor</th>
+                        <th>Local</th>
+                        <th>Modelo de Auditoria</th>
+                        <th>Ferramenta</th>
+                        <th>Plataforma</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instancia in page_obj %}
+                    <tr>
+                        <td><strong>#{{ instancia.id }}</strong></td>
+                        <td>#{{ instancia.auditoria_agendada.id }}</td> <td>{{ instancia.data_execucao|date:"d/m/Y" }}</td>
+                        <td>{{ instancia.responsavel.get_full_name|default:instancia.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
+                        <td>
+                            {{ instancia.local_execucao.nome|default:"N/A" }}
+                        </td>
+                        <td>
+                            {% for modelo in instancia.auditoria_agendada.modelos.all %}
+                                {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}--{% endfor %}
+                        </td>
+                        <td>
+                            <span class="badge badge-secondary">{{ instancia.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">{{ instancia.auditoria_agendada.get_categoria_auditoria_display|default:"N/A" }}</span>
+                        </td>
+                        <td>
+                            {% with status=instancia.status_execucao %}
+                                {% if status == 'Atraso' %}
+                                    <span class="badge badge-error">{{ status }}</span>
+                                {% elif status == 'Pendente' %}
+                                    {# Mudamos Pendente para uma cor mais chamativa #}
+                                    <span class="badge badge-info">{{ status }}</span>
+                                {% else %} {# Agendada #}
+                                    {# Agendada fica com uma cor mais neutra #}
+                                    <span class="badge badge-secondary" style="background-color: #e2e8f0; color: #475569;">{{ status }}</span>
+                                {% endif %}
+                            {% endwith %}
+                            </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Auditoria"
+                                        onclick='openRedirectModal("{% url 'auditorias:redirecionar_execucao' instancia.pk %}", {{ instancia.responsavel.id|default:instancia.auditoria_agendada.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
+                                    <i class="fas fa-people-arrows"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-icon" title="Excluir Execução"
+                                        onclick="confirmDelete('{% url 'auditorias:deletar_execucao' instancia.pk %}', 'Execução #{{ instancia.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 48px;">Nenhuma auditoria pendente ou atrasada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+</div>
+{% endblock %}

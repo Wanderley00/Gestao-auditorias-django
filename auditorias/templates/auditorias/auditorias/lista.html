@@ -1,35 +1,49 @@
 {% extends 'auditorias/lista_generica.html' %}
 
 {% block table_headers %}
-    <th>Responsável</th>
+    <th>ID Agendamento</th>
+    <th>Criado por</th>
+    <th>Auditor</th>
+    <th>Modelo(s)</th>
     <th>Local</th>
     <th>Ferramenta</th>
-    <th>Data de Início</th>
+    <th>Plataforma</th>
+    <th>Programação</th> <th>Data de Início</th>
     <th>Data de Fim</th>
     <th style="width: 120px;">Ações</th>
 {% endblock %}
 
 {% block table_row %}
+    <td><strong>#{{ object.id }}</strong></td>
+    <td>{{ object.criado_por.get_full_name|default:object.criado_por.username|default:"Sistema" }}</td>
     <td>
         <div style="font-weight: 600; color: var(--text-primary);">
-            {{ object.responsavel.get_full_name|default:object.responsavel.username }}
+            {{ object.responsavel.get_full_name|default:object.responsavel.username|default:"N/A" }}
         </div>
     </td>
     <td>
-        {{ object.get_nivel_organizacional_display }}
+        {% for modelo in object.modelos.all %}
+            {{ modelo.descricao }}{% if not forloop.last %},<br>{% endif %}
+        {% empty %}--{% endfor %}
     </td>
     <td>
-        <span class="badge badge-info">{{ object.ferramenta.nome|default:"—" }}</span>
+        {% if object.local_subsetor %}{{ object.local_subsetor.nome }}{% elif object.local_setor %}{{ object.local_setor.nome }}{% elif object.local_area %}{{ object.local_area.nome }}{% elif object.local_empresa %}{{ object.local_empresa.nome }}{% else %}--{% endif %}
     </td>
+    <td><span class="badge badge-secondary">{{ object.ferramenta.nome|default:"N/A" }}</span></td>
+    <td><span class="badge badge-info">{{ object.get_categoria_auditoria_display|default:"N/A" }}</span></td>
+    
+    <td>{{ object.get_programacao_display }}</td>
+    
     <td>{{ object.data_inicio|date:"d/m/Y" }}</td>
     <td>{{ object.data_fim|date:"d/m/Y"|default:"-" }}</td>
     <td>
         <div class="action-buttons">
-            <a href="{% url 'auditorias:editar_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Auditoria">
-                <i class="fas fa-edit"></i>
-            </a>
-            <button type="button" class="btn btn-danger btn-icon" title="Deletar Auditoria"
-                    onclick="confirmDelete('{% url 'auditorias:deletar_auditoria' object.pk %}', 'Auditoria de {{ object.data_inicio|date:"d/m/Y" }}')">
+            <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Agendamento"
+                    onclick='openRedirectModal("{% url 'auditorias:redirecionar_agendamento' object.pk %}", {{ object.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
+                <i class="fas fa-people-arrows"></i>
+            </button>
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Agendamento"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_auditoria' object.pk %}', 'Agendamento #{{ object.id }}')">
                 <i class="fas fa-trash"></i>
             </button>
         </div>

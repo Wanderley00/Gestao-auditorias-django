@@ -20,5 +20,45 @@
 
     {% include 'auditorias/partials/_scripts.html' %}
 
-</body>
+    <div id="redirectModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-people-arrows"></i> Redirecionar Auditoria</h2>
+                <span class="close-btn" onclick="closeRedirectModal()">&times;</span>
+            </div>
+            <form id="redirectForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <label for="responsavel_select">Redirecionar para:</label>
+                    <select id="responsavel_select" name="responsavel_id" class="form-control form-select">
+                        </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRedirectModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão</h2>
+                <span class="close-btn" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <form id="deleteForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body" style="text-align: center;">
+                    <p>Tem certeza que deseja excluir o item <strong id="deleteItemName"></strong>?</p>
+                    <p style="color: var(--error); font-weight: 500;">Esta ação não pode ser desfeita.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Sim, Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </body>
 </html>

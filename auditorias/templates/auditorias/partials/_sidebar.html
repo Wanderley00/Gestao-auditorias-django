@@ -4,7 +4,7 @@
             <div class="sidebar-logo">
                 <i class="fas fa-clipboard-check"></i>
             </div>
-            <div class="sidebar-title">GK SKF</div>
+            <div class="sidebar-title">Auditorias SKF</div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
@@ -27,16 +27,21 @@
 
         <div class="nav-section">
             <div class="nav-section-title">Gerenciamento de Auditorias</div>
-            <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if '/auditorias/auditorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-check"></i>
+            <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="nav-item-text">Agendamentos</span>
+            </a>
+
+            <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
+                <i class="fas fa-tasks"></i>
                 <span class="nav-item-text">Auditorias</span>
             </a>
 
-            <a href="{% url 'auditorias:historico_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_auditorias' %}active{% endif %}">
+            <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
                 <i class="fas fa-history"></i>
                 <span class="nav-item-text">Histórico</span>
             </a>
-
+            
             <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-item {% if '/auditorias/modelos-auditoria/' in request.path %}active{% endif %}">
                 <i class="fas fa-file-alt"></i>
                 <span class="nav-item-text">Modelos de Auditoria</span>
