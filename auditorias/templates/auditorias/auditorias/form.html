@@ -75,13 +75,13 @@
 <div class="form-row">
     <div class="form-group">
         <label for="modelos" class="form-label">Modelos de Auditoria</label>
-        <select id="modelos" name="modelos" class="form-control form-select" multiple size="8">
+        <select id="modelos" name="modelos" multiple>
             {% for m in modelos %}<option value="{{ m.pk }}" {% if m in auditoria.modelos.all %}selected{% endif %}>{{ m.descricao }}</option>{% endfor %}
         </select>
     </div>
     <div class="form-group">
         <label for="ativos_auditados" class="form-label">Ativos Auditados</label>
-        <select id="ativos_auditados" name="ativos_auditados" class="form-control form-select" multiple size="8">
+        <select id="ativos_auditados" name="ativos_auditados" multiple>
             {% if auditoria %}{% for a in auditoria.ativos_auditados.all %}<option value="{{ a.pk }}" selected>{{ a.tag }} - {{ a.descricao }}</option>{% endfor %}{% endif %}
         </select>
     </div>
@@ -162,7 +162,7 @@
                 </tr>
             </thead>
             <tbody id="date-preview-body">
-                </tbody>
+            </tbody>
         </table>
     </div>
 </div>
@@ -172,6 +172,27 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ===================================================================
+    // LÓGICA NOVA: INICIALIZAÇÃO DO TOM SELECT
+    // ===================================================================
+    new TomSelect('#modelos',{
+        plugins: ['remove_button'],
+        placeholder: 'Selecione um ou mais modelos...',
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+
+    new TomSelect('#ativos_auditados',{
+        plugins: ['remove_button'],
+        placeholder: 'Selecione um ou mais ativos...',
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+    
     // ===================================================================
     // LÓGICA 1: CARREGAMENTO DINÂMICO DE LOCAL, MODELO E ATIVO
     // ===================================================================
@@ -226,21 +247,33 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (nivel === 'SETOR' && setorSelect.value) local_id = setorSelect.value;
         else if (nivel === 'AREA' && areaSelect.value) local_id = areaSelect.value;
         else if (nivel === 'EMPRESA' && empresaSelect.value) local_id = empresaSelect.value;
-
-        ativosSelect.innerHTML = '<option value="">Carregando...</option>';
+        
+        // Limpa o Tom Select antes de carregar novos ativos
+        const ativosTomSelect = ativosSelect.tomselect;
+        ativosTomSelect.clear();
+        ativosTomSelect.clearOptions();
+        ativosTomSelect.addOption({value: '', text: 'Carregando...'});
+        
         if (nivel && local_id) {
             const url = `{% url 'auditorias:get_ativos_por_local' %}?nivel=${nivel}&local_id=${local_id}`;
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    ativosSelect.innerHTML = '';
-                    data.forEach(ativo => {
-                        const option = new Option(`${ativo.tag} - ${ativo.descricao}`, ativo.id);
-                        ativosSelect.add(option);
-                    });
+                    ativosTomSelect.clearOptions(); // Limpa o "Carregando..."
+                    if (data.length > 0) {
+                        data.forEach(ativo => {
+                            ativosTomSelect.addOption({
+                                value: ativo.id,
+                                text: `${ativo.tag} - ${ativo.descricao}`
+                            });
+                        });
+                    } else {
+                        ativosTomSelect.addOption({value: '', text: 'Nenhum ativo encontrado para este local'});
+                    }
                 });
         } else {
-            ativosSelect.innerHTML = '<option value="">Selecione um local para ver os ativos</option>';
+            ativosTomSelect.clearOptions();
+            ativosTomSelect.addOption({value: '', text: 'Selecione um local para ver os ativos'});
         }
     }
 

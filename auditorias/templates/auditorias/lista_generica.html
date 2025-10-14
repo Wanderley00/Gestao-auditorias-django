@@ -8,40 +8,47 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 class="content-title">{{ title }}</h2>
-            <p class="content-subtitle">Gerencie o {{ title|lower }} do sistema</p>
+            <p class="content-subtitle">Administrar {{ title|lower }} do sistema</p>
         </div>
         <a href="{% url create_url %}" class="btn btn-primary">
             <i class="fas fa-plus"></i>
-            {% if button_text %}{{ button_text }}{% else %}Nova {{ singular|default:title|slice:":-1" }}{% endif %}
+            {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
         </a>
     </div>
 </div>
 
-<!-- Filtros e Busca -->
+{% block search_form %}
 <div class="card" style="margin-bottom: 24px;">
     <div class="card-body">
-        <form method="get" style="display: flex; gap: 16px; align-items: end;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Buscar</label>
                 <div class="search-container">
                     <input type="text" name="search" value="{{ search }}" placeholder="Digite para buscar..." class="form-control search-input">
                 </div>
             </div>
-            <button type="submit" class="btn btn-secondary">
-                <i class="fas fa-search"></i>
-                Buscar
-            </button>
-            {% if search %}
-            <a href="?" class="btn btn-secondary">
-                <i class="fas fa-times"></i>
-                Limpar
-            </a>
-            {% endif %}
+
+            {% block extra_filters %}
+            {% endblock %}
+            
+            <div style="display: flex; gap: 8px; align-items: end;">
+                <button type="submit" class="btn btn-secondary" style="flex-grow: 1;">
+                    <i class="fas fa-search"></i>
+                    Buscar
+                </button>
+                
+                {% if request.GET %}
+                <a href="?" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Limpar
+                </a>
+                {% endif %}
+            </div>
         </form>
     </div>
 </div>
+{% endblock search_form %}
 
-<!-- Tabela de Resultados -->
 <div class="card">
     <div class="card-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -75,17 +82,16 @@
             <div class="table-container">
                 <table class="table" id="dataTable">
                     <thead>
+                        {% block table_headers %}
                         <tr>
-                            {% block table_headers %}
-                            <!-- Headers específicos serão definidos nos templates filhos -->
-                            {% endblock %}
+                            {# O conteúdo dos templates filhos virá aqui #}
                         </tr>
+                        {% endblock %}
                     </thead>
                     <tbody>
                         {% for object in page_obj %}
                         <tr>
                             {% block table_row %}
-                            <!-- Conteúdo das linhas será definido nos templates filhos -->
                             {% endblock %}
                         </tr>
                         {% endfor %}
@@ -93,14 +99,13 @@
                 </table>
             </div>
 
-            <!-- Paginação -->
             {% if page_obj.has_other_pages %}
             <div class="pagination">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% if search %}&search={{ search }}{% endif %}" title="Primeira página">
+                    <a href="?page=1&{{ request.GET.urlencode|cut:'page=' }}" title="Primeira página">
                         <i class="fas fa-angle-double-left"></i>
                     </a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}" title="Página anterior">
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" title="Página anterior">
                         <i class="fas fa-angle-left"></i>
                     </a>
                 {% endif %}
@@ -109,39 +114,38 @@
                     {% if page_obj.number == num %}
                         <span class="current">{{ num }}</span>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                        <a href="?page={{ num }}&{{ request.GET.urlencode|cut:'page=' }}">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}" title="Próxima página">
+                    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" title="Próxima página">
                         <i class="fas fa-angle-right"></i>
                     </a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}" title="Última página">
+                    <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page=' }}" title="Última página">
                         <i class="fas fa-angle-double-right"></i>
                     </a>
                 {% endif %}
             </div>
             {% endif %}
         {% else %}
-            <!-- Estado Vazio -->
             <div style="text-align: center; padding: 64px 24px; color: var(--text-muted);">
                 <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 24px; opacity: 0.3;"></i>
                 <h3 style="margin-bottom: 12px; color: var(--text-secondary);">
-                    {% if search %}
+                    {% if request.GET %}
                         Nenhum resultado encontrado
                     {% else %}
                         {% if empty_message %}{{ empty_message }}{% else %}Nenhum {{ singular|default:title|slice:":-1"|lower }} cadastrado{% endif %}
                     {% endif %}
                 </h3>
                 <p style="margin-bottom: 24px;">
-                    {% if search %}
+                    {% if request.GET %}
                         Tente ajustar os termos de busca ou limpar os filtros.
                     {% else %}
                         {% if empty_subtitle %}{{ empty_subtitle }}{% else %}Comece criando {{ artigo|default:'o' }} primeiro {{ singular|default:title|slice:":-1"|lower }}.{% endif %}
                     {% endif %}
                 </p>
-                {% if not search %}
+                {% if not request.GET %}
                 <a href="{% url create_url %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
                     {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
@@ -158,28 +162,55 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        /* --- ESTILOS GLOBAIS PARA TABELAS DE LISTAGEM --- */
+        #dataTable {
+            table-layout: auto; /* Garante que a tabela se ajuste ao conteúdo */
+        }
+        
+        #dataTable th, 
+        #dataTable td {
+            text-align: center !important; /* Força a centralização do texto */
+            vertical-align: middle !important; /* Alinha o conteúdo verticalmente */
+        }
+
+        /* Centraliza os botões de ação */
+        .action-buttons {
+            justify-content: center;
+        }
+    </style>
+{% endblock %}
+
+
 {% block extra_js %}
 <script>
     // Função para confirmar exclusão
     function confirmDelete(url, itemName) {
-        document.getElementById('confirmDeleteBtn').href = url;
-        document.getElementById('deleteModal').style.display = 'flex';
+        const modal = document.getElementById('deleteModal'); if (!modal) return;
+        
+        const form = modal.querySelector('#deleteForm');
+        const nameSpan = modal.querySelector('#deleteItemName');
+        
+        form.action = url;
+        nameSpan.textContent = `"${itemName}"`;
+        modal.style.display = 'flex';
     }
 
     function closeDeleteModal() {
-        document.getElementById('deleteModal').style.display = 'none';
+        const modal = document.getElementById('deleteModal');
+        if (modal) modal.style.display = 'none';
     }
 
     // Fechar modal clicando fora
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
+    document.getElementById('deleteModal')?.addEventListener('click', function(e) {
         if (e.target === this) {
             closeDeleteModal();
         }
     });
-
     // Função para exportar dados
     function exportarDados() {
-        // Implementar exportação (CSV, Excel, etc.)
         alert('Funcionalidade de exportação será implementada');
     }
 
@@ -196,7 +227,7 @@
                         table { width: 100%; border-collapse: collapse; }
                         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
                         th { background-color: #f5f5f5; }
-                        .btn { display: none; }
+                        .action-buttons { display: none; }
                     </style>
                 </head>
                 <body>
@@ -208,50 +239,5 @@
         printWindow.document.close();
         printWindow.print();
     }
-
-    // Busca em tempo real (opcional)
-    let searchTimeout;
-    const searchInput = document.querySelector('input[name="search"]');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                if (this.value.length >= 3 || this.value.length === 0) {
-                    this.form.submit();
-                }
-            }, 500);
-        });
-    }
-
-    // Atalhos de teclado
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + K para focar na busca
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            searchInput?.focus();
-        }
-        
-        // Escape para limpar busca
-        if (e.key === 'Escape' && searchInput === document.activeElement) {
-            searchInput.value = '';
-            searchInput.form.submit();
-        }
-    });
-
-    // Animações de entrada
-    document.addEventListener('DOMContentLoaded', function() {
-        const rows = document.querySelectorAll('tbody tr');
-        rows.forEach((row, index) => {
-            row.style.opacity = '0';
-            row.style.transform = 'translateY(10px)';
-            
-            setTimeout(() => {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '1';
-                row.style.transform = 'translateY(0)';
-            }, index * 50);
-        });
-    });
 </script>
 {% endblock %}

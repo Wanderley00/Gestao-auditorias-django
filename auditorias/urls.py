@@ -12,6 +12,8 @@ urlpatterns = [
     path('pilares/criar/', views.criar_pilar, name='criar_pilar'),
     path('pilares/<int:pk>/editar/', views.editar_pilar, name='editar_pilar'),
     path('pilares/<int:pk>/deletar/', views.deletar_pilar, name='deletar_pilar'),
+    path('pilares/exportar-csv/', views.exportar_pilares_csv,
+         name='exportar_pilares_csv'),  # NOVO
 
     path('categorias/', views.lista_categorias_auditoria,
          name='lista_categorias_auditoria'),
@@ -21,11 +23,15 @@ urlpatterns = [
          name='editar_categoria_auditoria'),
     path('categorias/<int:pk>/deletar/', views.deletar_categoria_auditoria,
          name='deletar_categoria_auditoria'),
+    path('categorias/exportar-csv/', views.exportar_categorias_auditoria_csv,
+         name='exportar_categorias_auditoria_csv'),  # NOVO
 
     path('normas/', views.lista_normas, name='lista_normas'),
     path('normas/criar/', views.criar_norma, name='criar_norma'),
     path('normas/<int:pk>/editar/', views.editar_norma, name='editar_norma'),
     path('normas/<int:pk>/deletar/', views.deletar_norma, name='deletar_norma'),
+    path('normas/exportar-csv/', views.exportar_normas_csv,
+         name='exportar_normas_csv'),  # NOVO
 
     path('ferramentas-digitais/', views.lista_ferramentas_digitais,
          name='lista_ferramentas_digitais'),
@@ -35,6 +41,8 @@ urlpatterns = [
          views.editar_ferramenta_digital, name='editar_ferramenta_digital'),
     path('ferramentas-digitais/<int:pk>/deletar/',
          views.deletar_ferramenta_digital, name='deletar_ferramenta_digital'),
+    path('ferramentas-digitais/exportar-csv/', views.exportar_ferramentas_digitais_csv,
+         name='exportar_ferramentas_digitais_csv'),  # NOVO
 
     path('checklists/', views.lista_checklists, name='lista_checklists'),
     path('checklists/criar/', views.criar_checklist, name='criar_checklist'),
@@ -42,6 +50,8 @@ urlpatterns = [
          views.editar_checklist, name='editar_checklist'),
     path('checklists/<int:pk>/deletar/',
          views.deletar_checklist, name='deletar_checklist'),
+    path('checklists/exportar-csv/', views.exportar_checklists_csv,
+         name='exportar_checklists_csv'),  # NOVO
 
     path('modelos-auditoria/', views.lista_modelos_auditoria,
          name='lista_modelos_auditoria'),
@@ -49,6 +59,8 @@ urlpatterns = [
          name='criar_modelo_auditoria'),
     path('modelos-auditoria/<int:pk>/editar/',
          views.editar_modelo_auditoria, name='editar_modelo_auditoria'),
+    path('modelos-auditoria/exportar-csv/', views.exportar_modelos_auditoria_csv,
+         name='exportar_modelos_auditoria_csv'),  # NOVO
 
     path('agendamentos/<int:pk>/redirecionar/',
          views.redirecionar_agendamento, name='redirecionar_agendamento'),
@@ -83,5 +95,11 @@ urlpatterns = [
 
     path('execucoes/<int:pk>/deletar/',
          views.deletar_execucao, name='deletar_execucao'),
+
+    path('checklists/<int:pk>/historico/',
+         views.historico_versoes_checklist, name='historico_versoes_checklist'),
+
+    path('checklists/<int:pk>/comparar/', views.comparar_versoes_checklist,
+         name='comparar_versoes_checklist'),
 
 ]

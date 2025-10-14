@@ -10,6 +10,8 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    
     <style>
         :root {
             --primary: #2563eb;
@@ -68,17 +70,16 @@
             z-index: 1000;
             transition: all 0.3s ease;
             box-shadow: var(--shadow-xl);
-            display: flex; /* MODIFICADO */
-            flex-direction: column; /* MODIFICADO */
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.collapsed {
             width: 80px;
         }
         
-        /* Cabeçalho Fixo da Sidebar */
         .sidebar-header {
-            padding: 20px 28px 20px 20px; /* MODIFICADO */
+            padding: 20px 28px 20px 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
             background: var(--primary-dark);
@@ -89,15 +90,15 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 16px; /* MODIFICADO */
+            margin-bottom: 16px;
         }
         
         .sidebar.collapsed .sidebar-header-top {
-            margin-bottom: 0; /* MODIFICADO */
+            margin-bottom: 0;
         }
         
         .sidebar.collapsed .sidebar-search-container {
-            display: none; /* MODIFICADO */
+            display: none;
         }
 
         .sidebar-logo {
@@ -138,10 +139,9 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Área de Rolagem da Sidebar */
         .sidebar-nav {
             flex: 1;
-            overflow-y: scroll; /* MODIFICADO */
+            overflow-y: scroll;
             padding: 12px 0;
         }
 
@@ -466,7 +466,7 @@
         .table-container {
             background: var(--bg-primary);
             border-radius: var(--radius-lg);
-            overflow: hidden;
+            overflow-x: auto; /* MODIFICADO: permite rolagem horizontal se necessário */
             box-shadow: var(--shadow-md);
             border: 1px solid var(--border);
         }
@@ -474,6 +474,7 @@
         .table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed; /* ADICIONADO: Força a tabela a respeitar a largura definida */
         }
 
         .table th {
@@ -491,6 +492,7 @@
             border-bottom: 1px solid var(--border);
             color: var(--text-secondary);
             font-size: 14px;
+            word-break: break-word; /* ADICIONADO: Quebra palavras longas para evitar expansão */
         }
 
         .table tbody tr:hover {
@@ -614,6 +616,11 @@
             background: rgba(37, 99, 235, 0.1);
             color: var(--primary);
         }
+        
+        .badge-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -661,19 +668,20 @@
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px; /* MODIFICADO: Adicionado altura para scroll horizontal */
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--primary-dark); /* MODIFICADO */
+            background: #f1f5f9; /* MODIFICADO */
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.4); /* MODIFICADO */
+            background: #cbd5e1; /* MODIFICADO */
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.6); /* MODIFICADO */
+            background: #94a3b8; /* MODIFICADO */
         }
 
         /* Toggle Switch */
@@ -760,11 +768,10 @@
     <style>
         .sidebar-search-container {
             position: relative;
-            /* margin-bottom: 12px; NOVO */
         }
         .sidebar-search-container .search-icon {
             position: absolute;
-            left: 15px; /* MODIFICADO */
+            left: 15px;
             top: 50%;
             transform: translateY(-50%);
             color: rgba(255, 255, 255, 0.5);
@@ -790,7 +797,7 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
 
-        /* INÍCIO DA ADIÇÃO: ESTILOS DO MODAL */
+        /* Modal Styles */
         .modal {
             display: none; position: fixed; z-index: 1001; left: 0; top: 0;
             width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
@@ -809,7 +816,6 @@
         .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close-btn:hover { color: black; }
         @keyframes slide-down { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        /* FIM DA ADIÇÃO */
     </style>
     {% endblock %}
 </head>

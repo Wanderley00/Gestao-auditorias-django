@@ -1,126 +1,140 @@
-{% extends 'auditorias/base.html' %}
+{% extends 'auditorias/lista_generica.html' %}
 
-{% block title %}{{ title }}{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{# Remove o formulário de busca genérico herdado do template pai, pois usaremos filtros por coluna #}
+{% block search_form %}{% endblock %}
 
-{% block content %}
-<div class="content-header">
-    <h2 class="content-title">{{ title }}</h2>
-    <p class="content-subtitle">Visualize o resultado de todas as auditorias finalizadas.</p>
-</div>
+{# Este bloco fica vazio, pois os filtros agora estão no cabeçalho da tabela #}
+{% block extra_filters %}{% endblock %}
 
-<div class="card" style="margin-bottom: 24px;">
-    <div class="card-body">
-        <form method="get" style="display: flex; gap: 16px; align-items: end;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <label class="form-label">Buscar</label>
-                <div class="search-container">
-                    <input type="text" name="search" value="{{ search }}" placeholder="Buscar por auditor, local..." class="form-control search-input">
-                </div>
-            </div>
-            <button type="submit" class="btn btn-secondary">
-                <i class="fas fa-search"></i> Buscar
-            </button>
-            {% if search %}
-            <a href="{% url 'auditorias:historico_concluidas' %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Limpar
-            </a>
-            {% endif %}
-        </form>
-    </div>
-</div>
+{% block table_headers %}
+    {# Linha 1: Títulos das Colunas com larguras definidas #}
+    <tr>
+        <th style="width: 8%;">ID Execução</th>
+        <th style="width: 8%;">ID Agendamento</th>
+        <th style="width: 10%;">Data Programada</th>
+        <th style="width: 12%;">Data de Realização</th>
+        <th>Auditor</th>
+        <th>Local</th>
+        <th>Modelo</th>
+        <th>Checklist</th>
 
+        <th style="width: 10%;">Ferramenta</th>
+        <th style="width: 10%;">Status</th>
+        <th style="width: 8%;">Ações</th>
+    </tr>
+    {# Linha 2: Campos de Filtro #}
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="4"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="5"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="6"></th>
 
-<div class="card">
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID Execução</th>
-                        <th>ID Agendamento</th> <th>Data de Criação</th>
-                        <th>Data Programada</th> 
-                        <th>Data de Realização</th>
-                        <th>Criado por</th>
-                        <th>Auditor</th>
-                        <th>Local</th>
-                        <th>Modelo</th>
-                        <th>Ferramenta</th>
-                        <th>Plataforma</th>
-                        <th>Conclusão (%)</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for instancia in page_obj %}
-                    <tr>
-                        <td><strong>#{{ instancia.id }}</strong></td>
-                        <td>#{{ instancia.auditoria_agendada.id }}</td> <td>{{ instancia.auditoria_agendada.data_criacao|date:"d/m/Y" }}</td>
-                        <td>{{ instancia.data_execucao|date:"d/m/Y" }}</td>
-                        <td>{{ instancia.get_data_conclusao|date:"d/m/Y H:i"|default:"--" }}</td>
-                        <td>
-                            {% if instancia.auditoria_agendada.criado_por %}
-                                {{ instancia.auditoria_agendada.criado_por.get_full_name|default:instancia.auditoria_agendada.criado_por.username }}
-                            {% else %}
-                                <span style="color: var(--text-muted);">Sistema</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ instancia.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
-                        <td>
-                           {{ instancia.local_execucao.nome|default:"N/A" }}
-                        </td>
-                        <td>
-                            {% for modelo in instancia.auditoria_agendada.modelos.all %}
-                                {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}--{% endfor %}
-                        </td>
-                        <td>
-                            <span class="badge badge-secondary">{{ instancia.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
-                        </td>
-                        <td>
-                            <span class="badge badge-info">{{ instancia.auditoria_agendada.get_categoria_auditoria_display|default:"N/A" }}</span>
-                        </td>
-                        <td>
-                            <div style="font-weight: 600; color: var(--primary);">
-                                {{ instancia.get_percentual_conclusao|floatformat:2 }}%
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge badge-success">{{ instancia.status }}</span>
-                        </td>
-                        <td>
-                            <a href="#" class="btn btn-secondary btn-icon" title="Ver Relatório">
-                                <i class="fas fa-chart-bar"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 48px;">Nenhuma auditoria concluída encontrada.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        {% if page_obj.has_other_pages %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page=1{% if search %}&search={{ search }}{% endif %}">&laquo;</a>
-                <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">&lsaquo;</a>
-            {% endif %}
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="7"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="8"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="9"></th>
+        <th></th>
+    </tr>
+{% endblock %}
 
-            <span class="current">
-                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
-            </span>
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">&rsaquo;</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">&raquo;</a>
-            {% endif %}
-        </div>
+{% block table_row %}
+    <td><strong>#{{ object.id }}</strong></td>
+    <td>#{{ object.auditoria_agendada.id }}</td>
+    <td>{{ object.data_execucao|date:"d/m/Y" }}</td>
+    <td>{{ object.get_data_conclusao|date:"d/m/Y H:i"|default:"--" }}</td>
+    <td>{{ object.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
+    <td>
+        {{ object.local_execucao.nome|default:"N/A" }}
+    </td>
+    <td>
+        {% for modelo in object.auditoria_agendada.modelos.all %}
+            {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
+        {% empty %}--{% endfor %}
+    </td>
+    <td>
+        {% if object.checklist_usado %}
+            {{ object.checklist_usado.nome }} (V{{ object.checklist_usado.version }})
+        {% else %}
+            N/A
         {% endif %}
-    </div>
-</div>
+    </td>
+    <td>
+        <span class="badge badge-secondary">{{ object.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
+    </td>
+    <td style="white-space: nowrap;">
+        <span class="badge badge-success">{{ object.status }}</span>
+    </td>
+    <td>
+        <a href="#" class="btn btn-secondary btn-icon" title="Ver Relatório">
+            <i class="fas fa-chart-bar"></i>
+        </a>
+    </td>
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+        .column-filter {
+            height: 38px;
+            font-size: 13px;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filters = document.querySelectorAll('.column-filter');
+        const table = document.querySelector('#dataTable');
+        if (!table) {
+            return;
+        }
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) {
+            return;
+        }
+
+        function applyTableFilters() {
+            const dataRows = tableBody.querySelectorAll('tr');
+            if (dataRows.length === 0) {
+                return;
+            }
+
+            dataRows.forEach(row => {
+                let isRowVisible = true;
+                const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+
+                    if (filterText) {
+                        const cell = cells[colIndex];
+                        if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+                                isRowVisible = false;
+                            }
+                        } else {
+                            isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+
+        if (filters.length > 0) {
+            filters.forEach(filter => {
+                filter.addEventListener('input', applyTableFilters);
+            });
+        }
+    });
+    </script>
 {% endblock %}

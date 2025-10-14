@@ -1,85 +1,158 @@
-{% extends 'auditorias/base.html' %}
+{% extends 'auditorias/lista_generica.html' %}
 
-{% block title %}Auditorias para Execução{% endblock %}
-{% block page_title %}Auditorias para Execução{% endblock %}
+{# Remove o formulário de busca genérico herdado do template pai #}
+{% block search_form %}{% endblock %}
 
-{% block content %}
-<div class="content-header">
-    <h2 class="content-title">Auditorias para Execução</h2>
-    <p class="content-subtitle">Visualize todas as auditorias pendentes, atrasadas ou em andamento.</p>
-</div>
+{# Este bloco fica vazio, pois os filtros agora estão no cabeçalho da tabela #}
+{% block extra_filters %}{% endblock %}
 
-<div class="card">
-    <div class="card-body">
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID Execução</th>
-                        <th>ID Agendamento</th> <th>Data Programada</th>
-                        <th>Auditor</th>
-                        <th>Local</th>
-                        <th>Modelo de Auditoria</th>
-                        <th>Ferramenta</th>
-                        <th>Plataforma</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for instancia in page_obj %}
-                    <tr>
-                        <td><strong>#{{ instancia.id }}</strong></td>
-                        <td>#{{ instancia.auditoria_agendada.id }}</td> <td>{{ instancia.data_execucao|date:"d/m/Y" }}</td>
-                        <td>{{ instancia.responsavel.get_full_name|default:instancia.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
-                        <td>
-                            {{ instancia.local_execucao.nome|default:"N/A" }}
-                        </td>
-                        <td>
-                            {% for modelo in instancia.auditoria_agendada.modelos.all %}
-                                {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}--{% endfor %}
-                        </td>
-                        <td>
-                            <span class="badge badge-secondary">{{ instancia.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
-                        </td>
-                        <td>
-                            <span class="badge badge-info">{{ instancia.auditoria_agendada.get_categoria_auditoria_display|default:"N/A" }}</span>
-                        </td>
-                        <td>
-                            {% with status=instancia.status_execucao %}
-                                {% if status == 'Atraso' %}
-                                    <span class="badge badge-error">{{ status }}</span>
-                                {% elif status == 'Pendente' %}
-                                    {# Mudamos Pendente para uma cor mais chamativa #}
-                                    <span class="badge badge-info">{{ status }}</span>
-                                {% else %} {# Agendada #}
-                                    {# Agendada fica com uma cor mais neutra #}
-                                    <span class="badge badge-secondary" style="background-color: #e2e8f0; color: #475569;">{{ status }}</span>
-                                {% endif %}
-                            {% endwith %}
-                            </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Auditoria"
-                                        onclick='openRedirectModal("{% url 'auditorias:redirecionar_execucao' instancia.pk %}", {{ instancia.responsavel.id|default:instancia.auditoria_agendada.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
-                                    <i class="fas fa-people-arrows"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-icon" title="Excluir Execução"
-                                        onclick="confirmDelete('{% url 'auditorias:deletar_execucao' instancia.pk %}', 'Execução #{{ instancia.id }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 48px;">Nenhuma auditoria pendente ou atrasada.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{% block table_headers %}
+    {# Linha 1: Títulos das Colunas #}
+    <tr>
+        <th>ID Execução</th>
+        <th>ID Agendamento</th>
+        <th>Data Programada</th>
+        <th>Auditor</th>
+        <th>Local</th>
+        <th>Modelo de Auditoria</th>
+        <th>Ferramenta</th>
+        <th>Plataforma</th>
+        <th>Status</th>
+        <th style="width: 120px; min-width: 120px;">Ações</th>
+    </tr>
+    {# Linha 2: Campos de Filtro com data-attributes para vincular às colunas #}
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="4"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="5"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="6"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="7"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="8"></th>
+        <th></th> {# Coluna de Ações sem filtro #}
+    </tr>
+{% endblock %}
+
+{% block table_row %}
+    <td><strong>#{{ object.id }}</strong></td>
+    <td>#{{ object.auditoria_agendada.id }}</td>
+    <td>{{ object.data_execucao|date:"d/m/Y" }}</td>
+    <td>{{ object.responsavel.get_full_name|default:object.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</td>
+    <td>
+     {{ object.local_execucao.nome|default:"N/A" }}
+    </td>
+    <td>
+        {% for modelo in object.auditoria_agendada.modelos.all %}
+            {{ modelo.descricao }}{% if not forloop.last %}, {% endif %}
+        {% empty %}--{% endfor %}
+    </td>
+    <td>
+        <span class="badge badge-secondary">{{ object.auditoria_agendada.ferramenta.nome|default:"N/A" }}</span>
+    </td>
+    <td>
+        <span class="badge badge-info">{{ object.auditoria_agendada.get_categoria_auditoria_display|default:"N/A" }}</span>
+    </td>
+    <td>
+        {% with status=object.status_execucao %}
+            {% if status == 'Atraso' %}
+                <span class="badge badge-error">{{ status }}</span>
+            {% elif status == 'Pendente' %}
+                <span class="badge badge-info">{{ status }}</span>
+      {% else %} {# Agendada #}
+                <span class="badge badge-secondary">{{ status }}</span>
+            {% endif %}
+        {% endwith %}
+    </td>
+    <td>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Auditoria"
+          onclick='openRedirectModal("{% url 'auditorias:redirecionar_execucao' object.pk %}", {{ object.responsavel.id|default:object.auditoria_agendada.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
+                <i class="fas fa-people-arrows"></i>
+            </button>
+            <button type="button" class="btn btn-danger btn-icon" title="Excluir Execução"
+                    onclick="confirmDelete('{% url 'auditorias:deletar_execucao' object.pk %}', 'Execução #{{ object.id }}')">
+    <i class="fas fa-trash"></i>
+            </button>
         </div>
-        </div>
-</div>
+    </td>
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+        .column-filter {
+            height: 38px;
+            font-size: 13px;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const filters = document.querySelectorAll('.column-filter');
+
+
+        const table = document.querySelector('#dataTable');
+        // LOG 3: Verifica se a tabela foi encontrada.
+        if (!table) {
+            return;
+        }
+
+     const tableBody = table.querySelector('tbody');
+        // LOG 4: Verifica se o corpo da tabela (tbody) foi encontrado.
+        if (!tableBody) {
+            return;
+        }
+
+        function applyTableFilters() {
+
+            const dataRows = tableBody.querySelectorAll('tr');
+            
+        if (dataRows.length === 0) {
+                console.warn("AVISO: Nenhuma linha de dados (<tr>) encontrada para filtrar.");
+                return;
+            }
+
+            dataRows.forEach((row, rowIndex) => {
+                let isRowVisible = true;
+          const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+
+                    if (filterText) {
+                        const cell = cells[colIndex];
+  if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+               isRowVisible = false;
+                            }
+                        } else {
+                           isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+
+        if (filters.length > 0) {
+            filters.forEach((filter, index) => {
+                // LOG 5: Confirma que o event listener foi adicionado a cada filtro.
+                filter.addEventListener('input', applyTableFilters);
+            });
+        } else {
+            console.warn("AVISO: Nenhum campo de filtro encontrado para adicionar listeners.");
+        }
+    });
+    </script>
 {% endblock %}

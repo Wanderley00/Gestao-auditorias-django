@@ -1,0 +1,78 @@
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block page_title %}Histórico de Versões - {{ original.nome }}{% endblock %}
+
+{# Remove o botão "Novo" e a barra de busca #}
+{% block search_form %}{% endblock %}
+
+{% block content_header %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">Histórico de Versões - {{ original.nome }}</h2>
+            <p class="content-subtitle">Visualize todas as versões criadas para este checklist.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" class="btn btn-primary">
+                <i class="fas fa-exchange-alt"></i> Comparar Versões
+            </a>
+            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para a Lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+    <th>Versão</th>
+    <th>Status</th>
+    <th>Data de Criação</th>
+    <th>Tópicos</th>
+    <th>Perguntas</th>
+    <th style="width: 180px;">Ações</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        <div style="font-weight: 600; color: var(--text-primary);">
+            Versão {{ object.version }}
+            {% if object.is_latest %}
+            <span class="badge badge-primary">Mais Recente</span>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        {% if object.ativo %}
+            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
+        {% else %}
+            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
+        {% endif %}
+    </td>
+    <td>{{ object.data_cadastro|date:"d/m/Y H:i" }}</td>
+    <td><span class="badge badge-info">{{ object.topicos.count }}</span></td>
+    <td>
+        <span class="badge badge-secondary">
+            {% with total=0 %}
+                {% for topico in object.topicos.all %}
+                    {% with total=total|add:topico.perguntas.count %}{% endwith %}
+                {% endfor %}
+                {{ total }}
+            {% endwith %}
+        </span>
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{% url 'auditorias:editar_checklist' object.pk %}" 
+               class="btn btn-secondary btn-icon" 
+               title="Visualizar Versão">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}?versoes={{ object.pk }}" 
+               class="btn btn-primary btn-icon" 
+               title="Comparar Esta Versão">
+                <i class="fas fa-code-branch"></i>
+            </a>
+        </div>
+    </td>
+{% endblock %}

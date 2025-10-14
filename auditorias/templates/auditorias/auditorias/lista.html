@@ -1,16 +1,36 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{% block search_form %}{% endblock %}
+
+{% block extra_filters %}{% endblock %}
+
 {% block table_headers %}
-    <th>ID Agendamento</th>
-    <th>Criado por</th>
-    <th>Auditor</th>
-    <th>Modelo(s)</th>
-    <th>Local</th>
-    <th>Ferramenta</th>
-    <th>Plataforma</th>
-    <th>Programação</th> <th>Data de Início</th>
-    <th>Data de Fim</th>
-    <th style="width: 120px;">Ações</th>
+    <tr>
+        <th>ID Agendamento</th>
+        <th>Criado por</th>
+        <th>Auditor</th>
+        <th>Modelo(s)</th>
+        <th>Local</th>
+        <th>Ferramenta</th>
+        <th>Plataforma</th>
+        <th>Programação</th>
+        <th>Data de Início</th>
+        <th>Data de Fim</th>
+        <th style="width: 120px;">Ações</th>
+    </tr>
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="4"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="5"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="6"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="7"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="8"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="9"></th>
+        <th></th>
+    </tr>
 {% endblock %}
 
 {% block table_row %}
@@ -18,7 +38,7 @@
     <td>{{ object.criado_por.get_full_name|default:object.criado_por.username|default:"Sistema" }}</td>
     <td>
         <div style="font-weight: 600; color: var(--text-primary);">
-            {{ object.responsavel.get_full_name|default:object.responsavel.username|default:"N/A" }}
+             {{ object.responsavel.get_full_name|default:object.responsavel.username|default:"N/A" }}
         </div>
     </td>
     <td>
@@ -39,7 +59,7 @@
     <td>
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Agendamento"
-                    onclick='openRedirectModal("{% url 'auditorias:redirecionar_agendamento' object.pk %}", {{ object.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
+                 onclick='openRedirectModal("{% url 'auditorias:redirecionar_agendamento' object.pk %}", {{ object.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
                 <i class="fas fa-people-arrows"></i>
             </button>
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Agendamento"
@@ -48,4 +68,82 @@
             </button>
         </div>
     </td>
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+         .column-filter {
+            height: 38px;
+            font-size: 13px;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const filters = document.querySelectorAll('.column-filter');
+
+
+        const table = document.querySelector('#dataTable');
+        // LOG 3: Verifica se a tabela foi encontrada.
+        if (!table) {
+             return;
+        }
+
+     const tableBody = table.querySelector('tbody');
+        // LOG 4: Verifica se o corpo da tabela (tbody) foi encontrado.
+        if (!tableBody) {
+            return;
+        }
+
+        function applyTableFilters() {
+
+            const dataRows = tableBody.querySelectorAll('tr');
+            
+        if (dataRows.length === 0) {
+                console.warn("AVISO: Nenhuma linha de dados (<tr>) encontrada para filtrar.");
+                return;
+            }
+
+            dataRows.forEach((row, rowIndex) => {
+                 let isRowVisible = true;
+          const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+
+                     if (filterText) {
+                        const cell = cells[colIndex];
+  if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+               isRowVisible = false;
+                            }
+                        } else {
+                            isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+
+        if (filters.length > 0) {
+             filters.forEach((filter, index) => {
+                // LOG 5: Confirma que o event listener foi adicionado a cada filtro.
+                filter.addEventListener('input', applyTableFilters);
+            });
+        } else {
+            console.warn("AVISO: Nenhum campo de filtro encontrado para adicionar listeners.");
+        }
+    });
+    </script>
 {% endblock %}

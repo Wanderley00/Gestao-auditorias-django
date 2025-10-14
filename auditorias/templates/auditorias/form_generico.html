@@ -12,7 +12,7 @@
         </div>
         {% if back_url %}
         {# CORREÇÃO APLICADA: Usa a variável 'back_url' diretamente #}
-        <a href="{{ back_url }}" class="btn btn-secondary">
+        <a href="{% url back_url %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i>
             Voltar
         </a>
@@ -44,7 +44,7 @@
                 <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
                     {% if back_url %}
                     {# CORREÇÃO APLICADA: Usa a variável 'back_url' diretamente #}
-                    <a href="{{ back_url }}" class="btn btn-secondary">
+                    <a href="{% url back_url %}" class="btn btn-secondary">
                         <i class="fas fa-times"></i>
                         Cancelar
                     </a>
@@ -104,7 +104,7 @@
                     </button>
                     {% if back_url %}
                     {# CORREÇÃO APLICADA: Usa a variável 'back_url' diretamente #}
-                    <a href="{{ back_url }}" class="btn btn-secondary btn-sm">
+                    <a href="{% url back_url %}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-list"></i>
                         Ver Lista
                     </a>

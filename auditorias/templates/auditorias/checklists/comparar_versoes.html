@@ -1,0 +1,662 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">Compare diferentes versões do checklist "{{ original.nome }}" para identificar alterações.</p>
+        </div>
+        <a href="{% url 'auditorias:historico_versoes_checklist' original.pk %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Histórico
+        </a>
+    </div>
+</div>
+
+{% if not versoes_comparadas %}
+<!-- ========================= SELEÇÃO DE VERSÕES ========================= -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Selecione as Versões para Comparar</h3>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" id="form-selecao-versoes">
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                <i class="fas fa-info-circle"></i> Selecione pelo menos 2 versões para realizar a comparação.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                {% for versao in versoes %}
+                <div class="version-card">
+                    <label class="version-selector">
+                        <input type="checkbox" name="versoes" value="{{ versao.pk }}" class="version-checkbox">
+                        <div class="version-content">
+                            <div class="version-header">
+                                <span class="version-badge">V{{ versao.version }}</span>
+                                {% if versao.is_latest %}
+                                <span class="badge badge-primary">Mais Recente</span>
+                                {% endif %}
+                            </div>
+                            <div class="version-info">
+                                <p class="version-name">{{ versao.nome }}</p>
+                                <p class="version-date">
+                                    <i class="fas fa-calendar"></i> {{ versao.data_cadastro|date:"d/m/Y H:i" }}
+                                </p>
+                                <div class="version-stats">
+                                    <span><i class="fas fa-list"></i> {{ versao.topicos.count }} tópicos</span>
+                                    <span><i class="fas fa-question-circle"></i> 
+                                        {% with total_perguntas=0 %}
+                                            {% for topico in versao.topicos.all %}
+                                                {% with total_perguntas=total_perguntas|add:topico.perguntas.count %}{% endwith %}
+                                            {% endfor %}
+                                            {{ total_perguntas }}
+                                        {% endwith %}
+                                        perguntas
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="submit" class="btn btn-primary" id="btn-comparar" disabled>
+                    <i class="fas fa-exchange-alt"></i> Comparar Versões Selecionadas
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="selecionarTodas()">
+                    <i class="fas fa-check-double"></i> Selecionar Todas
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="limparSelecao()">
+                    <i class="fas fa-times"></i> Limpar Seleção
+                </button>
+            </div>
+
+            <!-- Atalhos rápidos -->
+            <div style="margin-top: 32px; padding: 20px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">
+                    <i class="fas fa-bolt"></i> Atalhos Rápidos
+                </h4>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararPrimeiraUltima()">
+                        Primeira vs Última
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararUltimasDuas()">
+                        Últimas 2 Versões
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararUltimasTres()">
+                        Últimas 3 Versões
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<!-- ========================= COMPARAÇÃO DE VERSÕES ========================= -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Resumo das Alterações</h3>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="exportarComparacao()" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-download"></i> Exportar Comparação
+                </button>
+                <button onclick="window.print()" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Versões sendo comparadas -->
+        <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+            {% for versao in versoes_comparadas %}
+            <div class="version-badge-large">
+                <span class="version-number">V{{ versao.version }}</span>
+                <span class="version-date">{{ versao.data_cadastro|date:"d/m/Y" }}</span>
+            </div>
+            {% if not forloop.last %}
+            <div style="display: flex; align-items: center; color: var(--text-muted);">
+                <i class="fas fa-arrow-right" style="font-size: 24px;"></i>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Estatísticas de mudanças -->
+        <div class="stats-grid">
+            <div class="stat-card stat-added">
+                <div class="stat-icon"><i class="fas fa-plus-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.topicos_adicionados }}</div>
+                    <div class="stat-label">Tópicos Adicionados</div>
+                </div>
+            </div>
+            <div class="stat-card stat-removed">
+                <div class="stat-icon"><i class="fas fa-minus-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.topicos_removidos }}</div>
+                    <div class="stat-label">Tópicos Removidos</div>
+                </div>
+            </div>
+            <div class="stat-card stat-added">
+                <div class="stat-icon"><i class="fas fa-plus"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_adicionadas }}</div>
+                    <div class="stat-label">Perguntas Adicionadas</div>
+                </div>
+            </div>
+            <div class="stat-card stat-removed">
+                <div class="stat-icon"><i class="fas fa-minus"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_removidas }}</div>
+                    <div class="stat-label">Perguntas Removidas</div>
+                </div>
+            </div>
+            <div class="stat-card stat-modified">
+                <div class="stat-icon"><i class="fas fa-edit"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_modificadas }}</div>
+                    <div class="stat-label">Perguntas Modificadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparação detalhada lado a lado -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Comparação Detalhada</h3>
+        <div class="comparison-controls">
+            <button onclick="toggleDiferencasApenas()" class="btn btn-sm btn-secondary" id="btn-filtro">
+                <i class="fas fa-filter"></i> Mostrar Apenas Diferenças
+            </button>
+            <button onclick="expandirTodos()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-expand-alt"></i> Expandir Todos
+            </button>
+            <button onclick="recolherTodos()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-compress-alt"></i> Recolher Todos
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="comparison-table-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Elemento</th>
+                        {% for versao in versoes_comparadas %}
+                        <th>
+                            <div class="version-header-cell">
+                                <span class="version-badge">V{{ versao.version }}</span>
+                                <span class="version-date-small">{{ versao.data_cadastro|date:"d/m/Y" }}</span>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="comparison-body">
+                    {% for versao in versoes_comparadas %}
+                        {% for topico in versao.topicos.all %}
+                        <tr class="topico-row" data-topico="{{ topico.descricao }}">
+                            <td class="element-name">
+                                <button class="expand-btn" onclick="toggleTopico(this)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <strong>{{ topico.descricao }}</strong>
+                            </td>
+                            <td colspan="{{ versoes_comparadas|length }}" class="topico-info">
+                                <span class="badge badge-info">{{ topico.perguntas.count }} perguntas</span>
+                            </td>
+                        </tr>
+                        
+                        {% for pergunta in topico.perguntas.all %}
+                        <tr class="pergunta-row hidden" data-topico="{{ topico.descricao }}" data-pergunta="{{ pergunta.pk }}">
+                            <td class="element-name sub-element">
+                                <i class="fas fa-question-circle"></i>
+                                {{ pergunta.descricao|truncatechars:80 }}
+                            </td>
+                            {% for v_comp in versoes_comparadas %}
+                                {% if v_comp.pk == versao.pk %}
+                                <td class="version-data">
+                                    <div class="pergunta-details">
+                                        {% if pergunta.obrigatoria %}
+                                        <span class="detail-badge badge-required">Obrigatória</span>
+                                        {% endif %}
+                                        {% if pergunta.resposta_livre %}
+                                        <span class="detail-badge">Texto Livre</span>
+                                        {% endif %}
+                                        {% if pergunta.foto %}
+                                        <span class="detail-badge">📷 Foto</span>
+                                        {% endif %}
+                                        {% if pergunta.criar_opcao %}
+                                        <span class="detail-badge">Opções</span>
+                                        {% endif %}
+                                        {% if pergunta.porcentagem %}
+                                        <span class="detail-badge">% Porcentagem</span>
+                                        {% endif %}
+                                        
+                                        {% if pergunta.opcoes_resposta.all %}
+                                        <div class="opcoes-list">
+                                            <strong>Opções de Resposta:</strong>
+                                            <ul>
+                                            {% for opcao in pergunta.opcoes_resposta.all %}
+                                                <li>{{ opcao.descricao }} <span class="status-{{ opcao.status|lower }}">({{ opcao.get_status_display }})</span></li>
+                                            {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                {% else %}
+                                <td class="version-data">—</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 24px; text-align: center;">
+    <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" class="btn btn-secondary">
+        <i class="fas fa-redo"></i> Nova Comparação
+    </a>
+</div>
+
+{% endif %}
+
+<style>
+/* Estilos para seleção de versões */
+.version-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.version-selector {
+    display: block;
+    cursor: pointer;
+}
+
+.version-selector input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.version-selector input[type="checkbox"]:checked + .version-content {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.version-content {
+    padding: 20px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.version-card:hover .version-content {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.version-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.version-badge {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.version-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 8px 0;
+}
+
+.version-date {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 4px 0;
+}
+
+.version-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.version-stats span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Estilos para comparação */
+.version-badge-large {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border);
+}
+
+.version-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.version-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.stat-added {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--success);
+}
+
+.stat-removed {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: var(--error);
+}
+
+.stat-modified {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: var(--warning);
+}
+
+.stat-icon {
+    font-size: 32px;
+    color: inherit;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.comparison-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.comparison-table-container {
+    overflow-x: auto;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 16px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.comparison-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.version-header-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.version-date-small {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.topico-row {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+}
+
+.element-name {
+    font-weight: 600;
+}
+
+.sub-element {
+    padding-left: 48px !important;
+    font-weight: 400;
+}
+
+.expand-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 8px;
+    transition: transform 0.2s;
+}
+
+.expand-btn.expanded i {
+    transform: rotate(90deg);
+}
+
+.pergunta-row.hidden {
+    display: none;
+}
+
+.pergunta-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    margin-right: 4px;
+}
+
+.badge-required {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+}
+
+.opcoes-list {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.opcoes-list ul {
+    margin: 4px 0 0 0;
+    padding-left: 20px;
+}
+
+.opcoes-list li {
+    margin: 4px 0;
+}
+
+.status-conforme { color: var(--success); }
+.status-nao_conforme { color: var(--error); }
+.status-desvio_solucionado { color: var(--warning); }
+.status-na { color: var(--text-muted); }
+
+@media print {
+    .card-header button,
+    .comparison-controls,
+    .content-header a {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+// Controle de seleção de versões
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.version-checkbox');
+    const btnComparar = document.getElementById('btn-comparar');
+    
+    if (checkboxes.length > 0 && btnComparar) {
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', atualizarBotaoComparar);
+        });
+        atualizarBotaoComparar();
+    }
+});
+
+function atualizarBotaoComparar() {
+    const checkboxes = document.querySelectorAll('.version-checkbox:checked');
+    const btnComparar = document.getElementById('btn-comparar');
+    
+    if (checkboxes.length >= 2) {
+        btnComparar.disabled = false;
+        btnComparar.innerHTML = `<i class="fas fa-exchange-alt"></i> Comparar ${checkboxes.length} Versões`;
+    } else {
+        btnComparar.disabled = true;
+        btnComparar.innerHTML = '<i class="fas fa-exchange-alt"></i> Selecione pelo menos 2 versões';
+    }
+}
+
+function selecionarTodas() {
+    document.querySelectorAll('.version-checkbox').forEach(cb => cb.checked = true);
+    atualizarBotaoComparar();
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.version-checkbox').forEach(cb => cb.checked = false);
+    atualizarBotaoComparar();
+}
+
+function compararPrimeiraUltima() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 2) {
+        checkboxes[0].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+function compararUltimasDuas() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 2) {
+        checkboxes[checkboxes.length - 2].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+function compararUltimasTres() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 3) {
+        checkboxes[checkboxes.length - 3].checked = true;
+        checkboxes[checkboxes.length - 2].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+// Funções de comparação
+function toggleTopico(btn) {
+    const topicoRow = btn.closest('tr');
+    const topicoName = topicoRow.dataset.topico;
+    const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoName}"]`);
+    
+    btn.classList.toggle('expanded');
+    perguntasRows.forEach(row => row.classList.toggle('hidden'));
+}
+
+function expandirTodos() {
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+        if (!btn.classList.contains('expanded')) {
+            btn.click();
+        }
+    });
+}
+
+function recolherTodos() {
+    document.querySelectorAll('.expand-btn.expanded').forEach(btn => {
+        btn.click();
+    });
+}
+
+let mostrandoApenasDiferencas = false;
+
+function toggleDiferencasApenas() {
+    mostrandoApenasDiferencas = !mostrandoApenasDiferencas;
+    const btn = document.getElementById('btn-filtro');
+    
+    if (mostrandoApenasDiferencas) {
+        btn.innerHTML = '<i class="fas fa-eye"></i> Mostrar Todas';
+        // Lógica para filtrar apenas diferenças (implementar conforme necessidade)
+    } else {
+        btn.innerHTML = '<i class="fas fa-filter"></i> Mostrar Apenas Diferenças';
+        // Mostrar todas as linhas novamente
+    }
+}
+
+function exportarComparacao() {
+    // Implementar exportação para CSV ou PDF
+    alert('Funcionalidade de exportação em desenvolvimento');
+}
+</script>
+{% endblock %}

@@ -87,6 +87,15 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
     # FORMATANDO A DATA
     data_criacao = serializers.DateTimeField(format="%d/%m/%Y", read_only=True)
 
+    ferramenta_nome = serializers.CharField(
+        source='ferramenta.nome', read_only=True)
+
+    programacao = serializers.CharField(
+        source='get_programacao_display', read_only=True)
+
+    criado_por_nome = serializers.CharField(
+        source='criado_por.get_full_name', read_only=True, default='Sistema')
+
     class Meta:
         model = Auditoria
         fields = [
@@ -95,6 +104,9 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
             'modelo_auditoria_nome',
             'checklist_nome',
             'local_nome',  # Usaremos este campo unificado
+            'ferramenta_nome',
+            'programacao',
+            'criado_por_nome',
         ]
 
     def get_modelo_auditoria_nome(self, obj):
@@ -137,19 +149,20 @@ class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'data_execucao', 'checklist']
 
     def get_checklist(self, obj):
-        # Uma Auditoria (pai) pode ter vários Modelos, e cada Modelo um Checklist.
-        # Para a API, vamos assumir que a instância se refere ao checklist do primeiro modelo associado.
-        # Esta lógica pode ser ajustada se a regra de negócio for diferente.
-        primeiro_modelo = obj.auditoria_agendada.modelos.first()
-        if primeiro_modelo and primeiro_modelo.checklist:
-            return ChecklistSerializer(primeiro_modelo.checklist).data
+        # --- ALTERAÇÃO AQUI ---
+        # A lógica antiga buscava o checklist através do modelo de auditoria do pai.
+        # A nova lógica usa o campo 'checklist_usado', que é a fonte definitiva da verdade
+        # para esta instância específica, seja ela passada (V1) ou futura (V2).
+        if obj.checklist_usado:
+            return ChecklistSerializer(obj.checklist_usado).data
         return None
 
 
 class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
-    # Esta parte continua a mesma, mas agora o 'auditoria_info' virá com os novos campos
     auditoria_info = AuditoriaPaiSerializer(
         source='auditoria_agendada', read_only=True)
+
+    status = serializers.CharField(source='status_execucao', read_only=True)
 
     class Meta:
         model = AuditoriaInstancia
@@ -157,8 +170,8 @@ class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
             'id',
             'data_execucao',
             'executada',
-            'auditoria_agendada',
-            'auditoria_info'
+            'status',
+            'auditoria_info',
         ]
 
 

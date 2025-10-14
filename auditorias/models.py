@@ -11,6 +11,8 @@ from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
+from django.db.models import Q
+
 
 class Pilar(models.Model):
     nome = models.CharField(max_length=100, unique=True,
@@ -127,6 +129,19 @@ class Checklist(models.Model):
         verbose_name="Ferramenta Digital",
         related_name='checklists'
     )
+    # --- NOVOS CAMPOS PARA VERSIONAMENTO ---
+    version = models.PositiveIntegerField(default=1, verbose_name="Versão")
+    is_latest = models.BooleanField(
+        default=True, verbose_name="É a versão mais recente")
+    original_checklist = models.ForeignKey(
+        'self',
+        # Usar SET_NULL para não perder o histórico se o original for deletado
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='versions',
+        verbose_name="Checklist Original"
+    )
+    # --- FIM DOS NOVOS CAMPOS ---
     data_cadastro = models.DateTimeField(
         auto_now_add=True, verbose_name="Data de Cadastro")
     data_atualizacao = models.DateTimeField(
@@ -138,7 +153,7 @@ class Checklist(models.Model):
         ordering = ['nome']
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} (V{self.version})"
 
 
 class Topico(models.Model):
@@ -215,11 +230,13 @@ class OpcaoResposta(models.Model):
         ],
         verbose_name="Status Vinculado"
     )
+    # <-- ADICIONE ESTA LINHA
+    ordem = models.IntegerField(default=0, verbose_name="Ordem")
 
     class Meta:
         verbose_name = "Opção de Resposta"
         verbose_name_plural = "Opções de Resposta"
-        ordering = ['descricao']
+        ordering = ['ordem', 'descricao']  # <-- MODIFIQUE ESTA LINHA
 
     def __str__(self):
         return f"{self.descricao} ({self.get_status_display()})"
@@ -232,11 +249,13 @@ class OpcaoPorcentagem(models.Model):
     peso = models.PositiveIntegerField(verbose_name="Peso (%)")
     # Para armazenar o código hexadecimal da cor
     cor = models.CharField(max_length=7, default='#FFFFFF', verbose_name="Cor")
+    # <-- ADICIONE ESTA LINHA
+    ordem = models.IntegerField(default=0, verbose_name="Ordem")
 
     class Meta:
         verbose_name = "Opção de Porcentagem"
         verbose_name_plural = "Opções de Porcentagem"
-        ordering = ['peso']
+        ordering = ['ordem', 'peso']  # <-- MODIFIQUE ESTA LINHA
 
     def __str__(self):
         return f"{self.descricao} - {self.peso}%"
@@ -433,82 +452,11 @@ class Auditoria(models.Model):
             return "Dia Único"
 
     def save(self, *args, **kwargs):
-        is_new = self._state.adding
-        super().save(*args, **kwargs)  # Salva o objeto 'pai' primeiro
-
-        # Se for uma edição, apaga as instâncias futuras não executadas para recriá-las
-        if not is_new:
-            self.instancias.filter(
-                executada=False,
-                data_execucao__gte=timezone.now().date()
-            ).delete()
-
-        # 1. Determinar a lista de locais de execução (sempre no nível de Subsetor)
-        target_locations = []
-        if self.nivel_organizacional == 'SUBSETOR' and self.local_subsetor:
-            target_locations.append(self.local_subsetor)
-        elif self.nivel_organizacional == 'SETOR' and self.local_setor:
-            target_locations = list(
-                self.local_setor.subsetor_set.filter(ativo=True))
-        elif self.nivel_organizacional == 'AREA' and self.local_area:
-            target_locations = list(SubSetor.objects.filter(
-                setor__area=self.local_area, ativo=True))
-        elif self.nivel_organizacional == 'EMPRESA' and self.local_empresa:
-            target_locations = list(SubSetor.objects.filter(
-                setor__area__empresa=self.local_empresa, ativo=True))
-
-        # Se não encontrou locais específicos (ou não se aplica), cria uma instância sem local
-        if not target_locations:
-            target_locations.append(None)
-
-        # 2. Gerar a lista de datas programadas (lógica que já tínhamos)
-        dates_to_create = []
-        if self.data_inicio:
-            current_date = self.data_inicio
-            end_date = self.data_fim
-
-            if not end_date:  # Auditoria de dia único
-                if not (self.pular_finais_semana and current_date.weekday() >= 5):
-                    dates_to_create.append(current_date)
-            else:  # Auditoria com período
-                loop_limit = 365 * 5
-                loops = 0
-                while current_date <= end_date and loops < loop_limit:
-                    loops += 1
-                    if not (self.pular_finais_semana and current_date.weekday() >= 5):
-                        dates_to_create.append(current_date)
-
-                    # Lógica de incremento da data
-                    if self.por_intervalo and self.intervalo:
-                        current_date += timedelta(days=self.intervalo + 1)
-                    elif self.por_frequencia and self.frequencia:
-                        if self.frequencia == 'DIARIO':
-                            current_date += timedelta(days=1)
-                        elif self.frequencia == 'SEMANAL':
-                            current_date += timedelta(weeks=1)
-                        elif self.frequencia == 'QUINZENAL':
-                            current_date += timedelta(weeks=2)
-                        elif self.frequencia == 'MENSAL':
-                            current_date += relativedelta(months=1)
-                        elif self.frequencia == 'ANUAL':
-                            current_date += relativedelta(years=1)
-                        else:
-                            break  # Frequência inválida, para o loop
-                    else:
-                        break  # Sem regra de repetição, para o loop
-
-        # 3. Criar as instâncias cruzando DATAS vs LOCAIS vs REPETIÇÕES
-        repetitions = self.numero_repeticoes if self.numero_repeticoes and self.numero_repeticoes > 0 else 1
-
-        for dt in dates_to_create:
-            for location in target_locations:
-                for _ in range(repetitions):
-                    AuditoriaInstancia.objects.create(
-                        auditoria_agendada=self,
-                        data_execucao=dt,
-                        local_execucao=location,
-                        responsavel=self.responsavel  # <-- ADICIONE ESTA LINHA
-                    )
+        """
+        Sobrescrevemos o save apenas para garantir a chamada do método pai.
+        Toda a lógica de criação de instâncias foi movida para as views.
+        """
+        super().save(*args, **kwargs)
 
 
 class AuditoriaInstancia(models.Model):
@@ -517,6 +465,22 @@ class AuditoriaInstancia(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Auditoria Agendada",
         related_name='instancias'
+    )
+
+    # --- NOVO CAMPO PARA VINCULAR A VERSÃO EXATA DO CHECKLIST ---
+    checklist_usado = models.ForeignKey(
+        Checklist,
+        on_delete=models.PROTECT,  # Protege contra a exclusão do checklist se houver auditorias
+        null=True, blank=True,
+        verbose_name="Checklist Utilizado"
+    )
+    # --- FIM DO NOVO CAMPO ---
+
+    turno = models.ForeignKey(
+        Turno,
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        verbose_name="Turno de Execução"
     )
 
     responsavel = models.ForeignKey(
@@ -602,15 +566,18 @@ class AuditoriaInstancia(models.Model):
         return None
 
     def get_total_perguntas(self):
-        """Calcula o número total de perguntas de todos os checklists associados à auditoria pai."""
-        total_perguntas = 0
-        # Itera sobre todos os modelos de auditoria associados à auditoria agendada
-        for modelo in self.auditoria_agendada.modelos.all():
-            if modelo.checklist:
-                # Conta o número de perguntas em cada checklist
-                total_perguntas += Pergunta.objects.filter(
-                    topico__checklist=modelo.checklist).count()
-        return total_perguntas
+        """
+        Calcula o número total de perguntas DO CHECKLIST ESPECÍFICO
+        usado para esta instância.
+        """
+        # --- ALTERAÇÃO AQUI ---
+        # A lógica antiga olhava para o agendamento pai, que sempre tem a última versão.
+        # A nova lógica olha para o checklist exato que foi salvo nesta instância.
+        if self.checklist_usado:
+            return Pergunta.objects.filter(topico__checklist=self.checklist_usado).count()
+
+        # Se por algum motivo não houver um checklist vinculado, retorna 0 para evitar erros.
+        return 0
 
     def get_percentual_conclusao(self):
         """Calcula e formata o percentual de respostas concluídas."""

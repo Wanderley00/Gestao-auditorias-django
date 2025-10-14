@@ -11,6 +11,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.contenttypes.models import ContentType
+import csv
+from django.http import HttpResponse
 import json
 
 from .serializers import UsuarioSerializer
@@ -128,7 +130,7 @@ def lista_usuarios(request):
         'title': 'Usuários',
         'singular': 'Usuário',
         'button_text': 'Novo Usuário',
-        'create_url': 'usuarios:criar_usuario',  # <-- Chave que faltava
+        'create_url': 'usuarios:criar_usuario',
         'artigo': 'o'
     }
     return render(request, 'usuarios/lista.html', context)
@@ -414,6 +416,78 @@ def deletar_grupo(request, pk):
 # ============================================================================
 # VIEWS AJAX E UTILITÁRIAS
 # ============================================================================
+@login_required
+@user_passes_test(admin_required)
+def exportar_usuarios_csv(request):
+    """Exporta a lista de usuários filtrada para um arquivo CSV."""
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="usuarios.csv"'}
+    )
+
+    # Reaplica a mesma lógica de filtro da view de listagem
+    search = request.GET.get('search', '')
+    status = request.GET.get('status', '')
+    grupo = request.GET.get('grupo', '')
+
+    usuarios = Usuario.objects.prefetch_related('groups').all()
+
+    if search:
+        usuarios = usuarios.filter(
+            Q(username__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+
+    if status == 'ativo':
+        usuarios = usuarios.filter(is_active=True)
+    elif status == 'inativo':
+        usuarios = usuarios.filter(is_active=False)
+    elif status == 'staff':
+        usuarios = usuarios.filter(is_staff=True)
+
+    if grupo:
+        usuarios = usuarios.filter(groups__id=grupo)
+
+    usuarios = usuarios.order_by('username')
+
+    # Cria o escritor CSV
+    writer = csv.writer(response)
+
+    # Escreve o cabeçalho
+    writer.writerow([
+        'ID',
+        'Username',
+        'Nome',
+        'Sobrenome',
+        'Email',
+        'Ativo',
+        'Staff',
+        'Superusuário',
+        'Grupos',
+        'Data de Cadastro'
+    ])
+
+    # Escreve os dados de cada usuário no arquivo
+    for usuario in usuarios:
+        grupos_str = ', '.join([g.name for g in usuario.groups.all()])
+
+        writer.writerow([
+            usuario.id,
+            usuario.username,
+            usuario.first_name,
+            usuario.last_name,
+            usuario.email,
+            'Sim' if usuario.is_active else 'Não',
+            'Sim' if usuario.is_staff else 'Não',
+            'Sim' if usuario.is_superuser else 'Não',
+            grupos_str,
+            usuario.date_joined.strftime('%d/%m/%Y %H:%M')
+        ])
+
+    return response
+
 
 @require_http_methods(["GET"])
 def verificar_username(request):

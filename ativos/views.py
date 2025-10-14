@@ -6,6 +6,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.http import JsonResponse
+import csv
+from django.http import HttpResponse
 
 from .models import Categoria, Marca, Modelo, Ativo
 from organizacao.models import SubSetor
@@ -42,16 +44,16 @@ def lista_categorias(request):
     categorias = Categoria.objects.annotate(
         total_ativos=Count('ativos_categoria')
     )
-    
+
     if search:
         categorias = categorias.filter(
             Q(nome__icontains=search) | Q(descricao__icontains=search)
         )
-    
+
     paginator = Paginator(categorias, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -59,6 +61,7 @@ def lista_categorias(request):
         'singular': 'Categoria',
         'button_text': 'Nova Categoria',
         'create_url': 'ativos:criar_categoria',
+        'export_url': 'ativos:exportar_categorias_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma categoria cadastrada',
         'empty_subtitle': 'Comece criando a primeira categoria.'
@@ -73,7 +76,7 @@ def criar_categoria(request):
         nome = request.POST.get('nome')
         descricao = request.POST.get('descricao', '')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if nome:
             try:
                 Categoria.objects.create(
@@ -87,7 +90,7 @@ def criar_categoria(request):
                 messages.error(request, f'Erro ao criar categoria: {str(e)}')
         else:
             messages.error(request, 'Nome é obrigatório!')
-    
+
     context = {
         'title': 'Criar Categoria',
         'back_url': 'ativos:lista_categorias'
@@ -99,19 +102,19 @@ def criar_categoria(request):
 def editar_categoria(request, pk):
     """Edita uma categoria existente"""
     categoria = get_object_or_404(Categoria, pk=pk)
-    
+
     if request.method == 'POST':
         categoria.nome = request.POST.get('nome')
         categoria.descricao = request.POST.get('descricao', '')
         categoria.ativo = request.POST.get('ativo') == 'on'
-        
+
         try:
             categoria.save()
             messages.success(request, 'Categoria atualizada com sucesso!')
             return redirect('ativos:lista_categorias')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar categoria: {str(e)}')
-    
+
     context = {
         'categoria': categoria,
         'title': 'Editar Categoria',
@@ -124,7 +127,7 @@ def editar_categoria(request, pk):
 def deletar_categoria(request, pk):
     """Deleta uma categoria"""
     categoria = get_object_or_404(Categoria, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             categoria.delete()
@@ -132,7 +135,7 @@ def deletar_categoria(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar categoria: {str(e)}')
         return redirect('ativos:lista_categorias')
-    
+
     context = {
         'object': categoria,
         'title': 'Categoria'
@@ -140,9 +143,38 @@ def deletar_categoria(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_categorias_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={
+            'Content-Disposition': 'attachment; filename="ativos_categorias.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Descrição', 'Status', 'Data de Cadastro'])
+
+    search = request.GET.get('search', '')
+    categorias = Categoria.objects.all()
+    if search:
+        categorias = categorias.filter(
+            Q(nome__icontains=search) | Q(descricao__icontains=search))
+
+    for categoria in categorias:
+        writer.writerow([
+            categoria.nome,
+            categoria.descricao,
+            'Ativo' if categoria.ativo else 'Inativo',
+            categoria.data_cadastro.strftime('%d/%m/%Y %H:%M')
+        ])
+
+    return response
+
+
 # ============================================================================
 # VIEWS PARA MARCAS
 # ============================================================================
+
 
 @login_required
 def lista_marcas(request):
@@ -152,14 +184,14 @@ def lista_marcas(request):
         total_modelos=Count('modelo'),
         total_ativos=Count('ativos_marca')
     )
-    
+
     if search:
         marcas = marcas.filter(nome__icontains=search)
-    
+
     paginator = Paginator(marcas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -167,6 +199,7 @@ def lista_marcas(request):
         'singular': 'Marca',
         'button_text': 'Nova Marca',
         'create_url': 'ativos:criar_marca',
+        'export_url': 'ativos:exportar_marcas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma marca cadastrada',
         'empty_subtitle': 'Comece criando a primeira marca.'
@@ -180,7 +213,7 @@ def criar_marca(request):
     if request.method == 'POST':
         nome = request.POST.get('nome')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if nome:
             try:
                 Marca.objects.create(
@@ -193,7 +226,7 @@ def criar_marca(request):
                 messages.error(request, f'Erro ao criar marca: {str(e)}')
         else:
             messages.error(request, 'Nome é obrigatório!')
-    
+
     context = {
         'title': 'Criar Marca',
         'back_url': 'ativos:lista_marcas'
@@ -205,18 +238,18 @@ def criar_marca(request):
 def editar_marca(request, pk):
     """Edita uma marca existente"""
     marca = get_object_or_404(Marca, pk=pk)
-    
+
     if request.method == 'POST':
         marca.nome = request.POST.get('nome')
         marca.ativo = request.POST.get('ativo') == 'on'
-        
+
         try:
             marca.save()
             messages.success(request, 'Marca atualizada com sucesso!')
             return redirect('ativos:lista_marcas')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar marca: {str(e)}')
-    
+
     context = {
         'marca': marca,
         'title': 'Editar Marca',
@@ -229,7 +262,7 @@ def editar_marca(request, pk):
 def deletar_marca(request, pk):
     """Deleta uma marca"""
     marca = get_object_or_404(Marca, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             marca.delete()
@@ -237,7 +270,7 @@ def deletar_marca(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar marca: {str(e)}')
         return redirect('ativos:lista_marcas')
-    
+
     context = {
         'object': marca,
         'title': 'Marca'
@@ -245,34 +278,57 @@ def deletar_marca(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_marcas_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="marcas.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Status'])
+
+    search = request.GET.get('search', '')
+    marcas = Marca.objects.all()
+    if search:
+        marcas = marcas.filter(nome__icontains=search)
+
+    for marca in marcas:
+        writer.writerow([
+            marca.nome,
+            'Ativo' if marca.ativo else 'Inativo'
+        ])
+
+    return response
 # ============================================================================
 # VIEWS PARA MODELOS
 # ============================================================================
+
 
 @login_required
 def lista_modelos(request):
     """Lista todos os modelos"""
     search = request.GET.get('search', '')
     marca_filter = request.GET.get('marca', '')
-    
+
     modelos = Modelo.objects.select_related('marca').annotate(
         total_ativos=Count('ativos_modelo')
     )
-    
+
     if search:
         modelos = modelos.filter(
-            Q(nome__icontains=search) | 
+            Q(nome__icontains=search) |
             Q(marca__nome__icontains=search) |
             Q(descricao__icontains=search)
         )
-    
+
     if marca_filter:
         modelos = modelos.filter(marca_id=marca_filter)
-    
+
     paginator = Paginator(modelos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -282,6 +338,7 @@ def lista_modelos(request):
         'singular': 'Modelo',
         'button_text': 'Novo Modelo',
         'create_url': 'ativos:criar_modelo',
+        'export_url': 'ativos:exportar_modelos_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum modelo cadastrado',
         'empty_subtitle': 'Comece criando o primeiro modelo.'
@@ -297,7 +354,7 @@ def criar_modelo(request):
         nome = request.POST.get('nome')
         descricao = request.POST.get('descricao', '')
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if marca_id and nome:
             try:
                 marca = Marca.objects.get(pk=marca_id)
@@ -313,7 +370,7 @@ def criar_modelo(request):
                 messages.error(request, f'Erro ao criar modelo: {str(e)}')
         else:
             messages.error(request, 'Marca e nome são obrigatórios!')
-    
+
     context = {
         'marcas': Marca.objects.filter(ativo=True),
         'title': 'Criar Modelo',
@@ -326,23 +383,23 @@ def criar_modelo(request):
 def editar_modelo(request, pk):
     """Edita um modelo existente"""
     modelo = get_object_or_404(Modelo, pk=pk)
-    
+
     if request.method == 'POST':
         marca_id = request.POST.get('marca')
         modelo.nome = request.POST.get('nome')
         modelo.descricao = request.POST.get('descricao', '')
         modelo.ativo = request.POST.get('ativo') == 'on'
-        
+
         if marca_id:
             modelo.marca = Marca.objects.get(pk=marca_id)
-        
+
         try:
             modelo.save()
             messages.success(request, 'Modelo atualizado com sucesso!')
             return redirect('ativos:lista_modelos')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar modelo: {str(e)}')
-    
+
     context = {
         'modelo': modelo,
         'marcas': Marca.objects.filter(ativo=True),
@@ -356,7 +413,7 @@ def editar_modelo(request, pk):
 def deletar_modelo(request, pk):
     """Deleta um modelo"""
     modelo = get_object_or_404(Modelo, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             modelo.delete()
@@ -364,7 +421,7 @@ def deletar_modelo(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar modelo: {str(e)}')
         return redirect('ativos:lista_modelos')
-    
+
     context = {
         'object': modelo,
         'title': 'Modelo'
@@ -372,9 +429,43 @@ def deletar_modelo(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_modelos_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="modelos.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Marca', 'Descrição', 'Status'])
+
+    search = request.GET.get('search', '')
+    marca_filter = request.GET.get('marca', '')
+
+    modelos = Modelo.objects.select_related('marca').all()
+
+    if search:
+        modelos = modelos.filter(
+            Q(nome__icontains=search) |
+            Q(marca__nome__icontains=search) |
+            Q(descricao__icontains=search)
+        )
+    if marca_filter:
+        modelos = modelos.filter(marca_id=marca_filter)
+
+    for modelo in modelos:
+        writer.writerow([
+            modelo.nome,
+            modelo.marca.nome,
+            modelo.descricao,
+            'Ativo' if modelo.ativo else 'Inativo'
+        ])
+
+    return response
 # ============================================================================
 # VIEWS PARA ATIVOS
 # ============================================================================
+
 
 @login_required
 def lista_ativos(request):
@@ -382,28 +473,28 @@ def lista_ativos(request):
     search = request.GET.get('search', '')
     categoria_filter = request.GET.get('categoria', '')
     marca_filter = request.GET.get('marca', '')
-    
+
     ativos = Ativo.objects.select_related(
         'categoria', 'marca', 'modelo', 'estrutura_organizacional'
     )
-    
+
     if search:
         ativos = ativos.filter(
             Q(tag__icontains=search) |
             Q(descricao__icontains=search) |
             Q(codigo_fabricante__icontains=search)
         )
-    
+
     if categoria_filter:
         ativos = ativos.filter(categoria_id=categoria_filter)
-    
+
     if marca_filter:
         ativos = ativos.filter(marca_id=marca_filter)
-    
+
     paginator = Paginator(ativos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -415,6 +506,7 @@ def lista_ativos(request):
         'singular': 'Ativo',
         'button_text': 'Novo Ativo',
         'create_url': 'ativos:criar_ativo',
+        'export_url': 'ativos:exportar_ativos_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum ativo cadastrado',
         'empty_subtitle': 'Comece criando o primeiro ativo.'
@@ -435,7 +527,7 @@ def criar_ativo(request):
         modelo_id = request.POST.get('modelo') or None
         estrutura_id = request.POST.get('estrutura_organizacional') or None
         ativo = request.POST.get('ativo') == 'on'
-        
+
         if tag and descricao:
             try:
                 novo_ativo = Ativo.objects.create(
@@ -449,19 +541,19 @@ def criar_ativo(request):
                     estrutura_organizacional_id=estrutura_id,
                     ativo=ativo
                 )
-                
+
                 # Processar imagem se fornecida
                 if request.FILES.get('imagem_ativo'):
                     novo_ativo.imagem_ativo = request.FILES['imagem_ativo']
                     novo_ativo.save()
-                
+
                 messages.success(request, 'Ativo criado com sucesso!')
                 return redirect('ativos:lista_ativos')
             except Exception as e:
                 messages.error(request, f'Erro ao criar ativo: {str(e)}')
         else:
             messages.error(request, 'Tag e descrição são obrigatórios!')
-    
+
     context = {
         'categorias': Categoria.objects.filter(ativo=True),
         'marcas': Marca.objects.filter(ativo=True),
@@ -470,14 +562,14 @@ def criar_ativo(request):
         'title': 'Criar Ativo',
         'back_url': 'ativos:lista_ativos'
     }
-    return render(request, 'ativos/ativos/form.html', context)
+    return render(request, 'ativos/form.html', context)
 
 
 @login_required
 def editar_ativo(request, pk):
     """Edita um ativo existente"""
     ativo_obj = get_object_or_404(Ativo, pk=pk)
-    
+
     if request.method == 'POST':
         ativo_obj.tag = request.POST.get('tag')
         ativo_obj.descricao = request.POST.get('descricao')
@@ -486,20 +578,21 @@ def editar_ativo(request, pk):
         ativo_obj.categoria_id = request.POST.get('categoria') or None
         ativo_obj.marca_id = request.POST.get('marca') or None
         ativo_obj.modelo_id = request.POST.get('modelo') or None
-        ativo_obj.estrutura_organizacional_id = request.POST.get('estrutura_organizacional') or None
+        ativo_obj.estrutura_organizacional_id = request.POST.get(
+            'estrutura_organizacional') or None
         ativo_obj.ativo = request.POST.get('ativo') == 'on'
-        
+
         try:
             # Processar imagem se fornecida
             if request.FILES.get('imagem_ativo'):
                 ativo_obj.imagem_ativo = request.FILES['imagem_ativo']
-            
+
             ativo_obj.save()
             messages.success(request, 'Ativo atualizado com sucesso!')
             return redirect('ativos:lista_ativos')
         except Exception as e:
             messages.error(request, f'Erro ao atualizar ativo: {str(e)}')
-    
+
     context = {
         'ativo': ativo_obj,
         'categorias': Categoria.objects.filter(ativo=True),
@@ -509,14 +602,14 @@ def editar_ativo(request, pk):
         'title': 'Editar Ativo',
         'back_url': 'ativos:lista_ativos'
     }
-    return render(request, 'ativos/ativos/form.html', context)
+    return render(request, 'ativos/form.html', context)
 
 
 @login_required
 def deletar_ativo(request, pk):
     """Deleta um ativo"""
     ativo = get_object_or_404(Ativo, pk=pk)
-    
+
     if request.method == 'POST':
         try:
             ativo.delete()
@@ -524,12 +617,55 @@ def deletar_ativo(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar ativo: {str(e)}')
         return redirect('ativos:lista_ativos')
-    
+
     context = {
         'object': ativo,
         'title': 'Ativo'
     }
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def exportar_ativos_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="ativos.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Tag', 'Descrição', 'Categoria', 'Marca',
+                    'Modelo', 'Local (Subsetor)', 'Status'])
+
+    search = request.GET.get('search', '')
+    categoria_filter = request.GET.get('categoria', '')
+    marca_filter = request.GET.get('marca', '')
+
+    ativos = Ativo.objects.select_related(
+        'categoria', 'marca', 'modelo', 'estrutura_organizacional')
+
+    if search:
+        ativos = ativos.filter(
+            Q(tag__icontains=search) |
+            Q(descricao__icontains=search) |
+            Q(codigo_fabricante__icontains=search)
+        )
+    if categoria_filter:
+        ativos = ativos.filter(categoria_id=categoria_filter)
+    if marca_filter:
+        ativos = ativos.filter(marca_id=marca_filter)
+
+    for ativo in ativos:
+        writer.writerow([
+            ativo.tag,
+            ativo.descricao,
+            ativo.categoria.nome if ativo.categoria else 'N/A',
+            ativo.marca.nome if ativo.marca else 'N/A',
+            ativo.modelo.nome if ativo.modelo else 'N/A',
+            str(ativo.estrutura_organizacional) if ativo.estrutura_organizacional else 'N/A',
+            'Ativo' if ativo.ativo else 'Inativo'
+        ])
+
+    return response
 
 
 # ============================================================================
@@ -540,5 +676,6 @@ def deletar_ativo(request, pk):
 def get_modelos_por_marca(request):
     """Retorna modelos de uma marca via AJAX"""
     marca_id = request.GET.get('marca_id')
-    modelos = Modelo.objects.filter(marca_id=marca_id, ativo=True).values('id', 'nome')
+    modelos = Modelo.objects.filter(
+        marca_id=marca_id, ativo=True).values('id', 'nome')
     return JsonResponse(list(modelos), safe=False)

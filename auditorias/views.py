@@ -1,5 +1,6 @@
 # auditorias/views.py
 
+from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -12,6 +13,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import csv
+from django.http import HttpResponse
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,7 +30,8 @@ from .serializers import AuditoriaInstanciaListSerializer, AuditoriaInstanciaDet
 from .models import (
     Pilar, CategoriaAuditoria, Norma, RequisitoNorma, FerramentaDigital,
     Checklist, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem,
-    FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia, Resposta
+    FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia, Resposta,
+    CATEGORIAS_AUDITORIA
 )
 from organizacao.models import Empresa, Area, Setor, SubSetor
 from ativos.models import Ativo
@@ -40,6 +44,8 @@ from django.db.models import Q, F, Value
 from django.db.models.functions import Concat
 
 from django.utils import timezone
+
+from django.db import transaction
 
 # ============================================================================
 # VIEWS PRINCIPAIS - DASHBOARD E LISTAGENS
@@ -86,6 +92,7 @@ def lista_pilares(request):
         'singular': 'Pilar',
         'button_text': 'Novo Pilar',
         'create_url': 'auditorias:criar_pilar',
+        'export_url': 'auditorias:exportar_pilares_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum pilar cadastrado',
         'empty_subtitle': 'Comece criando o primeiro pilar.'
@@ -167,9 +174,36 @@ def deletar_pilar(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_pilares_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="pilares.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Descrição', 'Status', 'Data de Cadastro'])
+
+    search = request.GET.get('search', '')
+    pilares = Pilar.objects.all()
+    if search:
+        pilares = pilares.filter(
+            Q(nome__icontains=search) | Q(descricao__icontains=search))
+
+    for pilar in pilares:
+        writer.writerow([
+            pilar.nome,
+            pilar.descricao,
+            'Ativo' if pilar.ativo else 'Inativo',
+            pilar.data_cadastro.strftime('%d/%m/%Y %H:%M')
+        ])
+
+    return response
+
 # ============================================================================
 # VIEWS PARA CATEGORias DE AUDITORIA
 # ============================================================================
+
 
 @login_required
 def lista_categorias_auditoria(request):
@@ -193,6 +227,7 @@ def lista_categorias_auditoria(request):
         'singular': 'Categoria de Auditoria',
         'button_text': 'Nova Categoria de Auditoria',
         'create_url': 'auditorias:criar_categoria_auditoria',
+        'export_url': 'auditorias:exportar_categorias_auditoria_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma categoria de auditoria cadastrada',
         'empty_subtitle': 'Comece criando a primeira categoria de auditoria.'
@@ -280,6 +315,34 @@ def deletar_categoria_auditoria(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_categorias_auditoria_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={
+            'Content-Disposition': 'attachment; filename="categorias_auditoria.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Descrição', 'Pilar', 'Status', 'Data de Cadastro'])
+
+    search = request.GET.get('search', '')
+    categorias = CategoriaAuditoria.objects.select_related('pilar').all()
+    if search:
+        categorias = categorias.filter(
+            Q(descricao__icontains=search) | Q(pilar__nome__icontains=search))
+
+    for cat in categorias:
+        writer.writerow([
+            cat.descricao,
+            cat.pilar.nome if cat.pilar else 'N/A',
+            'Ativo' if cat.ativo else 'Inativo',
+            cat.data_cadastro.strftime('%d/%m/%Y %H:%M')
+        ])
+
+    return response
+
+
 # ============================================================================
 # VIEWS PARA NORMAS
 # ============================================================================
@@ -306,6 +369,7 @@ def lista_normas(request):
         'singular': 'Norma',
         'button_text': 'Nova Norma',
         'create_url': 'auditorias:criar_norma',
+        'export_url': 'auditorias:exportar_normas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma norma cadastrada',
         'empty_subtitle': 'Comece criando a primeira norma.'
@@ -387,9 +451,35 @@ def deletar_norma(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_normas_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="normas.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Descrição', 'Revisão', 'Status'])
+
+    search = request.GET.get('search', '')
+    normas = Norma.objects.all()
+    if search:
+        normas = normas.filter(Q(descricao__icontains=search)
+                               | Q(revisao__icontains=search))
+
+    for norma in normas:
+        writer.writerow([
+            norma.descricao,
+            norma.revisao,
+            'Ativo' if norma.ativo else 'Inativo'
+        ])
+
+    return response
+
 # ============================================================================
 # VIEWS PARA FERRAMENTAS DIGITAIS
 # ============================================================================
+
 
 @login_required
 def lista_ferramentas_digitais(request):
@@ -411,6 +501,7 @@ def lista_ferramentas_digitais(request):
         'singular': 'Ferramenta Digital',
         'button_text': 'Nova Ferramenta Digital',
         'create_url': 'auditorias:criar_ferramenta_digital',
+        'export_url': 'auditorias:exportar_ferramentas_digitais_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma ferramenta digital cadastrada',
         'empty_subtitle': 'Comece criando a primeira ferramenta digital.'
@@ -487,15 +578,39 @@ def deletar_ferramenta_digital(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_ferramentas_digitais_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={
+            'Content-Disposition': 'attachment; filename="ferramentas_digitais.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome'])
+
+    search = request.GET.get('search', '')
+    ferramentas = FerramentaDigital.objects.all()
+    if search:
+        ferramentas = ferramentas.filter(nome__icontains=search)
+
+    for ferramenta in ferramentas:
+        writer.writerow([ferramenta.nome])
+
+    return response
+
+
 # ============================================================================
 # VIEWS PARA CHECKLISTS
 # ============================================================================
 
 @login_required
 def lista_checklists(request):
-    """Lista todos os checklists"""
+    """Lista todos os checklists (apenas a versão mais recente de cada)."""
     search = request.GET.get('search', '')
-    checklists = Checklist.objects.select_related('ferramenta').all()
+    # --- ALTERAÇÃO AQUI ---
+    checklists = Checklist.objects.select_related(
+        'ferramenta').filter(is_latest=True)
 
     if search:
         checklists = checklists.filter(nome__icontains=search)
@@ -508,7 +623,8 @@ def lista_checklists(request):
         'page_obj': page_obj,
         'search': search,
         'title': 'Checklists',
-        'create_url': 'auditorias:criar_checklist'
+        'create_url': 'auditorias:criar_checklist',
+        'export_url': 'auditorias:exportar_checklists_csv',  # NOVO
     }
     return render(request, 'auditorias/checklists/lista.html', context)
 
@@ -554,261 +670,369 @@ def criar_checklist(request):
     return render(request, 'auditorias/checklists/form.html', context)
 
 
+def _create_new_version_from_request(request, checklist_original):
+    """
+    Cria uma nova versão de um checklist populando-a diretamente
+    com os dados do request.POST, evitando conflitos de ID.
+    """
+    # 1. Cria o novo objeto Checklist (a nova versão)
+    nova_versao = Checklist.objects.create(
+        nome=request.POST.get('nome'),
+        ativo=request.POST.get('ativo') == 'on',
+        ferramenta_id=request.POST.get('ferramenta') or None,
+        version=checklist_original.version + 1,
+        is_latest=True,
+        original_checklist=checklist_original.original_checklist or checklist_original
+    )
+
+    # 2. Re-processa a estrutura do formulário, mas criando tudo para a nova versão
+    topicos_data = {}
+    for key in request.POST:
+        if key.startswith('topico-descricao['):
+            # ID do formulário (pode ser '123' ou 'new-1')
+            topico_id_form = key.split('[')[1].split(']')[0]
+            topicos_data[topico_id_form] = {
+                'descricao': request.POST.get(key),
+                'ordem': request.POST.get(f'topico-ordem[{topico_id_form}]', 0)
+            }
+
+    for topico_id_form, topico_info in topicos_data.items():
+        # Cria um novo tópico para a nova versão
+        novo_topico = Topico.objects.create(
+            checklist=nova_versao,
+            descricao=topico_info['descricao'],
+            ordem=int(topico_info['ordem']) if topico_info['ordem'] else 0
+        )
+
+        # Processa as perguntas associadas a este tópico no formulário
+        for key in request.POST:
+            if key.startswith(f'pergunta-descricao[{topico_id_form}-'):
+                pergunta_id_full = key.split('[')[1].split(']')[0]
+
+                # Cria uma nova pergunta para o novo tópico
+                nova_pergunta = Pergunta.objects.create(
+                    topico=novo_topico,
+                    descricao=request.POST.get(key),
+                    ordem=int(request.POST.get(
+                        f'pergunta-ordem[{pergunta_id_full}]', 0)),
+                    obrigatoria=request.POST.get(
+                        f'pergunta-obrigatorio[{pergunta_id_full}]') == 'on',
+                    resposta_livre=request.POST.get(
+                        f'pergunta-resposta_livre[{pergunta_id_full}]') == 'on',
+                    foto=request.POST.get(
+                        f'pergunta-foto[{pergunta_id_full}]') == 'on',
+                    criar_opcao=request.POST.get(
+                        f'pergunta-criar_opcao[{pergunta_id_full}]') == 'on',
+                    porcentagem=request.POST.get(
+                        f'pergunta-porcentagem[{pergunta_id_full}]') == 'on'
+                )
+
+                # Processa as opções de resposta para esta pergunta
+                for opt_key in request.POST:
+                    if opt_key.startswith(f'opcao-resposta-descricao[{pergunta_id_full}-'):
+                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        OpcaoResposta.objects.create(
+                            pergunta=nova_pergunta,
+                            descricao=request.POST.get(opt_key),
+                            status=request.POST.get(
+                                f'opcao-resposta-status[{opt_id_full}]', 'CONFORME')
+                        )
+
+                # Processa as opções de porcentagem para esta pergunta
+                for opt_key in request.POST:
+                    if opt_key.startswith(f'opcao-porcentagem-descricao[{pergunta_id_full}-'):
+                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        OpcaoPorcentagem.objects.create(
+                            pergunta=nova_pergunta,
+                            descricao=request.POST.get(opt_key),
+                            peso=int(request.POST.get(
+                                f'opcao-porcentagem-peso[{opt_id_full}]', 0)),
+                            cor=request.POST.get(
+                                f'opcao-porcentagem-cor[{opt_id_full}]', '#FFFFFF')
+                        )
+
+    return nova_versao
+
+
 @login_required
 def editar_checklist(request, pk):
-    """Edita um checklist existente, incluindo seus tópicos, perguntas e opções."""
-    checklist = get_object_or_404(Checklist.objects.prefetch_related(
-        'topicos__perguntas__opcoes_resposta',
-        'topicos__perguntas__opcoes_porcentagem'
-    ), pk=pk)
+    """
+    Ao editar um checklist, cria uma nova versão (clone) com as modificações
+    e atualiza as auditorias futuras.
+    """
+    checklist_antigo = get_object_or_404(Checklist, pk=pk)
 
     if request.method == 'POST':
         try:
-            # 1. ATUALIZAR DADOS DO CHECKLIST
-            checklist.nome = request.POST.get('nome')
-            checklist.ativo = request.POST.get('ativo') == 'on'
-            ferramenta_id = request.POST.get('ferramenta')
-            checklist.ferramenta_id = ferramenta_id if ferramenta_id else None
-            checklist.save()
+            with transaction.atomic():
+                # 1. Cria a nova versão diretamente a partir dos dados do formulário
+                novo_checklist = _create_new_version_from_request(
+                    request, checklist_antigo)
 
-            # Processar estrutura completa
-            processar_estrutura_checklist(request, checklist)
+                # 2. Desativa a versão antiga, marcando-a como não sendo a mais recente
+                checklist_antigo.is_latest = False
+                checklist_antigo.save()
 
-            messages.success(request, 'Checklist atualizado com sucesso!')
-            return redirect('auditorias:lista_checklists')
+                # 3. Encontra todos os Modelos de Auditoria que usavam a versão antiga
+                modelos_afetados_ids = list(ModeloAuditoria.objects.filter(
+                    checklist=checklist_antigo
+                ).values_list('id', flat=True))
+
+                if modelos_afetados_ids:
+                    # 5. Atualiza esses modelos para apontarem para o NOVO checklist
+                    ModeloAuditoria.objects.filter(
+                        id__in=modelos_afetados_ids).update(checklist=novo_checklist)
+
+                    # 6. Atualiza APENAS as instâncias de auditoria com status "Agendada"
+                    #    (ou seja, com data estritamente maior que hoje)
+                    AuditoriaInstancia.objects.filter(
+                        auditoria_agendada__modelos__id__in=modelos_afetados_ids,
+                        executada=False,
+                        # --- ESTA É A LINHA QUE VAMOS ALTERAR ---
+                        data_execucao__gt=timezone.now().date()  # Alterado de __gte para __gt
+                    ).update(checklist_usado=novo_checklist)
+
+                messages.success(
+                    request, f'Checklist "{novo_checklist.nome}" atualizado para a versão {novo_checklist.version} com sucesso!')
+                return redirect('auditorias:lista_checklists')
 
         except Exception as e:
             messages.error(request, f'Erro ao atualizar checklist: {repr(e)}')
             import traceback
             print(traceback.format_exc())
 
+    # O contexto para o método GET continua o mesmo
     context = {
-        'checklist': checklist,
-        'object': checklist,
+        'checklist': checklist_antigo,
+        'object': checklist_antigo,
         'ferramentas': FerramentaDigital.objects.all(),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
-        'title': 'Editar Checklist',
+        'title': f'Editar Checklist: {checklist_antigo.nome} (V{checklist_antigo.version})',
         'back_url': 'auditorias:lista_checklists'
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
 
+# Supondo que seus models (AuditoriaInstancia, Checklist, SubSetor, Topico, etc.)
+# estejam importados corretamente.
+# from .models import AuditoriaInstancia, Checklist, SubSetor, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem
+
+
+def _gerar_instancias_para_auditoria(auditoria):
+    """
+    Função responsável por apagar instâncias futuras e gerar as novas
+    com base nos parâmetros do agendamento de uma auditoria.
+    Esta função deve ser chamada DEPOIS que a auditoria e seus M2M estiverem salvos.
+    """
+    # 1. Apaga todas as instâncias futuras que ainda não foram executadas
+    auditoria.instancias.filter(
+        executada=False,
+        data_execucao__gte=timezone.now().date()
+    ).delete()
+
+    # 2. Busca o checklist mais recente a ser usado
+    primeiro_modelo = auditoria.modelos.first()
+    checklist_para_usar = None
+    if primeiro_modelo and primeiro_modelo.checklist:
+        checklist_base = primeiro_modelo.checklist
+        original = checklist_base.original_checklist or checklist_base
+        checklist_para_usar = Checklist.objects.filter(
+            Q(pk=original.pk) | Q(original_checklist=original),
+            is_latest=True
+        ).first()
+
+    # 3. Lógica para gerar a lista de datas
+    dates_to_create = []
+    if auditoria.data_inicio:
+        current_date = auditoria.data_inicio
+        end_date = auditoria.data_fim
+
+        if not end_date:
+            if not (auditoria.pular_finais_semana and current_date.weekday() >= 5):
+                dates_to_create.append(current_date)
+        else:
+            loop_limit = 365 * 5  # Limite de 5 anos para evitar loops infinitos
+            loops = 0
+            while current_date <= end_date and loops < loop_limit:
+                loops += 1
+                if not (auditoria.pular_finais_semana and current_date.weekday() >= 5):
+                    dates_to_create.append(current_date)
+
+                if auditoria.por_intervalo and auditoria.intervalo:
+                    current_date += timedelta(days=auditoria.intervalo + 1)
+                elif auditoria.por_frequencia and auditoria.frequencia:
+                    if auditoria.frequencia == 'DIARIO':
+                        current_date += timedelta(days=1)
+                    elif auditoria.frequencia == 'SEMANAL':
+                        current_date += timedelta(weeks=1)
+                    elif auditoria.frequencia == 'QUINZENAL':
+                        current_date += timedelta(weeks=2)
+                    elif auditoria.frequencia == 'MENSAL':
+                        current_date += relativedelta(months=1)
+                    elif auditoria.frequencia == 'ANUAL':
+                        current_date += relativedelta(years=1)
+                    else:
+                        break
+                else:
+                    break
+
+    # 4. Determina os locais e turnos
+    target_locations = []
+    if auditoria.nivel_organizacional == 'SUBSETOR' and auditoria.local_subsetor:
+        target_locations.append(auditoria.local_subsetor)
+    elif auditoria.nivel_organizacional == 'SETOR' and auditoria.local_setor:
+        target_locations = list(
+            auditoria.local_setor.subsetor_set.filter(ativo=True))
+    elif auditoria.nivel_organizacional == 'AREA' and auditoria.local_area:
+        target_locations = list(SubSetor.objects.filter(
+            setor__area=auditoria.local_area, ativo=True))
+    elif auditoria.nivel_organizacional == 'EMPRESA' and auditoria.local_empresa:
+        target_locations = list(SubSetor.objects.filter(
+            setor__area__empresa=auditoria.local_empresa, ativo=True))
+
+    if not target_locations:
+        target_locations.append(None)
+
+    target_turnos = list(auditoria.turnos.all())
+    if not target_turnos:
+        target_turnos.append(None)
+
+    repetitions = auditoria.numero_repeticoes if auditoria.numero_repeticoes and auditoria.numero_repeticoes > 0 else 1
+
+    # 5. Cria as novas instâncias
+    instancias_a_criar = []
+    for dt in dates_to_create:
+        for location in target_locations:
+            for turno in target_turnos:
+                if turno and not turno.turnodetalhedia_set.filter(dia_semana=dt.weekday()).exists():
+                    continue
+                for _ in range(repetitions):
+                    instancias_a_criar.append(AuditoriaInstancia(
+                        auditoria_agendada=auditoria,
+                        data_execucao=dt,
+                        local_execucao=location,
+                        responsavel=auditoria.responsavel,
+                        turno=turno,
+                        checklist_usado=checklist_para_usar
+                    ))
+
+    if instancias_a_criar:
+        AuditoriaInstancia.objects.bulk_create(instancias_a_criar)
+
+
 def processar_estrutura_checklist(request, checklist):
     """Processa e salva toda a estrutura de tópicos, perguntas e opções do checklist."""
-
-    # Rastrear IDs processados para identificar o que deve ser deletado
     topicos_ids_processados = set()
     perguntas_ids_processadas = set()
     opcoes_resposta_ids_processadas = set()
     opcoes_porcentagem_ids_processadas = set()
 
-    # Coletar todos os tópicos do POST
-    topicos_data = {}
-    for key in request.POST:
+    for key, value in request.POST.items():
         if key.startswith('topico-descricao['):
-            topico_id = key.split('[')[1].split(']')[0]
-            topicos_data[topico_id] = {
-                'descricao': request.POST.get(key),
-                'ordem': request.POST.get(f'topico-ordem[{topico_id}]', 0)
-            }
+            topico_id_str = key.split('[')[1].split(']')[0]
+            topico_descricao = value
+            topico_ordem = request.POST.get(
+                f'topico-ordem[{topico_id_str}]', 0)
 
-    print(f"Processando {len(topicos_data)} tópicos")
-
-    # Processar cada tópico
-    for topico_id_str, topico_info in topicos_data.items():
-        # Criar ou atualizar tópico
-        if topico_id_str.startswith('new-'):
-            topico = Topico.objects.create(
-                checklist=checklist,
-                descricao=topico_info['descricao'],
-                ordem=int(topico_info['ordem']) if topico_info['ordem'] else 0
-            )
-            print(f"Novo tópico criado: {topico.id}")
-        else:
-            try:
+            if topico_id_str.startswith('new-'):
+                topico = Topico.objects.create(
+                    checklist=checklist, descricao=topico_descricao, ordem=topico_ordem)
+            else:
                 topico = Topico.objects.get(
                     pk=int(topico_id_str), checklist=checklist)
-                topico.descricao = topico_info['descricao']
-                topico.ordem = int(
-                    topico_info['ordem']) if topico_info['ordem'] else 0
+                topico.descricao = topico_descricao
+                topico.ordem = topico_ordem
                 topico.save()
-                print(f"Tópico atualizado: {topico.id}")
-            except Topico.DoesNotExist:
-                print(f"Tópico {topico_id_str} não encontrado, pulando...")
-                continue
+            topicos_ids_processados.add(topico.id)
 
-        topicos_ids_processados.add(topico.id)
+            # Processar perguntas deste tópico
+            for p_key, p_value in request.POST.items():
+                if p_key.startswith(f'pergunta-descricao[{topico_id_str}-'):
+                    pergunta_id_full = p_key.split('[')[1].split(']')[0]
+                    pergunta_id_str = pergunta_id_full.replace(
+                        f'{topico_id_str}-', '')
 
-        # Processar perguntas do tópico
-        perguntas_data = {}
-        for key in request.POST:
-            if key.startswith(f'pergunta-descricao[{topico_id_str}-'):
-                pergunta_id_full = key.split('[')[1].split(']')[0]
-                pergunta_id = pergunta_id_full.replace(f'{topico_id_str}-', '')
-                perguntas_data[pergunta_id] = {
-                    'descricao': request.POST.get(key),
-                    'ordem': request.POST.get(f'pergunta-ordem[{pergunta_id_full}]', 0),
-                    'obrigatoria': request.POST.get(f'pergunta-obrigatorio[{pergunta_id_full}]') == 'on',
-                    'resposta_livre': request.POST.get(f'pergunta-resposta_livre[{pergunta_id_full}]') == 'on',
-                    'foto': request.POST.get(f'pergunta-foto[{pergunta_id_full}]') == 'on',
-                    'criar_opcao': request.POST.get(f'pergunta-criar_opcao[{pergunta_id_full}]') == 'on',
-                    'porcentagem': request.POST.get(f'pergunta-porcentagem[{pergunta_id_full}]') == 'on',
-                    'id_full': pergunta_id_full
-                }
+                    pergunta_descricao = p_value
+                    pergunta_ordem = request.POST.get(
+                        f'pergunta-ordem[{pergunta_id_full}]', 0)
 
-        print(
-            f"  Processando {len(perguntas_data)} perguntas do tópico {topico.id}")
+                    if pergunta_id_str.startswith('new-'):
+                        pergunta = Pergunta.objects.create(
+                            topico=topico, descricao=pergunta_descricao, ordem=pergunta_ordem)
+                    else:
+                        pergunta = Pergunta.objects.get(
+                            pk=int(pergunta_id_str), topico=topico)
+                        pergunta.descricao = pergunta_descricao
+                        pergunta.ordem = pergunta_ordem
 
-        for pergunta_id_str, pergunta_info in perguntas_data.items():
-            # Criar ou atualizar pergunta
-            if pergunta_id_str.startswith('new-'):
-                pergunta = Pergunta.objects.create(
-                    topico=topico,
-                    descricao=pergunta_info['descricao'],
-                    ordem=int(pergunta_info['ordem']
-                              ) if pergunta_info['ordem'] else 0,
-                    obrigatoria=pergunta_info['obrigatoria'],
-                    resposta_livre=pergunta_info['resposta_livre'],
-                    foto=pergunta_info['foto'],
-                    criar_opcao=pergunta_info['criar_opcao'],
-                    porcentagem=pergunta_info['porcentagem']
-                )
-                print(f"    Nova pergunta criada: {pergunta.id}")
-            else:
-                try:
-                    pergunta = Pergunta.objects.get(
-                        pk=int(pergunta_id_str), topico=topico)
-                    pergunta.descricao = pergunta_info['descricao']
-                    pergunta.ordem = int(
-                        pergunta_info['ordem']) if pergunta_info['ordem'] else 0
-                    pergunta.obrigatoria = pergunta_info['obrigatoria']
-                    pergunta.resposta_livre = pergunta_info['resposta_livre']
-                    pergunta.foto = pergunta_info['foto']
-                    pergunta.criar_opcao = pergunta_info['criar_opcao']
-                    pergunta.porcentagem = pergunta_info['porcentagem']
+                    pergunta.obrigatoria = request.POST.get(
+                        f'pergunta-obrigatorio[{pergunta_id_full}]') == 'on'
+                    pergunta.resposta_livre = request.POST.get(
+                        f'pergunta-resposta_livre[{pergunta_id_full}]') == 'on'
+                    pergunta.foto = request.POST.get(
+                        f'pergunta-foto[{pergunta_id_full}]') == 'on'
+                    pergunta.criar_opcao = request.POST.get(
+                        f'pergunta-criar_opcao[{pergunta_id_full}]') == 'on'
+                    pergunta.porcentagem = request.POST.get(
+                        f'pergunta-porcentagem[{pergunta_id_full}]') == 'on'
                     pergunta.save()
-                    print(f"    Pergunta atualizada: {pergunta.id}")
-                except Pergunta.DoesNotExist:
-                    print(
-                        f"    Pergunta {pergunta_id_str} não encontrada, pulando...")
-                    continue
+                    perguntas_ids_processadas.add(pergunta.id)
 
-            perguntas_ids_processadas.add(pergunta.id)
+                    # Processar opções de resposta
+                    for o_key, o_value in request.POST.items():
+                        if o_key.startswith(f'opcao-resposta-descricao[{pergunta_id_full}-'):
+                            opcao_id_full = o_key.split('[')[1].split(']')[0]
+                            opcao_id_str = opcao_id_full.replace(
+                                f'{pergunta_id_full}-', '')
 
-            # Processar opções de resposta
-            if pergunta_info['criar_opcao']:
-                opcoes_resposta_data = {}
-                for key in request.POST:
-                    if key.startswith(f'opcao-resposta-descricao[{pergunta_info["id_full"]}-'):
-                        opcao_id_full = key.split('[')[1].split(']')[0]
-                        opcao_id = opcao_id_full.replace(
-                            f'{pergunta_info["id_full"]}-', '')
-                        opcoes_resposta_data[opcao_id] = {
-                            'descricao': request.POST.get(key),
-                            'status': request.POST.get(f'opcao-resposta-status[{opcao_id_full}]', 'CONFORME')
-                        }
+                            if opcao_id_str.startswith('new-'):
+                                opcao = OpcaoResposta.objects.create(
+                                    pergunta=pergunta)
+                            else:
+                                opcao = OpcaoResposta.objects.get(
+                                    pk=int(opcao_id_str), pergunta=pergunta)
 
-                print(
-                    f"      Processando {len(opcoes_resposta_data)} opções de resposta")
-
-                for opcao_id_str, opcao_info in opcoes_resposta_data.items():
-                    if opcao_id_str.startswith('new-'):
-                        opcao = OpcaoResposta.objects.create(
-                            pergunta=pergunta,
-                            descricao=opcao_info['descricao'],
-                            status=opcao_info['status']
-                        )
-                        print(
-                            f"        Nova opção de resposta criada: {opcao.id}")
-                    else:
-                        try:
-                            opcao = OpcaoResposta.objects.get(
-                                pk=int(opcao_id_str), pergunta=pergunta)
-                            opcao.descricao = opcao_info['descricao']
-                            opcao.status = opcao_info['status']
+                            opcao.descricao = o_value
+                            opcao.status = request.POST.get(
+                                f'opcao-resposta-status[{opcao_id_full}]')
+                            opcao.ordem = request.POST.get(
+                                f'opcao-resposta-ordem[{opcao_id_full}]', 0)
                             opcao.save()
-                            print(
-                                f"        Opção de resposta atualizada: {opcao.id}")
-                        except OpcaoResposta.DoesNotExist:
-                            print(
-                                f"        Opção de resposta {opcao_id_str} não encontrada")
-                            continue
+                            opcoes_resposta_ids_processadas.add(opcao.id)
 
-                    opcoes_resposta_ids_processadas.add(opcao.id)
+                    # Processar opções de porcentagem
+                    for o_key, o_value in request.POST.items():
+                        if o_key.startswith(f'opcao-porcentagem-descricao[{pergunta_id_full}-'):
+                            opcao_id_full = o_key.split('[')[1].split(']')[0]
+                            opcao_id_str = opcao_id_full.replace(
+                                f'{pergunta_id_full}-', '')
 
-            # Processar opções de porcentagem
-            if pergunta_info['porcentagem']:
-                opcoes_porcentagem_data = {}
-                for key in request.POST:
-                    if key.startswith(f'opcao-porcentagem-descricao[{pergunta_info["id_full"]}-'):
-                        opcao_id_full = key.split('[')[1].split(']')[0]
-                        opcao_id = opcao_id_full.replace(
-                            f'{pergunta_info["id_full"]}-', '')
-                        opcoes_porcentagem_data[opcao_id] = {
-                            'descricao': request.POST.get(key),
-                            'peso': request.POST.get(f'opcao-porcentagem-peso[{opcao_id_full}]', 0),
-                            'cor': request.POST.get(f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
-                        }
+                            if opcao_id_str.startswith('new-'):
+                                opcao = OpcaoPorcentagem.objects.create(
+                                    pergunta=pergunta)
+                            else:
+                                opcao = OpcaoPorcentagem.objects.get(
+                                    pk=int(opcao_id_str), pergunta=pergunta)
 
-                print(
-                    f"      Processando {len(opcoes_porcentagem_data)} opções de porcentagem")
-
-                for opcao_id_str, opcao_info in opcoes_porcentagem_data.items():
-                    if opcao_id_str.startswith('new-'):
-                        opcao = OpcaoPorcentagem.objects.create(
-                            pergunta=pergunta,
-                            descricao=opcao_info['descricao'],
-                            peso=int(opcao_info['peso']
-                                     ) if opcao_info['peso'] else 0,
-                            cor=opcao_info['cor']
-                        )
-                        print(
-                            f"        Nova opção de porcentagem criada: {opcao.id}")
-                    else:
-                        try:
-                            opcao = OpcaoPorcentagem.objects.get(
-                                pk=int(opcao_id_str), pergunta=pergunta)
-                            opcao.descricao = opcao_info['descricao']
-                            opcao.peso = int(
-                                opcao_info['peso']) if opcao_info['peso'] else 0
-                            opcao.cor = opcao_info['cor']
+                            opcao.descricao = o_value
+                            opcao.peso = request.POST.get(
+                                f'opcao-porcentagem-peso[{opcao_id_full}]', 0)
+                            opcao.cor = request.POST.get(
+                                f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
+                            opcao.ordem = request.POST.get(
+                                f'opcao-porcentagem-ordem[{opcao_id_full}]', 0)
                             opcao.save()
-                            print(
-                                f"        Opção de porcentagem atualizada: {opcao.id}")
-                        except OpcaoPorcentagem.DoesNotExist:
-                            print(
-                                f"        Opção de porcentagem {opcao_id_str} não encontrada")
-                            continue
+                            opcoes_porcentagem_ids_processadas.add(opcao.id)
 
-                    opcoes_porcentagem_ids_processadas.add(opcao.id)
-
-    # Deletar itens que foram removidos do formulário
-    print("\nRemovendo itens não processados...")
-
-    # Deletar opções não processadas
-    opcoes_resposta_deletadas = OpcaoResposta.objects.filter(
-        pergunta__topico__checklist=checklist
-    ).exclude(id__in=opcoes_resposta_ids_processadas).delete()
-    print(f"Opções de resposta deletadas: {opcoes_resposta_deletadas}")
-
-    opcoes_porcentagem_deletadas = OpcaoPorcentagem.objects.filter(
-        pergunta__topico__checklist=checklist
-    ).exclude(id__in=opcoes_porcentagem_ids_processadas).delete()
-    print(f"Opções de porcentagem deletadas: {opcoes_porcentagem_deletadas}")
-
-    # Deletar perguntas não processadas
-    perguntas_deletadas = Pergunta.objects.filter(
-        topico__checklist=checklist
-    ).exclude(id__in=perguntas_ids_processadas).delete()
-    print(f"Perguntas deletadas: {perguntas_deletadas}")
-
-    # Deletar tópicos não processados
-    topicos_deletados = Topico.objects.filter(
-        checklist=checklist
-    ).exclude(id__in=topicos_ids_processados).delete()
-    print(f"Tópicos deletados: {topicos_deletados}")
-
-    print(f"\nProcessamento concluído para checklist {checklist.id}")
+    # Deletar itens que não foram processados (removidos do formulário)
+    OpcaoResposta.objects.filter(pergunta__topico__checklist=checklist).exclude(
+        id__in=opcoes_resposta_ids_processadas).delete()
+    OpcaoPorcentagem.objects.filter(pergunta__topico__checklist=checklist).exclude(
+        id__in=opcoes_porcentagem_ids_processadas).delete()
+    Pergunta.objects.filter(topico__checklist=checklist).exclude(
+        id__in=perguntas_ids_processadas).delete()
+    Topico.objects.filter(checklist=checklist).exclude(
+        id__in=topicos_ids_processados).delete()
 
 
 @login_required
@@ -829,6 +1053,201 @@ def deletar_checklist(request, pk):
         'title': 'Checklist'
     }
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def historico_versoes_checklist(request, pk):
+    """Lista todas as versões de um checklist específico."""
+    checklist_atual = get_object_or_404(Checklist, pk=pk)
+
+    # Encontra o checklist original (V1) para buscar todas as suas versões
+    original = checklist_atual.original_checklist or checklist_atual
+
+    # Busca todas as versões relacionadas, incluindo o original, ordenando da mais nova para a mais antiga
+    versoes = original.versions.all() | Checklist.objects.filter(pk=original.pk)
+    versoes = versoes.order_by('-version')
+
+    context = {
+        'page_obj': versoes,  # Usando page_obj para reutilizar o template
+        'original': original,
+        'title': f'Histórico de Versões: {original.nome}',
+        # Apenas para o template não quebrar
+        'create_url': 'auditorias:criar_checklist',
+    }
+    return render(request, 'auditorias/checklists/historico.html', context)
+
+
+@login_required
+def comparar_versoes_checklist(request, pk):
+    """
+    View para comparar múltiplas versões de um checklist.
+    Permite selecionar e comparar 2 ou mais versões lado a lado.
+    """
+    checklist_atual = get_object_or_404(Checklist, pk=pk)
+
+    # Encontra o checklist original
+    original = checklist_atual.original_checklist or checklist_atual
+
+    # Busca todas as versões
+    versoes = (Checklist.objects.filter(
+        Q(pk=original.pk) | Q(original_checklist=original)
+    ).prefetch_related(
+        'topicos__perguntas__opcoes_resposta',
+        'topicos__perguntas__opcoes_porcentagem'
+    ).order_by('-version'))
+
+    # Se versões específicas foram selecionadas para comparação
+    versoes_selecionadas_ids = request.GET.getlist('versoes')
+
+    if versoes_selecionadas_ids and len(versoes_selecionadas_ids) >= 2:
+        versoes_para_comparar = versoes.filter(
+            pk__in=versoes_selecionadas_ids
+        ).order_by('version')
+
+        # Gera dados de comparação
+        comparacao_data = _gerar_dados_comparacao(versoes_para_comparar)
+
+        context = {
+            'original': original,
+            'versoes': versoes,
+            'versoes_comparadas': versoes_para_comparar,
+            'comparacao_data': comparacao_data,
+            'title': f'Comparar Versões - {original.nome}',
+        }
+    else:
+        context = {
+            'original': original,
+            'versoes': versoes,
+            'versoes_comparadas': None,
+            'title': f'Selecionar Versões para Comparar - {original.nome}',
+        }
+
+    return render(request, 'auditorias/checklists/comparar_versoes.html', context)
+
+
+def _gerar_dados_comparacao(versoes):
+    """
+    Gera estrutura de dados para comparação entre versões.
+    Retorna um dicionário com as diferenças detectadas.
+    """
+    comparacao = {
+        'versoes_info': [],
+        'topicos_diff': [],
+        'alteracoes_resumo': {
+            'topicos_adicionados': 0,
+            'topicos_removidos': 0,
+            'perguntas_adicionadas': 0,
+            'perguntas_removidas': 0,
+            'perguntas_modificadas': 0,
+        }
+    }
+
+    # Informações básicas de cada versão
+    for v in versoes:
+        comparacao['versoes_info'].append({
+            'id': v.pk,
+            'version': v.version,
+            'nome': v.nome,
+            'data': v.data_cadastro,
+            'total_topicos': v.topicos.count(),
+            'total_perguntas': sum(t.perguntas.count() for t in v.topicos.all()),
+        })
+
+    # Análise detalhada das diferenças
+    if len(versoes) >= 2:
+        # Compara tópicos
+        todas_versoes_topicos = {}
+        for v in versoes:
+            todas_versoes_topicos[v.version] = {
+                t.descricao: {
+                    'ordem': t.ordem,
+                    'perguntas': {
+                        p.descricao: {
+                            'ordem': p.ordem,
+                            'obrigatoria': p.obrigatoria,
+                            'resposta_livre': p.resposta_livre,
+                            'foto': p.foto,
+                            'criar_opcao': p.criar_opcao,
+                            'porcentagem': p.porcentagem,
+                            'opcoes_resposta': [{'descricao': o.descricao, 'status': o.status}
+                                                for o in p.opcoes_resposta.all()],
+                            'opcoes_porcentagem': [{'descricao': o.descricao, 'peso': o.peso}
+                                                   for o in p.opcoes_porcentagem.all()],
+                        } for p in t.perguntas.all()
+                    }
+                } for t in v.topicos.all()
+            }
+
+        # Detecta tópicos adicionados/removidos
+        versao_base = list(versoes)[0]
+        versao_comparada = list(versoes)[-1]
+
+        topicos_base = set(todas_versoes_topicos[versao_base.version].keys())
+        topicos_comparada = set(
+            todas_versoes_topicos[versao_comparada.version].keys())
+
+        topicos_adicionados = topicos_comparada - topicos_base
+        topicos_removidos = topicos_base - topicos_comparada
+        topicos_comuns = topicos_base & topicos_comparada
+
+        comparacao['alteracoes_resumo']['topicos_adicionados'] = len(
+            topicos_adicionados)
+        comparacao['alteracoes_resumo']['topicos_removidos'] = len(
+            topicos_removidos)
+
+        # Analisa perguntas em tópicos comuns
+        for topico_desc in topicos_comuns:
+            perguntas_base = set(
+                todas_versoes_topicos[versao_base.version][topico_desc]['perguntas'].keys())
+            perguntas_comparada = set(
+                todas_versoes_topicos[versao_comparada.version][topico_desc]['perguntas'].keys())
+
+            perguntas_adicionadas = perguntas_comparada - perguntas_base
+            perguntas_removidas = perguntas_base - perguntas_comparada
+            perguntas_comuns = perguntas_base & perguntas_comparada
+
+            comparacao['alteracoes_resumo']['perguntas_adicionadas'] += len(
+                perguntas_adicionadas)
+            comparacao['alteracoes_resumo']['perguntas_removidas'] += len(
+                perguntas_removidas)
+
+            # Detecta perguntas modificadas
+            for pergunta_desc in perguntas_comuns:
+                perg_base = todas_versoes_topicos[versao_base.version][topico_desc]['perguntas'][pergunta_desc]
+                perg_comp = todas_versoes_topicos[versao_comparada.version][topico_desc]['perguntas'][pergunta_desc]
+
+                if perg_base != perg_comp:
+                    comparacao['alteracoes_resumo']['perguntas_modificadas'] += 1
+
+        # Estrutura detalhada para exibição
+        comparacao['topicos_diff'] = todas_versoes_topicos
+
+    return comparacao
+
+
+@login_required
+def exportar_checklists_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="checklists.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Ferramenta', 'Status'])
+
+    search = request.GET.get('search', '')
+    checklists = Checklist.objects.select_related('ferramenta').all()
+    if search:
+        checklists = checklists.filter(nome__icontains=search)
+
+    for checklist in checklists:
+        writer.writerow([
+            checklist.nome,
+            checklist.ferramenta.nome if checklist.ferramenta else 'N/A',
+            'Ativo' if checklist.ativo else 'Inativo'
+        ])
+
+    return response
 
 # ============================================================================
 # VIEWS PARA MODELOS DE AUDITORIA
@@ -856,6 +1275,7 @@ def lista_modelos_auditoria(request):
         'singular': 'Modelo de Auditoria',
         'button_text': 'Novo Modelo de Auditoria',
         'create_url': 'auditorias:criar_modelo_auditoria',
+        'export_url': 'auditorias:exportar_modelos_auditoria_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum modelo de auditoria cadastrado',
         'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.'
@@ -982,9 +1402,38 @@ def deletar_modelo_auditoria(request, pk):
     return render(request, 'auditorias/deletar_generico.html', context)
 
 
+@login_required
+def exportar_modelos_auditoria_csv(request):
+
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={
+            'Content-Disposition': 'attachment; filename="modelos_auditoria.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Descrição', 'Checklist', 'Categoria', 'Status'])
+
+    search = request.GET.get('search', '')
+    modelos = ModeloAuditoria.objects.select_related(
+        'checklist', 'categoria').all()
+    if search:
+        modelos = modelos.filter(descricao__icontains=search)
+
+    for modelo in modelos:
+        writer.writerow([
+            modelo.descricao,
+            modelo.checklist.nome if modelo.checklist else 'N/A',
+            modelo.categoria.descricao if modelo.categoria else 'N/A',
+            'Ativo' if modelo.ativo else 'Inativo'
+        ])
+
+    return response
+
 # ============================================================================
 # VIEWS PARA AUDITORIAS
 # ============================================================================
+
 
 @login_required
 def lista_auditorias(request):
@@ -1020,7 +1469,7 @@ def lista_auditorias(request):
         'search': search,
         'title': 'Agendamento de Auditorias',
         'singular': 'Auditoria',
-        'button_text': 'Nova Auditoria',
+        'button_text': 'Criar Auditoria',
         'create_url': 'auditorias:criar_auditoria',
         'artigo': 'a',
         'empty_message': 'Nenhuma auditoria agendada',
@@ -1060,44 +1509,49 @@ def criar_auditoria(request):
 
                 schedule_type = request.POST.get('schedule_type')
 
-                # --- Monta o objeto com TODOS os dados ANTES de salvar ---
-                auditoria = Auditoria(
-                    criado_por=request.user,
-                    ferramenta_id=ferramenta_id,
-                    responsavel_id=responsavel_id,
-                    nivel_organizacional=nivel_organizacional,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    # Atribui todos os locais aqui
-                    local_empresa_id=local_empresa_id,
-                    local_area_id=local_area_id,
-                    local_setor_id=local_setor_id,
-                    local_subsetor_id=local_subsetor_id,
-                    # Outros campos...
-                    categoria_auditoria=request.POST.get(
-                        'categoria_auditoria'),
-                    por_frequencia=schedule_type == 'por_frequencia',
-                    por_intervalo=schedule_type == 'por_intervalo',
-                    frequencia=request.POST.get('frequencia') or None,
-                    intervalo=int(request.POST.get('intervalo')
-                                  ) if request.POST.get('intervalo') else None,
-                    numero_repeticoes=int(request.POST.get('numero_repeticoes')) if request.POST.get(
-                        'numero_repeticoes') else None,
-                    pular_finais_semana=request.POST.get(
-                        'pular_finais_semana') == 'on',
-                    contem_turnos=request.POST.get('contem_turnos') == 'on'
-                )
+                with transaction.atomic():
 
-                # --- Salva TUDO de uma vez (isso também dispara a criação das instâncias) ---
-                auditoria.save()
+                    # --- Monta o objeto com TODOS os dados ANTES de salvar ---
+                    auditoria = Auditoria(
+                        criado_por=request.user,
+                        ferramenta_id=ferramenta_id,
+                        responsavel_id=responsavel_id,
+                        nivel_organizacional=nivel_organizacional,
+                        data_inicio=data_inicio,
+                        data_fim=data_fim,
+                        # Atribui todos os locais aqui
+                        local_empresa_id=local_empresa_id,
+                        local_area_id=local_area_id,
+                        local_setor_id=local_setor_id,
+                        local_subsetor_id=local_subsetor_id,
+                        # Outros campos...
+                        categoria_auditoria=request.POST.get(
+                            'categoria_auditoria'),
+                        por_frequencia=schedule_type == 'por_frequencia',
+                        por_intervalo=schedule_type == 'por_intervalo',
+                        frequencia=request.POST.get('frequencia') or None,
+                        intervalo=int(request.POST.get('intervalo')
+                                      ) if request.POST.get('intervalo') else None,
+                        numero_repeticoes=int(request.POST.get('numero_repeticoes')) if request.POST.get(
+                            'numero_repeticoes') else None,
+                        pular_finais_semana=request.POST.get(
+                            'pular_finais_semana') == 'on',
+                        contem_turnos=request.POST.get('contem_turnos') == 'on'
+                    )
 
-                # Define as relações ManyToMany DEPOIS do primeiro save
-                if modelos_ids:
-                    auditoria.modelos.set(modelos_ids)
-                if ativos_ids:
-                    auditoria.ativos_auditados.set(ativos_ids)
-                if turnos_ids:
-                    auditoria.turnos.set(turnos_ids)
+                    # --- Salva TUDO de uma vez (isso também dispara a criação das instâncias) ---
+                    auditoria.save()
+
+                    # Define as relações ManyToMany DEPOIS do primeiro save
+                    if modelos_ids:
+                        auditoria.modelos.set(modelos_ids)
+                    if ativos_ids:
+                        auditoria.ativos_auditados.set(ativos_ids)
+                    if turnos_ids:
+                        auditoria.turnos.set(turnos_ids)
+
+                    # --- CHAMA A NOVA FUNÇÃO AQUI ---
+                    _gerar_instancias_para_auditoria(auditoria)
 
                 messages.success(request, 'Auditoria criada com sucesso!')
                 return redirect('auditorias:lista_auditorias')
@@ -1131,54 +1585,62 @@ def editar_auditoria(request, pk):
 
     if request.method == 'POST':
         try:
-            # --- Captura todos os dados do formulário primeiro ---
-            data_inicio_str = request.POST.get('data_inicio')
-            data_fim_str = request.POST.get('data_fim')
+            with transaction.atomic():
+                # --- Captura todos os dados do formulário primeiro ---
+                data_inicio_str = request.POST.get('data_inicio')
+                data_fim_str = request.POST.get('data_fim')
 
-            # --- Atualiza todos os campos do objeto ANTES de salvar ---
-            auditoria.ferramenta_id = request.POST.get('ferramenta')
-            auditoria.responsavel_id = request.POST.get('responsavel')
-            auditoria.nivel_organizacional = request.POST.get(
-                'nivel_organizacional')
-            auditoria.categoria_auditoria = request.POST.get(
-                'categoria_auditoria')
+                # --- Atualiza todos os campos do objeto ANTES de salvar ---
+                auditoria.ferramenta_id = request.POST.get('ferramenta')
+                auditoria.responsavel_id = request.POST.get('responsavel')
+                auditoria.nivel_organizacional = request.POST.get(
+                    'nivel_organizacional')
+                auditoria.categoria_auditoria = request.POST.get(
+                    'categoria_auditoria')
 
-            # Converte as datas de string para objeto de data
-            auditoria.data_inicio = datetime.strptime(
-                data_inicio_str, '%Y-%m-%d').date()
-            auditoria.data_fim = datetime.strptime(
-                data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
+                # Converte as datas de string para objeto de data
+                auditoria.data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                auditoria.data_fim = datetime.strptime(
+                    data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
 
-            # Atualiza todos os locais
-            auditoria.local_empresa_id = request.POST.get(
-                'local_empresa') or None
-            auditoria.local_area_id = request.POST.get('local_area') or None
-            auditoria.local_setor_id = request.POST.get('local_setor') or None
-            auditoria.local_subsetor_id = request.POST.get(
-                'local_subsetor') or None
+                # Atualiza todos os locais
+                auditoria.local_empresa_id = request.POST.get(
+                    'local_empresa') or None
+                auditoria.local_area_id = request.POST.get(
+                    'local_area') or None
+                auditoria.local_setor_id = request.POST.get(
+                    'local_setor') or None
+                auditoria.local_subsetor_id = request.POST.get(
+                    'local_subsetor') or None
 
-            schedule_type = request.POST.get('schedule_type')
+                schedule_type = request.POST.get('schedule_type')
 
-            # Atualiza os dados de programação
-            auditoria.por_frequencia = schedule_type == 'por_frequencia'
-            auditoria.por_intervalo = schedule_type == 'por_intervalo'
-            auditoria.frequencia = request.POST.get('frequencia') or None
-            auditoria.intervalo = int(request.POST.get(
-                'intervalo')) if request.POST.get('intervalo') else None
-            auditoria.numero_repeticoes = int(request.POST.get(
-                'numero_repeticoes')) if request.POST.get('numero_repeticoes') else None
-            auditoria.pular_finais_semana = request.POST.get(
-                'pular_finais_semana') == 'on'
-            auditoria.contem_turnos = request.POST.get('contem_turnos') == 'on'
+                # Atualiza os dados de programação
+                auditoria.por_frequencia = schedule_type == 'por_frequencia'
+                auditoria.por_intervalo = schedule_type == 'por_intervalo'
+                auditoria.frequencia = request.POST.get('frequencia') or None
+                auditoria.intervalo = int(request.POST.get(
+                    'intervalo')) if request.POST.get('intervalo') else None
+                auditoria.numero_repeticoes = int(request.POST.get(
+                    'numero_repeticoes')) if request.POST.get('numero_repeticoes') else None
+                auditoria.pular_finais_semana = request.POST.get(
+                    'pular_finais_semana') == 'on'
+                auditoria.contem_turnos = request.POST.get(
+                    'contem_turnos') == 'on'
 
-            # --- Salva TUDO de uma vez (isso também vai recriar as instâncias futuras) ---
-            auditoria.save()
+                # --- Salva TUDO de uma vez (isso também vai recriar as instâncias futuras) ---
+                auditoria.save()
 
-            # Atualiza as relações ManyToMany
-            auditoria.modelos.set(request.POST.getlist('modelos'))
-            auditoria.ativos_auditados.set(
-                request.POST.getlist('ativos_auditados'))
-            auditoria.turnos.set(request.POST.getlist('turnos'))
+                # Atualiza as relações ManyToMany
+                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.ativos_auditados.set(
+                    request.POST.getlist('ativos_auditados'))
+                auditoria.turnos.set(request.POST.getlist('turnos'))
+
+                # --- CHAMA A NOVA FUNÇÃO AQUI ---
+                # Ela internamente já apaga as futuras e recria as novas
+                _gerar_instancias_para_auditoria(auditoria)
 
             messages.success(request, 'Auditoria atualizada com sucesso!')
             return redirect('auditorias:lista_auditorias')
@@ -1519,12 +1981,15 @@ class AuditoriasPendentesAPIView(ListAPIView):
         # E que a auditoria pai tenha o usuário logado como responsável
         return AuditoriaInstancia.objects.filter(
             executada=False,
-            auditoria_agendada__responsavel=user
-        ).select_related(  # Otimiza a consulta ao banco de dados
+            responsavel=user,
+            # Filtra para incluir apenas auditorias de hoje ou do passado
+            data_execucao__lte=timezone.now().date()
+        ).select_related(
             'auditoria_agendada__local_empresa',
             'auditoria_agendada__local_area',
             'auditoria_agendada__local_setor',
-            'auditoria_agendada__local_subsetor'
+            'auditoria_agendada__local_subsetor',
+            'auditoria_agendada__ferramenta'
         ).order_by('data_execucao')
 
 
@@ -1542,7 +2007,7 @@ class AuditoriaInstanciaDetailAPIView(RetrieveAPIView):
         pelas quais ele é o responsável.
         """
         user = self.request.user
-        return AuditoriaInstancia.objects.filter(auditoria_agendada__responsavel=user)
+        return AuditoriaInstancia.objects.filter(responsavel=user)
 
 
 class SubmeterAuditoriaAPIView(APIView):
@@ -1555,7 +2020,7 @@ class SubmeterAuditoriaAPIView(APIView):
         try:
             instancia = AuditoriaInstancia.objects.get(
                 pk=pk,
-                auditoria_agendada__responsavel=request.user,
+                responsavel=request.user,
                 executada=False
             )
         except AuditoriaInstancia.DoesNotExist:
@@ -1704,8 +2169,9 @@ def lista_execucoes(request):
     instancias_list = AuditoriaInstancia.objects.exclude(executada=True).select_related(
         'auditoria_agendada__responsavel',
         'auditoria_agendada__ferramenta',
-        'auditoria_agendada__criado_por',  # Adicionado
-        'local_execucao'  # Adicionado
+        'auditoria_agendada__criado_por',
+        'local_execucao',
+        'responsavel'
     ).prefetch_related(
         'auditoria_agendada__modelos'
     ).order_by('data_execucao')
@@ -1722,18 +2188,21 @@ def lista_execucoes(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # --- INÍCIO DA CORREÇÃO ---
     all_users_list = list(Usuario.objects.filter(is_active=True).annotate(
         name=Concat('first_name', Value(' '), 'last_name')
     ).values('id', 'name'))
-    # --- FIM DA CORREÇÃO ---
 
     context = {
         'page_obj': page_obj,
         'search': search,
         'title': 'Auditorias para Execução',
-        # Passa o JSON para o template
-        'all_users_json': json.dumps(all_users_list)
+        'all_users_json': json.dumps(all_users_list),
+        'singular': 'Execução',
+        'artigo': 'a',
+        'create_url': 'auditorias:criar_auditoria',
+        'button_text': 'Nova Auditoria',
+        'empty_message': 'Nenhuma auditoria pendente ou atrasada encontrada.',
+        'empty_subtitle': 'Todas as auditorias estão em dia!'
     }
     return render(request, 'auditorias/execucoes.html', context)
 
@@ -1745,7 +2214,6 @@ def historico_concluidas(request):
     # A query agora filtra apenas as instâncias executadas
     instancias_list = AuditoriaInstancia.objects.filter(executada=True).select_related(
         'auditoria_agendada__responsavel',
-        'auditoria_agendada__criado_por',
         'auditoria_agendada__ferramenta',
     ).prefetch_related(
         'auditoria_agendada__modelos',
@@ -1764,29 +2232,42 @@ def historico_concluidas(request):
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Histórico de Auditorias Concluídas'
+        'title': 'Histórico de Auditorias Concluídas',
+        'singular': 'Auditoria',
+        'artigo': 'a',
+        'button_text': 'Nova Auditoria',
+        'create_url': 'auditorias:criar_auditoria',
+        'empty_message': 'Nenhuma auditoria concluída foi encontrada.',
+        'empty_subtitle': 'As auditorias finalizadas aparecerão aqui.'
     }
     return render(request, 'auditorias/historico_concluidas.html', context)
 
 
 @login_required
 def redirecionar_agendamento(request, pk):
-    """ Redireciona o auditor de um AGENDAMENTO PAI e de todas as suas execuções futuras. """
-    agendamento = get_object_or_404(Auditoria, pk=pk)
+    """ Redireciona o auditor de um AGENDAMENTO PAI e de todas as suas execuções filhas não concluídas. """
     if request.method == 'POST':
         novo_responsavel_id = request.POST.get('responsavel_id')
         if novo_responsavel_id:
             try:
-                # 1. Atualiza o responsável do agendamento pai
-                agendamento.responsavel_id = novo_responsavel_id
-                agendamento.save(update_fields=['responsavel'])
+                # Usamos .filter() para poder usar .update()
+                agendamento = Auditoria.objects.filter(pk=pk)
+                if not agendamento.exists():
+                    messages.error(request, 'Agendamento não encontrado.')
+                    return redirect(request.META.get('HTTP_REFERER', 'auditorias:lista_auditorias'))
 
-                # 2. Atualiza o responsável de todas as execuções filhas NÃO CONCLUÍDAS
-                agendamento.instancias.filter(executada=False).update(
-                    responsavel_id=novo_responsavel_id)
+                # 1. Atualiza o agendamento pai diretamente no banco, sem chamar o save()
+                agendamento.update(responsavel_id=novo_responsavel_id)
+
+                # 2. Atualiza todas as execuções filhas NÃO CONCLUÍDAS
+                # Usamos o ID do agendamento para encontrar as instâncias corretas
+                AuditoriaInstancia.objects.filter(
+                    auditoria_agendada_id=pk,
+                    executada=False
+                ).update(responsavel_id=novo_responsavel_id)
 
                 messages.success(
-                    request, f'Agendamento #{agendamento.id} e suas execuções foram redirecionados.')
+                    request, f'Agendamento #{pk} e suas execuções foram redirecionados.')
             except Exception as e:
                 messages.error(request, f'Erro ao redirecionar: {e}')
 

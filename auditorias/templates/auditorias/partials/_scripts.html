@@ -13,8 +13,8 @@
         const form = modal.querySelector('#deleteForm');
         const nameSpan = modal.querySelector('#deleteItemName');
         
-        form.action = url; // Define a URL de exclusão no formulário
-        nameSpan.textContent = `"${itemName}"`; // Mostra o nome do item
+        form.action = url;
+        nameSpan.textContent = `"${itemName}"`;
         modal.style.display = 'flex';
     }
 
@@ -40,7 +40,6 @@
         allUsers.forEach(user => {
             const option = document.createElement('option');
             option.value = user.id;
-            // Corrigido para lidar com nomes nulos ou vazios
             option.textContent = user.name.trim() ? user.name : `(Usuário ${user.id})`;
             if (user.id == currentResponsavelId) {
                 option.selected = true;
@@ -56,12 +55,153 @@
         if (modal) modal.style.display = 'none';
     }
 
+    // Função para exportar dados (ATUALIZADA)
+    function exportarDados() {
+        const currentPath = window.location.pathname;
+        const searchParams = window.location.search;
+        let exportUrl = '';
+        
+        // Detectar qual listagem está sendo exibida e definir a URL de exportação
+        if (currentPath.includes('/usuarios/')) {
+            exportUrl = '/usuarios/exportar-csv/' + searchParams;
+        } else {
+            alert('Exportação não disponível para esta página');
+            return;
+        }
+        
+        // Criar elemento de link temporário e clicar nele para iniciar o download
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.download = '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Função para imprimir tabela (ATUALIZADA)
+    function imprimirTabela() {
+        const dataTable = document.getElementById('dataTable') || document.getElementById('usuariosTable');
+        
+        if (!dataTable) {
+            alert('Tabela não encontrada para impressão');
+            return;
+        }
+        
+        const printContent = dataTable.outerHTML;
+        const printWindow = window.open('', '_blank');
+        
+        const title = document.querySelector('.content-title')?.textContent || 'Relatório';
+        
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>${title} - Impressão</title>
+                    <style>
+                        @media print {
+                            @page { margin: 1cm; }
+                        }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            padding: 20px;
+                        }
+                        h1 {
+                            text-align: center;
+                            color: #2563eb;
+                            margin-bottom: 20px;
+                        }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        th, td { 
+                            border: 1px solid #ddd; 
+                            padding: 12px 8px; 
+                            text-align: left;
+                            font-size: 12px;
+                        }
+                        th { 
+                            background-color: #f8fafc;
+                            font-weight: bold;
+                            color: #0f172a;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f9fafb;
+                        }
+                        .btn, .action-buttons { 
+                            display: none !important; 
+                        }
+                        .badge {
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: bold;
+                        }
+                        .badge-success {
+                            background-color: #d1fae5;
+                            color: #065f46;
+                        }
+                        .badge-error {
+                            background-color: #fee2e2;
+                            color: #991b1b;
+                        }
+                        .print-header {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 20px;
+                            padding-bottom: 10px;
+                            border-bottom: 2px solid #2563eb;
+                        }
+                        .print-date {
+                            color: #64748b;
+                            font-size: 12px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-header">
+                        <h1>${title}</h1>
+                        <div class="print-date">
+                            Impresso em: ${new Date().toLocaleString('pt-BR')}
+                        </div>
+                    </div>
+                    ${printContent}
+                </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        
+        // Aguardar o carregamento antes de imprimir
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+        };
+    }
+
     // Funções de UI (sidebar, alertas, etc)
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('collapsed');
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+
+        if (sidebarNav) {
+            // 1. Restaura a posição da rolagem ao carregar a página
+            const scrollPos = sessionStorage.getItem('sidebarScrollPos');
+            if (scrollPos) {
+                sidebarNav.scrollTop = parseInt(scrollPos, 10);
+            }
+
+            // 2. Salva a posição da rolagem antes de navegar para outra página
+            const sidebarLinks = sidebarNav.querySelectorAll('a.nav-item');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    sessionStorage.setItem('sidebarScrollPos', sidebarNav.scrollTop);
+                });
+            });
+        }
+
         // Auto-hide de alertas
         document.querySelectorAll('.alert').forEach(alert => {
             setTimeout(() => {

@@ -1,11 +1,28 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{# Remove o formulário de busca genérico herdado do template pai #}
+{% block search_form %}{% endblock %}
+
+{# Este bloco fica vazio, pois os filtros agora estão no cabeçalho da tabela #}
+{% block extra_filters %}{% endblock %}
+
 {% block table_headers %}
-    <th>Descrição do Modelo</th>
-    <th>Checklist Associado</th>
-    <th>Categoria</th>
-    <th>Status</th>
-    <th style="width: 120px;">Ações</th>
+    {# Linha 1: Títulos das Colunas #}
+    <tr>
+        <th>Descrição do Modelo</th>
+        <th>Checklist Associado</th>
+        <th>Categoria</th>
+        <th>Status</th>
+        <th style="width: 120px;">Ações</th>
+    </tr>
+    {# Linha 2: Campos de Filtro #}
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        <th></th> {# Coluna de Ações sem filtro #}
+    </tr>
 {% endblock %}
 
 {% block table_row %}
@@ -33,5 +50,71 @@
                 <i class="fas fa-trash"></i>
             </button>
         </div>
-        </td>
+    </td>
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+        .column-filter {
+            height: 38px;
+            font-size: 13px;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filters = document.querySelectorAll('.column-filter');
+        const table = document.querySelector('#dataTable');
+        if (!table) {
+            return;
+        }
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) {
+            return;
+        }
+
+        function applyTableFilters() {
+            const dataRows = tableBody.querySelectorAll('tr');
+            if (dataRows.length === 0) {
+                return;
+            }
+
+            dataRows.forEach(row => {
+                let isRowVisible = true;
+                const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+
+                    if (filterText) {
+                        const cell = cells[colIndex];
+                        if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+                                isRowVisible = false;
+                            }
+                        } else {
+                            isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+
+        if (filters.length > 0) {
+            filters.forEach(filter => {
+                filter.addEventListener('input', applyTableFilters);
+            });
+        }
+    });
+    </script>
 {% endblock %}

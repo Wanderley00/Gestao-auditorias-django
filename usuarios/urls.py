@@ -38,4 +38,8 @@ urlpatterns = [
     path('meu-perfil/', views.meu_perfil, name='meu_perfil'),
     path('alterar-senha/', views.alterar_minha_senha, name='alterar_minha_senha'),
 
+    path('exportar-csv/', views.exportar_usuarios_csv,
+         name='exportar_usuarios_csv'),
+
+
 ]

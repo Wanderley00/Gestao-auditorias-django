@@ -7,23 +7,28 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Empresa, Area, Setor, SubSetor
 from usuarios.models import Usuario
+import csv
+from django.http import HttpResponse
 
 # ============================================================================
 # VIEWS PARA EMPRESAS
 # ============================================================================
 
+
 @login_required
 def lista_empresas(request):
     """Lista todas as empresas."""
     search = request.GET.get('search', '')
-    empresas = Empresa.objects.all()
+    empresas = Empresa.objects.select_related(
+        'usuario_responsavel').all()  # Adicionado select_related
     if search:
-        empresas = empresas.filter(Q(nome__icontains=search) | Q(cnpj__icontains=search))
-    
+        empresas = empresas.filter(
+            Q(nome__icontains=search) | Q(cnpj__icontains=search))
+
     paginator = Paginator(empresas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -31,11 +36,13 @@ def lista_empresas(request):
         'singular': 'Empresa',
         'button_text': 'Nova Empresa',
         'create_url': 'organizacao:criar_empresa',
+        'export_url': 'organizacao:exportar_empresas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma empresa cadastrada.',
         'empty_subtitle': 'Comece criando a primeira empresa.'
     }
     return render(request, 'organizacao/empresas/lista.html', context)
+
 
 @login_required
 def criar_empresa(request):
@@ -49,7 +56,8 @@ def criar_empresa(request):
                     cnpj=request.POST.get('cnpj'),
                     endereco=request.POST.get('endereco'),
                     ativo=request.POST.get('ativo') == 'on',
-                    usuario_responsavel_id=request.POST.get('usuario_responsavel') or None
+                    usuario_responsavel_id=request.POST.get(
+                        'usuario_responsavel') or None
                 )
                 messages.success(request, 'Empresa criada com sucesso!')
                 return redirect('organizacao:lista_empresas')
@@ -57,13 +65,14 @@ def criar_empresa(request):
                 messages.error(request, f'Erro ao criar empresa: {e}')
         else:
             messages.error(request, 'O nome da empresa é obrigatório.')
-    
+
     context = {
         'title': 'Criar Empresa',
         'back_url': 'organizacao:lista_empresas',
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/empresas/form.html', context)
+
 
 @login_required
 def editar_empresa(request, pk):
@@ -77,7 +86,8 @@ def editar_empresa(request, pk):
                 empresa.cnpj = request.POST.get('cnpj')
                 empresa.endereco = request.POST.get('endereco')
                 empresa.ativo = request.POST.get('ativo') == 'on'
-                empresa.usuario_responsavel_id = request.POST.get('usuario_responsavel') or None
+                empresa.usuario_responsavel_id = request.POST.get(
+                    'usuario_responsavel') or None
                 empresa.save()
                 messages.success(request, 'Empresa atualizada com sucesso!')
                 return redirect('organizacao:lista_empresas')
@@ -85,7 +95,7 @@ def editar_empresa(request, pk):
                 messages.error(request, f'Erro ao atualizar empresa: {e}')
         else:
             messages.error(request, 'O nome da empresa é obrigatório.')
-            
+
     context = {
         'object': empresa,
         'title': 'Editar Empresa',
@@ -93,6 +103,7 @@ def editar_empresa(request, pk):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/empresas/form.html', context)
+
 
 @login_required
 def deletar_empresa(request, pk):
@@ -105,26 +116,59 @@ def deletar_empresa(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar empresa: {e}')
         return redirect('organizacao:lista_empresas')
-    
+
     context = {'object': empresa, 'title': 'Empresa'}
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def exportar_empresas_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="empresas.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'CNPJ', 'Endereço', 'Responsável', 'Status'])
+
+    search = request.GET.get('search', '')
+    empresas = Empresa.objects.select_related('usuario_responsavel').all()
+    if search:
+        empresas = empresas.filter(
+            Q(nome__icontains=search) | Q(cnpj__icontains=search))
+
+    for empresa in empresas:
+        responsavel = empresa.usuario_responsavel.get_full_name(
+        ) or empresa.usuario_responsavel.username if empresa.usuario_responsavel else 'N/A'
+        writer.writerow([
+            empresa.nome,
+            empresa.cnpj,
+            empresa.endereco,
+            responsavel,
+            'Ativo' if empresa.ativo else 'Inativo'
+        ])
+
+    return response
 
 # ============================================================================
 # VIEWS PARA ÁREAS
 # ============================================================================
 
+
 @login_required
 def lista_areas(request):
     """Lista todas as áreas."""
     search = request.GET.get('search', '')
-    areas = Area.objects.select_related('empresa').all()
+    areas = Area.objects.select_related(
+        'empresa', 'usuario_responsavel').all()  # Adicionado select_related
     if search:
-        areas = areas.filter(Q(nome__icontains=search) | Q(empresa__nome__icontains=search))
-    
+        areas = areas.filter(Q(nome__icontains=search) |
+                             Q(empresa__nome__icontains=search))
+
     paginator = Paginator(areas, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -132,11 +176,13 @@ def lista_areas(request):
         'singular': 'Área',
         'button_text': 'Nova Área',
         'create_url': 'organizacao:criar_area',
+        'export_url': 'organizacao:exportar_areas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma área cadastrada.',
         'empty_subtitle': 'Comece criando a primeira área.'
     }
     return render(request, 'organizacao/areas/lista.html', context)
+
 
 @login_required
 def criar_area(request):
@@ -150,7 +196,8 @@ def criar_area(request):
                     nome=nome,
                     empresa_id=empresa_id,
                     ativo=request.POST.get('ativo') == 'on',
-                    usuario_responsavel_id=request.POST.get('usuario_responsavel') or None
+                    usuario_responsavel_id=request.POST.get(
+                        'usuario_responsavel') or None
                 )
                 messages.success(request, 'Área criada com sucesso!')
                 return redirect('organizacao:lista_areas')
@@ -158,7 +205,7 @@ def criar_area(request):
                 messages.error(request, f'Erro ao criar área: {e}')
         else:
             messages.error(request, 'Nome e Empresa são obrigatórios.')
-    
+
     context = {
         'title': 'Criar Área',
         'back_url': 'organizacao:lista_areas',
@@ -166,6 +213,7 @@ def criar_area(request):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/areas/form.html', context)
+
 
 @login_required
 def editar_area(request, pk):
@@ -179,7 +227,8 @@ def editar_area(request, pk):
                 area.nome = nome
                 area.empresa_id = empresa_id
                 area.ativo = request.POST.get('ativo') == 'on'
-                area.usuario_responsavel_id = request.POST.get('usuario_responsavel') or None
+                area.usuario_responsavel_id = request.POST.get(
+                    'usuario_responsavel') or None
                 area.save()
                 messages.success(request, 'Área atualizada com sucesso!')
                 return redirect('organizacao:lista_areas')
@@ -187,7 +236,7 @@ def editar_area(request, pk):
                 messages.error(request, f'Erro ao atualizar área: {e}')
         else:
             messages.error(request, 'Nome e Empresa são obrigatórios.')
-            
+
     context = {
         'object': area,
         'title': 'Editar Área',
@@ -196,6 +245,7 @@ def editar_area(request, pk):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/areas/form.html', context)
+
 
 @login_required
 def deletar_area(request, pk):
@@ -208,26 +258,59 @@ def deletar_area(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar área: {e}')
         return redirect('organizacao:lista_areas')
-    
+
     context = {'object': area, 'title': 'Área'}
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def exportar_areas_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="areas.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Empresa', 'Responsável', 'Status'])
+
+    search = request.GET.get('search', '')
+    areas = Area.objects.select_related('empresa', 'usuario_responsavel').all()
+    if search:
+        areas = areas.filter(Q(nome__icontains=search) |
+                             Q(empresa__nome__icontains=search))
+
+    for area in areas:
+        responsavel = area.usuario_responsavel.get_full_name(
+        ) or area.usuario_responsavel.username if area.usuario_responsavel else 'N/A'
+        writer.writerow([
+            area.nome,
+            area.empresa.nome,
+            responsavel,
+            'Ativo' if area.ativo else 'Inativo'
+        ])
+
+    return response
 
 # ============================================================================
 # VIEWS PARA SETORES
 # ============================================================================
 
+
 @login_required
 def lista_setores(request):
     """Lista todos os setores."""
     search = request.GET.get('search', '')
-    setores = Setor.objects.select_related('area__empresa').all()
+    setores = Setor.objects.select_related(
+        # Adicionado select_related
+        'area__empresa', 'usuario_responsavel').all()
     if search:
-        setores = setores.filter(Q(nome__icontains=search) | Q(area__nome__icontains=search) | Q(area__empresa__nome__icontains=search))
-    
+        setores = setores.filter(Q(nome__icontains=search) | Q(
+            area__nome__icontains=search) | Q(area__empresa__nome__icontains=search))
+
     paginator = Paginator(setores, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -235,11 +318,13 @@ def lista_setores(request):
         'singular': 'Setor',
         'button_text': 'Novo Setor',
         'create_url': 'organizacao:criar_setor',
+        'export_url': 'organizacao:exportar_setores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum setor cadastrado.',
         'empty_subtitle': 'Comece criando o primeiro setor.'
     }
     return render(request, 'organizacao/setores/lista.html', context)
+
 
 @login_required
 def criar_setor(request):
@@ -253,7 +338,8 @@ def criar_setor(request):
                     nome=nome,
                     area_id=area_id,
                     ativo=request.POST.get('ativo') == 'on',
-                    usuario_responsavel_id=request.POST.get('usuario_responsavel') or None
+                    usuario_responsavel_id=request.POST.get(
+                        'usuario_responsavel') or None
                 )
                 messages.success(request, 'Setor criado com sucesso!')
                 return redirect('organizacao:lista_setores')
@@ -261,7 +347,7 @@ def criar_setor(request):
                 messages.error(request, f'Erro ao criar setor: {e}')
         else:
             messages.error(request, 'Nome e Área são obrigatórios.')
-    
+
     context = {
         'title': 'Criar Setor',
         'back_url': 'organizacao:lista_setores',
@@ -269,6 +355,7 @@ def criar_setor(request):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/setores/form.html', context)
+
 
 @login_required
 def editar_setor(request, pk):
@@ -282,7 +369,8 @@ def editar_setor(request, pk):
                 setor.nome = nome
                 setor.area_id = area_id
                 setor.ativo = request.POST.get('ativo') == 'on'
-                setor.usuario_responsavel_id = request.POST.get('usuario_responsavel') or None
+                setor.usuario_responsavel_id = request.POST.get(
+                    'usuario_responsavel') or None
                 setor.save()
                 messages.success(request, 'Setor atualizado com sucesso!')
                 return redirect('organizacao:lista_setores')
@@ -290,7 +378,7 @@ def editar_setor(request, pk):
                 messages.error(request, f'Erro ao atualizar setor: {e}')
         else:
             messages.error(request, 'Nome e Área são obrigatórios.')
-            
+
     context = {
         'object': setor,
         'title': 'Editar Setor',
@@ -299,6 +387,7 @@ def editar_setor(request, pk):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/setores/form.html', context)
+
 
 @login_required
 def deletar_setor(request, pk):
@@ -311,26 +400,61 @@ def deletar_setor(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar setor: {e}')
         return redirect('organizacao:lista_setores')
-    
+
     context = {'object': setor, 'title': 'Setor'}
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def exportar_setores_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="setores.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Área', 'Empresa', 'Responsável', 'Status'])
+
+    search = request.GET.get('search', '')
+    setores = Setor.objects.select_related(
+        'area__empresa', 'usuario_responsavel').all()
+    if search:
+        setores = setores.filter(Q(nome__icontains=search) | Q(
+            area__nome__icontains=search) | Q(area__empresa__nome__icontains=search))
+
+    for setor in setores:
+        responsavel = setor.usuario_responsavel.get_full_name(
+        ) or setor.usuario_responsavel.username if setor.usuario_responsavel else 'N/A'
+        writer.writerow([
+            setor.nome,
+            setor.area.nome,
+            setor.area.empresa.nome,
+            responsavel,
+            'Ativo' if setor.ativo else 'Inativo'
+        ])
+
+    return response
 
 # ============================================================================
 # VIEWS PARA SUBSETORES
 # ============================================================================
 
+
 @login_required
 def lista_subsetores(request):
     """Lista todos os subsetores."""
     search = request.GET.get('search', '')
-    subsetores = SubSetor.objects.select_related('setor__area__empresa').all()
+    subsetores = SubSetor.objects.select_related(
+        # Adicionado select_related
+        'setor__area__empresa', 'usuario_responsavel').all()
     if search:
-        subsetores = subsetores.filter(Q(nome__icontains=search) | Q(setor__nome__icontains=search) | Q(setor__area__nome__icontains=search))
-    
+        subsetores = subsetores.filter(Q(nome__icontains=search) | Q(
+            setor__nome__icontains=search) | Q(setor__area__nome__icontains=search))
+
     paginator = Paginator(subsetores, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -338,11 +462,13 @@ def lista_subsetores(request):
         'singular': 'Subsetor',
         'button_text': 'Novo Subsetor',
         'create_url': 'organizacao:criar_subsetor',
+        'export_url': 'organizacao:exportar_subsetores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum subsetor cadastrado.',
         'empty_subtitle': 'Comece criando o primeiro subsetor.'
     }
     return render(request, 'organizacao/subsetores/lista.html', context)
+
 
 @login_required
 def criar_subsetor(request):
@@ -356,7 +482,8 @@ def criar_subsetor(request):
                     nome=nome,
                     setor_id=setor_id,
                     ativo=request.POST.get('ativo') == 'on',
-                    usuario_responsavel_id=request.POST.get('usuario_responsavel') or None
+                    usuario_responsavel_id=request.POST.get(
+                        'usuario_responsavel') or None
                 )
                 messages.success(request, 'Subsetor criado com sucesso!')
                 return redirect('organizacao:lista_subsetores')
@@ -364,7 +491,7 @@ def criar_subsetor(request):
                 messages.error(request, f'Erro ao criar subsetor: {e}')
         else:
             messages.error(request, 'Nome e Setor são obrigatórios.')
-    
+
     context = {
         'title': 'Criar Subsetor',
         'back_url': 'organizacao:lista_subsetores',
@@ -372,6 +499,7 @@ def criar_subsetor(request):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/subsetores/form.html', context)
+
 
 @login_required
 def editar_subsetor(request, pk):
@@ -385,7 +513,8 @@ def editar_subsetor(request, pk):
                 subsetor.nome = nome
                 subsetor.setor_id = setor_id
                 subsetor.ativo = request.POST.get('ativo') == 'on'
-                subsetor.usuario_responsavel_id = request.POST.get('usuario_responsavel') or None
+                subsetor.usuario_responsavel_id = request.POST.get(
+                    'usuario_responsavel') or None
                 subsetor.save()
                 messages.success(request, 'Subsetor atualizado com sucesso!')
                 return redirect('organizacao:lista_subsetores')
@@ -393,7 +522,7 @@ def editar_subsetor(request, pk):
                 messages.error(request, f'Erro ao atualizar subsetor: {e}')
         else:
             messages.error(request, 'Nome e Setor são obrigatórios.')
-            
+
     context = {
         'object': subsetor,
         'title': 'Editar Subsetor',
@@ -402,6 +531,7 @@ def editar_subsetor(request, pk):
         'usuarios': Usuario.objects.filter(is_active=True)
     }
     return render(request, 'organizacao/subsetores/form.html', context)
+
 
 @login_required
 def deletar_subsetor(request, pk):
@@ -414,6 +544,37 @@ def deletar_subsetor(request, pk):
         except Exception as e:
             messages.error(request, f'Erro ao deletar subsetor: {e}')
         return redirect('organizacao:lista_subsetores')
-    
+
     context = {'object': subsetor, 'title': 'Subsetor'}
     return render(request, 'auditorias/deletar_generico.html', context)
+
+
+@login_required
+def exportar_subsetores_csv(request):
+    response = HttpResponse(
+        content_type='text/csv; charset=utf-8-sig',
+        headers={'Content-Disposition': 'attachment; filename="subsetores.csv"'}
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(['Nome', 'Setor', 'Área', 'Responsável', 'Status'])
+
+    search = request.GET.get('search', '')
+    subsetores = SubSetor.objects.select_related(
+        'setor__area__empresa', 'usuario_responsavel').all()
+    if search:
+        subsetores = subsetores.filter(Q(nome__icontains=search) | Q(
+            setor__nome__icontains=search) | Q(setor__area__nome__icontains=search))
+
+    for subsetor in subsetores:
+        responsavel = subsetor.usuario_responsavel.get_full_name(
+        ) or subsetor.usuario_responsavel.username if subsetor.usuario_responsavel else 'N/A'
+        writer.writerow([
+            subsetor.nome,
+            subsetor.setor.nome,
+            subsetor.setor.area.nome,
+            responsavel,
+            'Ativo' if subsetor.ativo else 'Inativo'
+        ])
+
+    return response

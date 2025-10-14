@@ -1,30 +1,41 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{# Remove o formulário de busca genérico herdado do template pai #}
+{% block search_form %}{% endblock %}
+
+{# Este bloco fica vazio, pois os filtros agora estão no cabeçalho da tabela #}
+{% block extra_filters %}{% endblock %}
+
 {% block table_headers %}
-<th style="width: 40px;">
-    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-</th>
-<th>Nome</th>
-<th>Descrição</th>
-<th>Status</th>
-<th>Data Cadastro</th>
-<th style="width: 120px;">Ações</th>
+    {# Linha 1: Títulos das Colunas #}
+    <tr>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Status</th>
+        <th>Data Cadastro</th>
+        <th style="width: 120px;">Ações</th>
+    </tr>
+    {# Linha 2: Campos de Filtro #}
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        <th></th> {# Coluna de Ações sem filtro #}
+    </tr>
 {% endblock %}
 
 {% block table_row %}
 <td>
-    <input type="checkbox" name="selected_items" value="{{ object.pk }}" class="item-checkbox">
-</td>
-<td>
     <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;"> 
             {{ object.nome.0|upper }}
         </div>
         <div>
             <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
-                {{ object.nome }}
+                {{ object.nome }} 
             </div>
-            <div style="font-size: 12px; color: var(--text-muted);">
+            <div style="font-size: 12px; color: var(--text-muted);"> 
                 ID: {{ object.pk }}
             </div>
         </div>
@@ -32,13 +43,13 @@
 </td>
 <td>
     <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ object.descricao }}">
-        {{ object.descricao|default:"—" }}
+        {{ object.descricao|default:"—" }} 
     </div>
 </td>
 <td>
-    {% if object.ativo %}
-        <span class="badge badge-success">
-            <i class="fas fa-check-circle"></i>
+    {% if object.ativo %} 
+        <span class="badge badge-success"> 
+            <i class="fas fa-check-circle"></i> 
             Ativo
         </span>
     {% else %}
@@ -46,10 +57,10 @@
             <i class="fas fa-times-circle"></i>
             Inativo
         </span>
-    {% endif %}
+    {% endif %} 
 </td>
 <td>
-    <div style="color: var(--text-secondary);">
+    <div style="color: var(--text-secondary);"> 
         {{ object.data_cadastro|date:"d/m/Y" }}
     </div>
     <div style="font-size: 12px; color: var(--text-muted);">
@@ -61,159 +72,80 @@
         <a href="{% url 'auditorias:editar_pilar' object.pk %}" 
            class="btn btn-secondary btn-icon" 
            title="Editar pilar">
-            <i class="fas fa-edit"></i>
+            <i class="fas fa-edit"></i> 
         </a>
         <button type="button" 
                 class="btn btn-danger btn-icon" 
                 title="Deletar pilar"
                 onclick="confirmDelete('{% url 'auditorias:deletar_pilar' object.pk %}', '{{ object.nome }}')">
-            <i class="fas fa-trash"></i>
+            <i class="fas fa-trash"></i> 
         </button>
     </div>
 </td>
 {% endblock %}
 
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+        .column-filter {
+            height: 38px;
+            font-size: 13px;
+        }
+    </style>
+{% endblock %}
+
 {% block extra_js %}
-{{ block.super }}
-<script>
-    // Função para selecionar/deselecionar todos os itens
-    function toggleSelectAll() {
-        const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.item-checkbox');
-        
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = selectAll.checked;
-        });
-        
-        updateBulkActions();
-    }
-
-    // Atualizar ações em lote baseado na seleção
-    function updateBulkActions() {
-        const selectedItems = document.querySelectorAll('.item-checkbox:checked');
-        const bulkActions = document.getElementById('bulkActions');
-        
-        if (selectedItems.length > 0) {
-            if (!bulkActions) {
-                createBulkActionsBar(selectedItems.length);
-            } else {
-                updateBulkActionsCount(selectedItems.length);
-            }
-        } else {
-            removeBulkActionsBar();
-        }
-    }
-
-    // Criar barra de ações em lote
-    function createBulkActionsBar(count) {
-        const bulkActionsHtml = `
-            <div id="bulkActions" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 16px 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 16px; z-index: 1000;">
-                <span id="bulkCount">${count} item${count > 1 ? 's' : ''} selecionado${count > 1 ? 's' : ''}</span>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="bulkActivate()" class="btn btn-success btn-sm">
-                        <i class="fas fa-check"></i>
-                        Ativar
-                    </button>
-                    <button onclick="bulkDeactivate()" class="btn btn-warning btn-sm">
-                        <i class="fas fa-pause"></i>
-                        Desativar
-                    </button>
-                    <button onclick="bulkDelete()" class="btn btn-danger btn-sm">
-                        <i class="fas fa-trash"></i>
-                        Excluir
-                    </button>
-                    <button onclick="clearSelection()" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-times"></i>
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', bulkActionsHtml);
-    }
-
-    // Atualizar contador de ações em lote
-    function updateBulkActionsCount(count) {
-        const bulkCount = document.getElementById('bulkCount');
-        if (bulkCount) {
-            bulkCount.textContent = `${count} item${count > 1 ? 's' : ''} selecionado${count > 1 ? 's' : ''}`;
-        }
-    }
-
-    // Remover barra de ações em lote
-    function removeBulkActionsBar() {
-        const bulkActions = document.getElementById('bulkActions');
-        if (bulkActions) {
-            bulkActions.remove();
-        }
-    }
-
-    // Limpar seleção
-    function clearSelection() {
-        document.getElementById('selectAll').checked = false;
-        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
-        removeBulkActionsBar();
-    }
-
-    // Ações em lote
-    function bulkActivate() {
-        const selectedIds = getSelectedIds();
-        if (selectedIds.length > 0) {
-            // Implementar ativação em lote via AJAX
-            console.log('Ativar itens:', selectedIds);
-            alert('Funcionalidade de ativação em lote será implementada');
-        }
-    }
-
-    function bulkDeactivate() {
-        const selectedIds = getSelectedIds();
-        if (selectedIds.length > 0) {
-            // Implementar desativação em lote via AJAX
-            console.log('Desativar itens:', selectedIds);
-            alert('Funcionalidade de desativação em lote será implementada');
-        }
-    }
-
-    function bulkDelete() {
-        const selectedIds = getSelectedIds();
-        if (selectedIds.length > 0) {
-            if (confirm(`Tem certeza que deseja excluir ${selectedIds.length} item${selectedIds.length > 1 ? 's' : ''}?`)) {
-                // Implementar exclusão em lote via AJAX
-                console.log('Excluir itens:', selectedIds);
-                alert('Funcionalidade de exclusão em lote será implementada');
-            }
-        }
-    }
-
-    // Obter IDs selecionados
-    function getSelectedIds() {
-        const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
-        return Array.from(selectedCheckboxes).map(cb => cb.value);
-    }
-
-    // Event listeners para checkboxes individuais
+    {{ block.super }}
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', updateBulkActions);
-        });
-    });
+        const filters = document.querySelectorAll('.column-filter');
+        const table = document.querySelector('#dataTable');
+        if (!table) {
+            return;
+        }
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) {
+            return;
+        }
 
-    // Atalhos de teclado específicos
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + A para selecionar todos
-        if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.target.matches('input[type="text"], textarea')) {
-            e.preventDefault();
-            document.getElementById('selectAll').checked = true;
-            toggleSelectAll();
-        }
-        
-        // Delete para excluir selecionados
-        if (e.key === 'Delete') {
-            const selectedIds = getSelectedIds();
-            if (selectedIds.length > 0) {
-                bulkDelete();
+        function applyTableFilters() {
+            const dataRows = tableBody.querySelectorAll('tr');
+            if (dataRows.length === 0) {
+                return;
             }
+
+            dataRows.forEach(row => {
+                let isRowVisible = true;
+                const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+
+                    if (filterText) {
+                        const cell = cells[colIndex];
+                        if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+                                isRowVisible = false;
+                            }
+                        } else {
+                            isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+
+        if (filters.length > 0) {
+            filters.forEach(filter => {
+                filter.addEventListener('input', applyTableFilters);
+            });
         }
     });
-</script>
+    </script>
 {% endblock %}

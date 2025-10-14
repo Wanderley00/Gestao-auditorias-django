@@ -1,18 +1,37 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{# Remove o formulário de busca padrão do topo #}
+{% block search_form %}{% endblock %}
+
+{# Este bloco fica vazio, pois os filtros estão no cabeçalho #}
+{% block extra_filters %}{% endblock %}
+
+{# Adiciona a linha de filtros no cabeçalho da tabela #}
 {% block table_headers %}
-    <th>Nome do Checklist</th>
-    <th>Ferramenta</th>
-    <th>Status</th>
-    <th style="width: 120px;">Ações</th>
+    <tr>
+        <th>Nome do Checklist</th>
+        <th>Versão</th>
+        <th>Ferramenta</th>
+        <th>Status</th>
+        <th style="width: 140px;">Ações</th> {# Aumentei um pouco a largura para caber os 3 botões #}
+    </tr>
+    <tr class="filter-row">
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar por nome..." data-column-index="0"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar por versão..." data-column-index="1"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar por ferramenta..." data-column-index="2"></th>
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar por status..." data-column-index="3"></th>
+        <th></th> {# Coluna de Ações sem filtro #}
+    </tr>
 {% endblock %}
 
+{# O conteúdo da linha da tabela com o novo botão #}
 {% block table_row %}
     <td>
         <div style="font-weight: 600; color: var(--text-primary);">
             {{ object.nome }}
         </div>
     </td>
+    <td><span class="badge badge-secondary">V{{ object.version }}</span></td>
     <td>{{ object.ferramenta.nome|default:"—" }}</td>
     <td>
         {% if object.ativo %}
@@ -26,10 +45,81 @@
             <a href="{% url 'auditorias:editar_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Checklist">
                 <i class="fas fa-edit"></i>
             </a>
+            
+            {# --- BOTÃO DE HISTÓRICO ADICIONADO AQUI --- #}
+            <a href="{% url 'auditorias:historico_versoes_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Histórico de Versões">
+                <i class="fas fa-history"></i>
+            </a>
+
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Checklist"
                     onclick="confirmDelete('{% url 'auditorias:deletar_checklist' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
     </td>
+{% endblock %}
+
+{# Adiciona o CSS para a linha de filtro #}
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .filter-row th {
+            padding: 8px !important;
+            vertical-align: top;
+        }
+        .column-filter {
+            height: 38px;
+            font-size: 13px;
+            width: 100%;
+        }
+    </style>
+{% endblock %}
+
+{# Adiciona o JavaScript para a funcionalidade de filtro em tempo real #}
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filters = document.querySelectorAll('.column-filter');
+        const table = document.querySelector('#dataTable');
+        if (!table) {
+            return;
+        }
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) {
+            return;
+        }
+        function applyTableFilters() {
+            const dataRows = tableBody.querySelectorAll('tr');
+            if (dataRows.length === 0) {
+                return;
+            }
+            dataRows.forEach(row => {
+                let isRowVisible = true;
+                const cells = row.querySelectorAll('td');
+                filters.forEach(filter => {
+                    const filterText = filter.value.toLowerCase().trim();
+                    const colIndex = parseInt(filter.dataset.columnIndex, 10);
+                    if (filterText) {
+                        const cell = cells[colIndex];
+                        if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterText)) {
+                                isRowVisible = false;
+                            }
+                        } else {
+                            isRowVisible = false;
+                        }
+                    }
+                });
+                row.style.display = isRowVisible ? '' : 'none';
+            });
+        }
+        if (filters.length > 0) {
+            filters.forEach(filter => {
+                filter.addEventListener('input', applyTableFilters);
+            });
+        }
+    });
+    </script>
 {% endblock %}
