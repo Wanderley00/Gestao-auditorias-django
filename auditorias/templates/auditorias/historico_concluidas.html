@@ -67,8 +67,8 @@
         <span class="badge badge-success">{{ object.status }}</span>
     </td>
     <td>
-        <a href="#" class="btn btn-secondary btn-icon" title="Ver Relatório">
-            <i class="fas fa-chart-bar"></i>
+        <a href="{% url 'auditorias:detalhes_historico_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Ver Detalhes">
+            <i class="fas fa-eye"></i>
         </a>
     </td>
 {% endblock %}

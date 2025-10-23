@@ -1,0 +1,374 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
+
+{% block pagetitle %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">Visualização completa das informações e respostas da auditoria</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="{% url backurl %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Seção 1: Cabeçalho da Auditoria -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-info-circle"></i> Informações da Execução
+        </h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-hashtag"></i> ID da Execução
+                </div>
+                <div class="info-value">{{ object.id }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-calendar-check"></i> Data de Execução
+                </div>
+                <div class="info-value">{{ object.data_execucao|date:"d/m/Y" }}</div>
+            </div>
+            
+            {% if object.get_data_conclusao %}
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clock"></i> Data de Conclusão
+                </div>
+                <div class="info-value">{{ object.get_data_conclusao|date:"d/m/Y H:i" }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-user-check"></i> Auditor
+                </div>
+                <div class="info-value">{{ object.responsavel.get_full_name|default:object.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-map-marker-alt"></i> Local de Execução
+                </div>
+                <div class="info-value">{{ object.local_execucao.nome|default:"N/A" }}</div>
+            </div>
+            
+            {% if object.turno %}
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clock"></i> Turno
+                </div>
+                <div class="info-value">{{ object.turno.descricao }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-tools"></i> Ferramenta
+                </div>
+                <div class="info-value">
+                    <span class="badge badge-secondary">
+                        {{ object.auditoria_agendada.ferramenta.nome|default:"N/A" }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clipboard-list"></i> Checklist Utilizado
+                </div>
+                <div class="info-value">
+                    {% if object.checklistusado %}
+                        {{ object.checklistusado.nome }} <span class="badge badge-info">V{{ object.checklistusado.version }}</span>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if object.auditoria_agendada.modelos.exists %}
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">
+                    <i class="fas fa-file-alt"></i> Modelo(s) de Auditoria
+                </div>
+                <div class="info-value">
+                    {% for modelo in object.auditoria_agendada.modelos.all %}
+                        <span class="badge badge-info">{{ modelo.descricao }}</span>{% if not forloop.last %} {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Seção 2: Respostas do Checklist -->
+{% if dados_estruturados %}
+    {% for item in dados_estruturados %}
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);">
+            <h3 class="card-title" style="color: white; font-size: 18px;">
+                <i class="fas fa-layer-group"></i> {{ item.topico.descricao }}
+            </h3>
+        </div>
+        <div class="card-body">
+            {% if item.perguntas_respostas %}
+                {% for pr in item.perguntas_respostas %}
+                <div class="pergunta-container" style="{% if not forloop.last %}margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--border);{% endif %}">
+                    <!-- Descrição da Pergunta -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <div style="min-width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                                {{ forloop.counter }}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 16px; margin-bottom: 8px;">
+                                    {{ pr.pergunta.descricao }}
+                                    {% if pr.pergunta.obrigatoria %}
+                                        <span class="badge badge-error" style="font-size: 11px; margin-left: 8px;">OBRIGATÓRIA</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Tipos de resposta permitidos -->
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                                    {% if pr.pergunta.respostalivre %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-keyboard"></i> Resposta Livre
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.foto %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-camera"></i> Foto
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.criaropcao %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-list"></i> Opção
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.porcentagem %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-percent"></i> Porcentagem
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resposta -->
+                    <div style="margin-left: 44px;">
+                        {% if pr.resposta %}
+                            <div style="background: var(--background); border-left: 4px solid var(--primary); padding: 16px; border-radius: var(--radius-md);">
+                                <div style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">
+                                    <i class="fas fa-reply"></i> Resposta
+                                </div>
+                                
+                                <!-- Opção de Resposta -->
+                                {% if pr.resposta.opcao_resposta %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--radius-md); 
+                                            {% if pr.resposta.opcao_resposta.status == 'CONFORME' %}background: rgba(34, 197, 94, 0.1); color: #16a34a;
+                                            {% elif pr.resposta.opcao_resposta.status == 'NAOCONFORME' %}background: rgba(239, 68, 68, 0.1); color: #dc2626;
+                                            {% elif pr.resposta.opcao_resposta.status == 'NA' %}background: rgba(148, 163, 184, 0.1); color: #64748b;
+                                            {% elif pr.resposta.opcao_resposta.status == 'DESVIOSOLUCIONADO' %}background: rgba(251, 191, 36, 0.1); color: #f59e0b;
+                                            {% endif %}">
+                                            {% if pr.resposta.opcao_resposta.status == 'CONFORME' %}
+                                                <i class="fas fa-check-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'NAOCONFORME' %}
+                                                <i class="fas fa-times-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'NA' %}
+                                                <i class="fas fa-minus-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'DESVIOSOLUCIONADO' %}
+                                                <i class="fas fa-exclamation-circle"></i>
+                                            {% endif %}
+                                            <span style="font-weight: 600; font-size: 15px;">{{ pr.resposta.opcao_resposta.descricao }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Opção de Porcentagem -->
+                                {% if pr.resposta.opcao_porcentagem %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--radius-md); background: {{ pr.resposta.opcao_porcentagem.cor|default:'#e5e7eb' }};">
+                                            <i class="fas fa-percent"></i>
+                                            <span style="font-weight: 600; font-size: 15px;">{{ pr.resposta.opcao_porcentagem.descricao }}</span>
+                                            <span class="badge badge-secondary">Peso: {{ pr.resposta.opcao_porcentagem.peso }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Resposta Livre (Texto) -->
+                                {% if pr.resposta.respostalivre_texto %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">{{ pr.resposta.respostalivre_texto }}</div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Anexos (Fotos) -->
+                                {% if pr.resposta.anexos.exists %}
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">
+                                            <i class="fas fa-paperclip"></i> Anexos ({{ pr.resposta.anexos.count }})
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+                                            {% for anexo in pr.resposta.anexos.all %}
+                                                <div class="anexo-item">
+                                                    <a href="{{ anexo.arquivo.url }}" target="_blank" style="text-decoration: none;">
+                                                        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 1; background: var(--background);">
+                                                            {% if anexo.arquivo.url|slice:"-4:" in '.jpg,.png,.gif,jpeg,.webp' or anexo.arquivo.url|slice:"-5:" in '.jpeg' %}
+                                                                <img src="{{ anexo.arquivo.url }}" alt="Anexo" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s;">
+                                                                <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px;">
+                                                                    <i class="fas fa-image"></i>
+                                                                </div>
+                                                            {% else %}
+                                                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
+                                                                    <i class="fas fa-file" style="font-size: 32px; margin-bottom: 8px;"></i>
+                                                                    <div style="font-size: 11px; text-align: center; padding: 0 8px; word-break: break-word;">{{ anexo.arquivo.name|slice:"-20:" }}</div>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </a>
+                                                    <div style="margin-top: 8px; text-align: center;">
+                                                        <a href="{{ anexo.arquivo.url }}" download class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 12px;">
+                                                            <i class="fas fa-download"></i> Download
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Se não houver resposta em nenhum campo -->
+                                {% if not pr.resposta.opcao_resposta and not pr.resposta.opcao_porcentagem and not pr.resposta.respostalivre_texto and not pr.resposta.anexos.exists %}
+                                    <div style="color: var(--text-muted); font-style: italic;">
+                                        <i class="fas fa-info-circle"></i> Nenhuma resposta registrada
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div style="background: var(--background); border-left: 4px solid var(--text-muted); padding: 16px; border-radius: var(--radius-md); color: var(--text-muted); font-style: italic;">
+                                <i class="fas fa-question-circle"></i> Pergunta não respondida
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p>Nenhuma pergunta encontrada neste tópico.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: 64px 24px;">
+            <i class="fas fa-clipboard-list" style="font-size: 64px; color: var(--text-muted); opacity: 0.3; margin-bottom: 24px;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 12px;">Nenhum dado disponível</h3>
+            <p style="color: var(--text-muted);">Esta auditoria não possui checklist ou respostas registradas.</p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extracss %}
+<style>
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .info-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-label i {
+        margin-right: 6px;
+        color: var(--primary);
+    }
+    
+    .info-value {
+        font-size: 15px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .pergunta-container {
+        transition: all 0.2s ease;
+    }
+    
+    .anexo-item img:hover {
+        transform: scale(1.05);
+    }
+    
+    @media print {
+        .btn, .content-header button, .content-header a {
+            display: none !important;
+        }
+        
+        .card {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        .pergunta-container {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    // Lightbox simples para imagens
+    document.addEventListener('DOMContentLoaded', function() {
+        const images = document.querySelectorAll('.anexo-item img');
+        
+        images.forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                const lightbox = document.createElement('div');
+                lightbox.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; cursor: zoom-out;';
+                
+                const imgClone = document.createElement('img');
+                imgClone.src = this.src;
+                imgClone.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px;';
+                
+                lightbox.appendChild(imgClone);
+                document.body.appendChild(lightbox);
+                
+                lightbox.addEventListener('click', function() {
+                    document.body.removeChild(lightbox);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

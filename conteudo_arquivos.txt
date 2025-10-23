@@ -1,68 +1,3 @@
-C:\Users\SV1830\Downloads\Gestao-auditorias-django\gerar.py
-
-import os
-
-
-def analisar_e_escrever_arquivos():
-    """
-    Percorre o diretório atual e suas subpastas em busca de arquivos
-    com extensões específicas (.py, .html, .css, .js) e escreve seus
-    caminhos e conteúdos em um arquivo de texto.
-    """
-    # Obtém o caminho do diretório onde o script está sendo executado.
-    pasta_raiz = os.getcwd()
-
-    # Define as extensões de arquivo que queremos procurar.
-    extensoes_desejadas = ('.py', '.html', '.css', '.js')
-
-    # Nome do arquivo de saída.
-    arquivo_saida = 'conteudo_arquivos.txt'
-
-    try:
-        with open(arquivo_saida, 'w', encoding='utf-8') as saida:
-            print(f"Analisando a partir de: {pasta_raiz}")
-            print(f"Os resultados serão salvos em: {arquivo_saida}\n")
-
-            # os.walk() gera os nomes de arquivo em uma árvore de diretórios.
-            for diretorio_atual, _, arquivos in os.walk(pasta_raiz):
-                for nome_arquivo in arquivos:
-                    # Verifica se o arquivo possui uma das extensões desejadas.
-                    if nome_arquivo.endswith(extensoes_desejadas):
-                        caminho_completo = os.path.join(
-                            diretorio_atual, nome_arquivo)
-
-                        # Escreve o cabeçalho com o caminho do arquivo.
-                        saida.write(f"{caminho_completo}\n\n")
-
-                        try:
-                            # Abre e lê o conteúdo do arquivo encontrado.
-                            with open(caminho_completo, 'r', encoding='utf-8', errors='ignore') as entrada:
-                                conteudo = entrada.read()
-                                saida.write(f"{conteudo}\n")
-                        except Exception as e:
-                            # Caso não consiga ler o arquivo, registra um erro.
-                            saida.write(
-                                f"--- Erro ao ler o arquivo: {e} ---\n")
-
-                        # Adiciona um separador para maior clareza.
-                        saida.write(
-                            "_____________________________________\n\n")
-                        print(f"Processado: {caminho_completo}")
-
-        print(
-            f"\nAnálise concluída com sucesso! Verifique o arquivo '{arquivo_saida}'.")
-
-    except IOError as e:
-        print(f"Erro ao escrever no arquivo de saída: {e}")
-    except Exception as e:
-        print(f"Ocorreu um erro inesperado: {e}")
-
-
-if __name__ == '__main__':
-    analisar_e_escrever_arquivos()
-
-_____________________________________
-
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\manage.py
 
 #!/usr/bin/env python
@@ -2563,13 +2498,26 @@ class Resposta(models.Model):
         null=True, blank=True,
         verbose_name="Texto da Resposta Livre"
     )
+
+    # --- ADICIONE OS CAMPOS ABAIXO ---
+    oportunidade_melhoria = models.BooleanField(
+        null=True, blank=True, verbose_name="Oportunidade de Melhoria"
+    )
+    desvio_solucionado = models.BooleanField(
+        null=True, blank=True, verbose_name="Desvio Solucionado na Hora"
+    )
+    grau_nc = models.CharField(
+        max_length=20,
+        null=True, blank=True,
+        choices=[('NC MAIOR', 'NC Maior'), ('NC MENOR', 'NC Menor')],
+        verbose_name="Grau da Não Conformidade"
+    )
     data_resposta = models.DateTimeField(
-        auto_now_add=True, verbose_name="Data da Resposta")
+        verbose_name="Data da Resposta", null=True, blank=True)
 
     class Meta:
         verbose_name = "Resposta"
         verbose_name_plural = "Respostas"
-        # Garante que só haja uma resposta por pergunta em cada auditoria
         unique_together = ('auditoria_instancia', 'pergunta')
 
     def __str__(self):
@@ -2608,40 +2556,48 @@ from .models import (
     Auditoria, AuditoriaInstancia, Checklist, Topico, Pergunta,
     OpcaoResposta, OpcaoPorcentagem, Resposta, AnexoResposta
 )
-
 import base64
 import uuid
 from django.core.files.base import ContentFile
-from rest_framework import serializers
+
+# --- CAMPO Base64 CORRIGIDO E MELHORADO ---
+# Renomeado para Base64FileField para ser mais genérico
 
 
-class Base64ImageField(serializers.ImageField):
+class Base64FileField(serializers.FileField):
     """
-    Um campo de serializer que lida com imagens codificadas em Base64.
+    Um campo de serializer que lida com arquivos codificados em Base64,
+    aceitando tanto o formato raw quanto o formato com prefixo "data:".
     """
 
     def to_internal_value(self, data):
-        # Verifica se o dado recebido é uma string e tem o formato Base64
-        if isinstance(data, str) and data.startswith('data:image'):
-            # Separa o formato do conteúdo Base64
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
+        # Verifica se o dado é uma string Base64
+        if isinstance(data, str):
+            # Se tiver o prefixo 'data:[...];base64,', remove-o
+            if 'base64,' in data:
+                header, data = data.split(';base64,')
 
-            # Gera um nome de arquivo único
-            file_name = f"{uuid.uuid4()}.{ext}"
-            # Decodifica a string Base64 e a transforma em um arquivo que o Django entende
-            data = ContentFile(base64.b64decode(imgstr), name=file_name)
+            try:
+                # Decodifica os dados e cria um ContentFile
+                decoded_file = base64.b64decode(data)
+                # Gera um nome de arquivo único. Você pode adicionar uma extensão padrão se quiser.
+                file_name = str(uuid.uuid4())[:12]
+                # Usa o ContentFile que o Django entende
+                data = ContentFile(decoded_file, name=f'{file_name}.jpg')
+            except (TypeError, ValueError):
+                self.fail('invalid_file')
 
         return super().to_internal_value(data)
 
-
-# --- Serializers para a estrutura do Checklist ---
+# --- O RESTO DOS SERIALIZERS CONTINUA IGUAL ---
 
 
 class OpcaoRespostaSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcaoResposta
         fields = ['id', 'descricao', 'status']
+
+# ... (outros serializers como OpcaoPorcentagemSerializer, PerguntaSerializer, etc. continuam aqui sem alterações) ...
 
 
 class OpcaoPorcentagemSerializer(serializers.ModelSerializer):
@@ -2679,23 +2635,16 @@ class ChecklistSerializer(serializers.ModelSerializer):
         fields = ['id', 'nome', 'topicos']
 
 
-# --- Serializers para a Auditoria (simplificado) ---
-
 class AuditoriaPaiSerializer(serializers.ModelSerializer):
     """ Serializer enriquecido para a Auditoria 'pai' """
     modelo_auditoria_nome = serializers.SerializerMethodField()
     checklist_nome = serializers.SerializerMethodField()
-    # NOVO CAMPO: Para o nome do local
     local_nome = serializers.SerializerMethodField()
-    # FORMATANDO A DATA
     data_criacao = serializers.DateTimeField(format="%d/%m/%Y", read_only=True)
-
     ferramenta_nome = serializers.CharField(
         source='ferramenta.nome', read_only=True)
-
     programacao = serializers.CharField(
         source='get_programacao_display', read_only=True)
-
     criado_por_nome = serializers.CharField(
         source='criado_por.get_full_name', read_only=True, default='Sistema')
 
@@ -2706,7 +2655,7 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
             'data_criacao',
             'modelo_auditoria_nome',
             'checklist_nome',
-            'local_nome',  # Usaremos este campo unificado
+            'local_nome',
             'ferramenta_nome',
             'programacao',
             'criado_por_nome',
@@ -2723,9 +2672,6 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
         return 'N/A'
 
     def get_local_nome(self, obj):
-        """
-        Retorna o nome do local específico com base no nível organizacional.
-        """
         if obj.nivel_organizacional == 'SUBSETOR' and obj.local_subsetor:
             return obj.local_subsetor.nome
         if obj.nivel_organizacional == 'SETOR' and obj.local_setor:
@@ -2736,15 +2682,8 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
             return obj.local_empresa.nome
         return 'Local não definido'
 
-# --- Serializer para os Detalhes de UMA Auditoria ---
-
 
 class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer completo para uma única Instância de Auditoria,
-    incluindo o checklist completo.
-    """
-    # Usamos um SerializerMethodField para buscar o checklist de forma customizada
     checklist = serializers.SerializerMethodField()
 
     class Meta:
@@ -2752,10 +2691,6 @@ class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'data_execucao', 'checklist']
 
     def get_checklist(self, obj):
-        # --- ALTERAÇÃO AQUI ---
-        # A lógica antiga buscava o checklist através do modelo de auditoria do pai.
-        # A nova lógica usa o campo 'checklist_usado', que é a fonte definitiva da verdade
-        # para esta instância específica, seja ela passada (V1) ou futura (V2).
         if obj.checklist_usado:
             return ChecklistSerializer(obj.checklist_usado).data
         return None
@@ -2764,7 +2699,6 @@ class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
 class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
     auditoria_info = AuditoriaPaiSerializer(
         source='auditoria_agendada', read_only=True)
-
     status = serializers.CharField(source='status_execucao', read_only=True)
 
     class Meta:
@@ -2779,16 +2713,12 @@ class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
 
 
 class RespostaSerializer(serializers.ModelSerializer):
-    """
-    Serializer para receber, validar e CRIAR os dados de uma única resposta,
-    incluindo anexos de fotos.
-    """
     pergunta_id = serializers.IntegerField(write_only=True)
-    # Novo campo para receber uma lista de imagens em Base64
+    # --- ATUALIZADO: Usando o novo campo Base64FileField ---
     anexos_base64 = serializers.ListField(
-        child=Base64ImageField(),
-        required=False,    # O campo não é obrigatório
-        write_only=True    # Usado apenas para receber dados, não para exibir
+        child=Base64FileField(),  # <<<--- MUDANÇA AQUI
+        required=False,
+        write_only=True
     )
 
     class Meta:
@@ -2798,23 +2728,28 @@ class RespostaSerializer(serializers.ModelSerializer):
             'opcao_resposta',
             'opcao_porcentagem',
             'resposta_livre_texto',
-            'anexos_base64',  # Adicione o novo campo aqui
+            'anexos_base64',
+            'oportunidade_melhoria',
+            'desvio_solucionado',
+            'grau_nc',
+            'data_resposta',
         ]
 
     def create(self, validated_data):
-        # Pega a lista de anexos (fotos) e remove do dicionário principal
+        # --- ADICIONE ESTAS LINHAS PARA DEBUG ---
+        # print("--- DADOS VALIDADOS PELO SERIALIZER ---", validated_data)
         anexos_data = validated_data.pop('anexos_base64', [])
+        # print("--- ANEXOS ENCONTRADOS ---", "Sim" if anexos_data else "Não")
+        # --- FIM DAS LINHAS DE DEBUG ---
 
-        # Pega a instância da auditoria que passamos da view
         instancia = self.context['auditoria_instancia']
 
-        # Cria o objeto Resposta com os dados restantes
-        resposta = Resposta.objects.create(
+        resposta, created = Resposta.objects.update_or_create(
             auditoria_instancia=instancia,
-            **validated_data
+            pergunta_id=validated_data.get('pergunta_id'),
+            defaults=validated_data
         )
 
-        # Se houver anexos, cria os objetos AnexoResposta
         for anexo_file in anexos_data:
             AnexoResposta.objects.create(resposta=resposta, arquivo=anexo_file)
 
@@ -2932,6 +2867,17 @@ urlpatterns = [
 
     path('checklists/<int:pk>/historico/',
          views.historico_versoes_checklist, name='historico_versoes_checklist'),
+
+    path('checklists/<int:pk>/comparar/', views.comparar_versoes_checklist,
+         name='comparar_versoes_checklist'),
+
+    path('historico/<int:pk>/detalhes/',
+         views.detalhes_auditoria, name='detalhes_auditoria'),
+
+
+    path('historico/<int:pk>/visualizar/',
+         views.detalhes_historico_auditoria, name='detalhes_historico_auditoria'),
+
 ]
 
 _____________________________________
@@ -2955,7 +2901,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import csv
 from django.http import HttpResponse
-
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -2979,7 +2925,8 @@ from cadastros_base.models import Turno
 from usuarios.models import Usuario
 
 import json
-
+from django.db.models import Min, Max
+from django.db.models import Max, Q
 from django.db.models import Q, F, Value
 from django.db.models.functions import Concat
 
@@ -3612,24 +3559,37 @@ def criar_checklist(request):
 
 def _create_new_version_from_request(request, checklist_original):
     """
-    Cria uma nova versão de um checklist populando-a diretamente
-    com os dados do request.POST, evitando conflitos de ID.
+    Cria uma nova versão de um checklist, garantindo que o número da versão
+    seja sempre o próximo da sequência, independentemente de qual versão foi editada.
     """
-    # 1. Cria o novo objeto Checklist (a nova versão)
+    # --- INÍCIO DA CORREÇÃO ---
+    # 1. Encontra o checklist "pai" (a primeira versão) para agrupar todas as versões.
+    base_checklist = checklist_original.original_checklist or checklist_original
+
+    # 2. Encontra o número da versão mais alta existente para este checklist.
+    latest_version_number = Checklist.objects.filter(
+        Q(pk=base_checklist.pk) | Q(original_checklist=base_checklist)
+    ).aggregate(max_version=Max('version'))['max_version'] or 0
+
+    # 3. O número da nova versão será o mais alto + 1 (ex: se o max for 2, a nova será 3).
+    new_version_number = latest_version_number + 1
+    # --- FIM DA CORREÇÃO ---
+
+    # 4. Cria o novo objeto Checklist com o número de versão correto.
     nova_versao = Checklist.objects.create(
         nome=request.POST.get('nome'),
         ativo=request.POST.get('ativo') == 'on',
         ferramenta_id=request.POST.get('ferramenta') or None,
-        version=checklist_original.version + 1,
+        version=new_version_number,  # <-- CORRIGIDO
         is_latest=True,
-        original_checklist=checklist_original.original_checklist or checklist_original
+        original_checklist=base_checklist
     )
 
-    # 2. Re-processa a estrutura do formulário, mas criando tudo para a nova versão
+    # (O restante da função para copiar os tópicos e perguntas continua o mesmo)
+    # ... (código existente para processar a estrutura do checklist)
     topicos_data = {}
     for key in request.POST:
         if key.startswith('topico-descricao['):
-            # ID do formulário (pode ser '123' ou 'new-1')
             topico_id_form = key.split('[')[1].split(']')[0]
             topicos_data[topico_id_form] = {
                 'descricao': request.POST.get(key),
@@ -3637,19 +3597,15 @@ def _create_new_version_from_request(request, checklist_original):
             }
 
     for topico_id_form, topico_info in topicos_data.items():
-        # Cria um novo tópico para a nova versão
         novo_topico = Topico.objects.create(
             checklist=nova_versao,
             descricao=topico_info['descricao'],
             ordem=int(topico_info['ordem']) if topico_info['ordem'] else 0
         )
 
-        # Processa as perguntas associadas a este tópico no formulário
         for key in request.POST:
             if key.startswith(f'pergunta-descricao[{topico_id_form}-'):
                 pergunta_id_full = key.split('[')[1].split(']')[0]
-
-                # Cria uma nova pergunta para o novo tópico
                 nova_pergunta = Pergunta.objects.create(
                     topico=novo_topico,
                     descricao=request.POST.get(key),
@@ -3667,10 +3623,10 @@ def _create_new_version_from_request(request, checklist_original):
                         f'pergunta-porcentagem[{pergunta_id_full}]') == 'on'
                 )
 
-                # Processa as opções de resposta para esta pergunta
                 for opt_key in request.POST:
                     if opt_key.startswith(f'opcao-resposta-descricao[{pergunta_id_full}-'):
-                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        opt_id_full = opt_key.split('[')[1].split(']')[
+                            0]
                         OpcaoResposta.objects.create(
                             pergunta=nova_pergunta,
                             descricao=request.POST.get(opt_key),
@@ -3678,10 +3634,10 @@ def _create_new_version_from_request(request, checklist_original):
                                 f'opcao-resposta-status[{opt_id_full}]', 'CONFORME')
                         )
 
-                # Processa as opções de porcentagem para esta pergunta
                 for opt_key in request.POST:
                     if opt_key.startswith(f'opcao-porcentagem-descricao[{pergunta_id_full}-'):
-                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        opt_id_full = opt_key.split('[')[1].split(']')[
+                            0]
                         OpcaoPorcentagem.objects.create(
                             pergunta=nova_pergunta,
                             descricao=request.POST.get(opt_key),
@@ -3698,39 +3654,49 @@ def _create_new_version_from_request(request, checklist_original):
 def editar_checklist(request, pk):
     """
     Ao editar um checklist, cria uma nova versão (clone) com as modificações
-    e atualiza as auditorias futuras.
+    e atualiza as auditorias futuras. A nova versão será sempre a mais recente.
     """
-    checklist_antigo = get_object_or_404(Checklist, pk=pk)
+    checklist_a_ser_editado = get_object_or_404(Checklist, pk=pk)
 
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # 1. Cria a nova versão diretamente a partir dos dados do formulário
+                # --- INÍCIO DA CORREÇÃO ---
+                # 1. Encontra o checklist "pai" e a versão que é atualmente a mais recente.
+                base_checklist = checklist_a_ser_editado.original_checklist or checklist_a_ser_editado
+                versao_mais_recente_anterior = Checklist.objects.filter(
+                    Q(pk=base_checklist.pk) | Q(
+                        original_checklist=base_checklist),
+                    is_latest=True
+                ).first()
+                # --- FIM DA CORREÇÃO ---
+
+                # 2. Cria a nova versão (a função interna agora calcula o número da versão corretamente).
                 novo_checklist = _create_new_version_from_request(
-                    request, checklist_antigo)
+                    request, checklist_a_ser_editado)
 
-                # 2. Desativa a versão antiga, marcando-a como não sendo a mais recente
-                checklist_antigo.is_latest = False
-                checklist_antigo.save()
+                # 3. Desativa a versão que ERA a mais recente, marcando-a como 'is_latest=False'.
+                if versao_mais_recente_anterior:
+                    versao_mais_recente_anterior.is_latest = False
+                    versao_mais_recente_anterior.save()
 
-                # 3. Encontra todos os Modelos de Auditoria que usavam a versão antiga
-                modelos_afetados_ids = list(ModeloAuditoria.objects.filter(
-                    checklist=checklist_antigo
-                ).values_list('id', flat=True))
+                # 4. Encontra todos os Modelos de Auditoria que usavam a versão mais recente anterior.
+                if versao_mais_recente_anterior:
+                    modelos_afetados_ids = list(ModeloAuditoria.objects.filter(
+                        checklist=versao_mais_recente_anterior
+                    ).values_list('id', flat=True))
 
-                if modelos_afetados_ids:
-                    # 5. Atualiza esses modelos para apontarem para o NOVO checklist
-                    ModeloAuditoria.objects.filter(
-                        id__in=modelos_afetados_ids).update(checklist=novo_checklist)
+                    if modelos_afetados_ids:
+                        # 5. Atualiza esses modelos para apontarem para o NOVO checklist.
+                        ModeloAuditoria.objects.filter(
+                            id__in=modelos_afetados_ids).update(checklist=novo_checklist)
 
-                    # 6. Atualiza APENAS as instâncias de auditoria com status "Agendada"
-                    #    (ou seja, com data estritamente maior que hoje)
-                    AuditoriaInstancia.objects.filter(
-                        auditoria_agendada__modelos__id__in=modelos_afetados_ids,
-                        executada=False,
-                        # --- ESTA É A LINHA QUE VAMOS ALTERAR ---
-                        data_execucao__gt=timezone.now().date()  # Alterado de __gte para __gt
-                    ).update(checklist_usado=novo_checklist)
+                        # 6. Atualiza APENAS as instâncias de auditoria futuras.
+                        AuditoriaInstancia.objects.filter(
+                            auditoria_agendada__modelos__id__in=modelos_afetados_ids,
+                            executada=False,
+                            data_execucao__gt=timezone.now().date()
+                        ).update(checklist_usado=novo_checklist)
 
                 messages.success(
                     request, f'Checklist "{novo_checklist.nome}" atualizado para a versão {novo_checklist.version} com sucesso!')
@@ -3741,17 +3707,16 @@ def editar_checklist(request, pk):
             import traceback
             print(traceback.format_exc())
 
-    # O contexto para o método GET continua o mesmo
+    # O contexto para o método GET (para exibir o formulário) continua o mesmo.
     context = {
-        'checklist': checklist_antigo,
-        'object': checklist_antigo,
+        'checklist': checklist_a_ser_editado,
+        'object': checklist_a_ser_editado,
         'ferramentas': FerramentaDigital.objects.all(),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
-        'title': f'Editar Checklist: {checklist_antigo.nome} (V{checklist_antigo.version})',
+        'title': f'Editar Checklist: {checklist_a_ser_editado.nome} (V{checklist_a_ser_editado.version})',
         'back_url': 'auditorias:lista_checklists'
     }
     return render(request, 'auditorias/checklists/form.html', context)
-
 
 # Supondo que seus models (AuditoriaInstancia, Checklist, SubSetor, Topico, etc.)
 # estejam importados corretamente.
@@ -3997,24 +3962,222 @@ def deletar_checklist(request, pk):
 
 @login_required
 def historico_versoes_checklist(request, pk):
-    """Lista todas as versões de um checklist específico."""
+    """
+    Lista todas as versões de um checklist específico.
+    """
     checklist_atual = get_object_or_404(Checklist, pk=pk)
 
     # Encontra o checklist original (V1) para buscar todas as suas versões
     original = checklist_atual.original_checklist or checklist_atual
 
-    # Busca todas as versões relacionadas, incluindo o original, ordenando da mais nova para a mais antiga
-    versoes = original.versions.all() | Checklist.objects.filter(pk=original.pk)
-    versoes = versoes.order_by('-version')
+    # MODIFICAÇÃO: A consulta agora 'anota' (annotate) em cada versão
+    # a contagem total de perguntas, somando as de todos os seus tópicos.
+    versoes = Checklist.objects.filter(
+        Q(pk=original.pk) | Q(original_checklist=original)
+    ).prefetch_related(
+        'topicos'
+    ).annotate(
+        total_perguntas=Count('topicos__perguntas')
+    ).order_by('-version')
 
     context = {
-        'page_obj': versoes,  # Usando page_obj para reutilizar o template
+        'versoes': versoes,
         'original': original,
-        'title': f'Histórico de Versões: {original.nome}',
-        # Apenas para o template não quebrar
-        'create_url': 'auditorias:criar_checklist',
+        'title': f'Histórico de Versões - {original.nome}',
     }
+
     return render(request, 'auditorias/checklists/historico.html', context)
+
+
+@login_required
+def comparar_versoes_checklist(request, pk):
+    """
+    View para comparar múltiplas versões de um checklist.
+    Permite selecionar e comparar 2 ou mais versões lado a lado.
+    """
+    checklist_atual = get_object_or_404(Checklist, pk=pk)
+
+    # Encontra o checklist original
+    original = checklist_atual.original_checklist or checklist_atual
+
+    # Busca todas as versões
+    versoes = (Checklist.objects.filter(
+        Q(pk=original.pk) | Q(original_checklist=original)
+    ).prefetch_related(
+        'topicos__perguntas__opcoes_resposta',
+        'topicos__perguntas__opcoes_porcentagem'
+    ).order_by('-version'))
+
+    # Se versões específicas foram selecionadas para comparação
+    versoes_selecionadas_ids = request.GET.getlist('versoes')
+
+    if versoes_selecionadas_ids and len(versoes_selecionadas_ids) >= 2:
+        versoes_para_comparar = versoes.filter(
+            pk__in=versoes_selecionadas_ids
+        ).order_by('version')
+
+        # Gera dados de comparação
+        comparacao_data = _gerar_dados_comparacao(versoes_para_comparar)
+
+        context = {
+            'original': original,
+            'versoes': versoes,
+            'versoes_comparadas': versoes_para_comparar,
+            'comparacao_data': comparacao_data,
+            'title': f'Comparar Versões - {original.nome}',
+        }
+    else:
+        context = {
+            'original': original,
+            'versoes': versoes,
+            'versoes_comparadas': None,
+            'title': f'Selecionar Versões para Comparar - {original.nome}',
+        }
+
+    return render(request, 'auditorias/checklists/comparar_versoes.html', context)
+
+
+def _gerar_dados_comparacao(versoes):
+    """
+    Gera estrutura de dados para comparação entre versões.
+    Retorna um dicionário com as diferenças detectadas organizadas para exibição lado a lado.
+    """
+    comparacao = {
+        'versoes_info': [],
+        'topicos_comparados': [],
+        'alteracoes_resumo': {
+            'topicos_adicionados': 0,
+            'topicos_removidos': 0,
+            'perguntas_adicionadas': 0,
+            'perguntas_removidas': 0,
+            'perguntas_modificadas': 0,
+        }
+    }
+
+    # Informações básicas de cada versão
+    versoes_list = list(versoes)
+    for v in versoes_list:
+        comparacao['versoes_info'].append({
+            'id': v.pk,
+            'version': v.version,
+            'nome': v.nome,
+            'data': v.data_cadastro,
+            'total_topicos': v.topicos.count(),
+            'total_perguntas': sum(t.perguntas.count() for t in v.topicos.all()),
+        })
+
+    # Criar estrutura de dados para cada versão
+    versoes_data = {}
+    for v in versoes_list:
+        versoes_data[v.pk] = {}
+        for topico in v.topicos.all():
+            if topico.descricao not in versoes_data[v.pk]:
+                versoes_data[v.pk][topico.descricao] = []
+
+            for pergunta in topico.perguntas.all():
+                versoes_data[v.pk][topico.descricao].append({
+                    'id': pergunta.pk,
+                    'descricao': pergunta.descricao,
+                    'ordem': pergunta.ordem,
+                    'obrigatoria': pergunta.obrigatoria,
+                    'resposta_livre': pergunta.resposta_livre,
+                    'foto': pergunta.foto,
+                    'criar_opcao': pergunta.criar_opcao,
+                    'porcentagem': pergunta.porcentagem,
+                    'opcoes_resposta': [
+                        {'descricao': o.descricao, 'status': o.status,
+                            'status_display': o.get_status_display()}
+                        for o in pergunta.opcoes_resposta.all()
+                    ],
+                    'opcoes_porcentagem': [
+                        {'descricao': o.descricao, 'peso': o.peso}
+                        for o in pergunta.opcoes_porcentagem.all()
+                    ],
+                })
+
+    # Obter todos os tópicos únicos
+    todos_topicos = set()
+    for v_pk in versoes_data:
+        todos_topicos.update(versoes_data[v_pk].keys())
+
+    # Análise de alterações entre primeira e última versão
+    if len(versoes_list) >= 2:
+        primeira_versao = versoes_list[0]
+        ultima_versao = versoes_list[-1]
+
+        topicos_primeira = set(versoes_data[primeira_versao.pk].keys())
+        topicos_ultima = set(versoes_data[ultima_versao.pk].keys())
+
+        comparacao['alteracoes_resumo']['topicos_adicionados'] = len(
+            topicos_ultima - topicos_primeira)
+        comparacao['alteracoes_resumo']['topicos_removidos'] = len(
+            topicos_primeira - topicos_ultima)
+
+        # Contar perguntas
+        for topico in topicos_primeira & topicos_ultima:
+            pergs_primeira = versoes_data[primeira_versao.pk][topico]
+            pergs_ultima = versoes_data[ultima_versao.pk][topico]
+
+            desc_primeira = [p['descricao'] for p in pergs_primeira]
+            desc_ultima = [p['descricao'] for p in pergs_ultima]
+
+            comparacao['alteracoes_resumo']['perguntas_adicionadas'] += len(
+                set(desc_ultima) - set(desc_primeira))
+            comparacao['alteracoes_resumo']['perguntas_removidas'] += len(
+                set(desc_primeira) - set(desc_ultima))
+
+            # Contar modificadas
+            for p1 in pergs_primeira:
+                for p2 in pergs_ultima:
+                    if p1['descricao'] == p2['descricao']:
+                        # Verifica se outras propriedades mudaram
+                        if (p1['obrigatoria'] != p2['obrigatoria'] or
+                            p1['resposta_livre'] != p2['resposta_livre'] or
+                            p1['foto'] != p2['foto'] or
+                            p1['criar_opcao'] != p2['criar_opcao'] or
+                            p1['porcentagem'] != p2['porcentagem'] or
+                            p1['opcoes_resposta'] != p2['opcoes_resposta'] or
+                                p1['opcoes_porcentagem'] != p2['opcoes_porcentagem']):
+                            comparacao['alteracoes_resumo']['perguntas_modificadas'] += 1
+                        break
+
+    # Organizar dados para exibição lado a lado
+    for topico_nome in sorted(todos_topicos):
+        topico_data = {
+            'nome': topico_nome,
+            'perguntas_agrupadas': []
+        }
+
+        # Coletar todas as perguntas únicas deste tópico de todas as versões
+        todas_perguntas_desc = set()
+        for v_pk in versoes_data:
+            if topico_nome in versoes_data[v_pk]:
+                for p in versoes_data[v_pk][topico_nome]:
+                    todas_perguntas_desc.add(p['descricao'])
+
+        # Para cada descrição de pergunta única, criar uma linha de comparação
+        for pergunta_desc in sorted(todas_perguntas_desc):
+            linha_pergunta = {
+                'descricao': pergunta_desc,
+                'versoes_dados': {}
+            }
+
+            # Para cada versão, buscar a pergunta com essa descrição
+            for v in versoes_list:
+                v_pk = v.pk
+                linha_pergunta['versoes_dados'][v_pk] = None
+
+                if topico_nome in versoes_data[v_pk]:
+                    for p in versoes_data[v_pk][topico_nome]:
+                        if p['descricao'] == pergunta_desc:
+                            linha_pergunta['versoes_dados'][v_pk] = p
+                            break
+
+            topico_data['perguntas_agrupadas'].append(linha_pergunta)
+
+        comparacao['topicos_comparados'].append(topico_data)
+
+    return comparacao
 
 
 @login_required
@@ -4809,6 +4972,10 @@ class SubmeterAuditoriaAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        # --- ADICIONE ESTA LINHA PARA DEBUG ---
+        # print("--- DADOS RECEBIDOS PELA API ---", request.data)
+        # --- FIM DA LINHA DE DEBUG ---
+
         try:
             instancia = AuditoriaInstancia.objects.get(
                 pk=pk,
@@ -5099,6 +5266,114 @@ def deletar_execucao(request, pk):
 
     # Redireciona de volta para a lista de execuções
     return redirect('auditorias:lista_execucoes')
+
+
+@login_required
+def detalhes_auditoria(request, pk):
+    """Exibe os detalhes de uma instância de auditoria concluída."""
+    try:
+        # AQUI ESTÁ A CORREÇÃO: 'checklistusado' foi corrigido para 'checklist_usado'
+        instancia = AuditoriaInstancia.objects.select_related(
+            'auditoria_agendada__responsavel',
+            'auditoria_agendada__ferramenta',
+            'local_execucao__setor__area__empresa',
+            'responsavel',
+            'checklist_usado'  # Corrigido de 'checklistusado'
+        ).prefetch_related(
+            'respostas__pergunta__topico',
+            'respostas__anexos'
+        ).get(pk=pk)
+
+        # Organizar as respostas por tópico para facilitar a exibição no template
+        respostas_por_topico = {}
+        if instancia.checklist_usado:
+            for topico in instancia.checklist_usado.topicos.all().order_by('ordem'):
+                respostas_por_topico[topico] = []
+
+        for resposta in instancia.respostas.all().order_by('pergunta__ordem'):
+            topico = resposta.pergunta.topico
+            if topico in respostas_por_topico:
+                respostas_por_topico[topico].append(resposta)
+
+        context = {
+            'instancia': instancia,
+            'respostas_por_topico': respostas_por_topico,
+            'title': f'Detalhes da Auditoria #{instancia.id}'
+        }
+        return render(request, 'auditorias/detalhes_auditoria.html', context)
+
+    except AuditoriaInstancia.DoesNotExist:
+        messages.error(
+            request, 'A instância de auditoria solicitada não foi encontrada.')
+        return redirect('auditorias:historico_concluidas')
+
+
+@login_required
+def detalhes_historico_auditoria(request, pk):
+    """
+    Exibe os detalhes de uma instância de auditoria concluída, incluindo
+    todas as perguntas e as respostas fornecidas, além de um sumário.
+    """
+    instancia = get_object_or_404(
+        AuditoriaInstancia.objects.select_related(
+            'checklist_usado',
+            'local_execucao__setor__area__empresa',
+            'auditoria_agendada__ferramenta',
+            'responsavel'
+        ).prefetch_related(
+            'auditoria_agendada__modelos__categoria__pilar',
+            'respostas__opcao_resposta',
+            'respostas__anexos'
+        ),
+        pk=pk
+    )
+
+    respostas_map = {
+        resposta.pergunta_id: resposta
+        for resposta in instancia.respostas.all()
+    }
+
+    # --- LÓGICA DE CÁLCULO DE TEMPO CORRIGIDA ---
+    tempo_execucao_str = "N/A"  # Valor padrão
+    respostas_queryset = instancia.respostas.all()
+    if respostas_queryset.count() > 1:
+        datas_respostas = respostas_queryset.aggregate(
+            primeira=Min('data_resposta'),
+            ultima=Max('data_resposta')
+        )
+        if datas_respostas['primeira'] and datas_respostas['ultima']:
+            delta = datas_respostas['ultima'] - datas_respostas['primeira']
+
+            # Formata o tempo para HH:MM:SS
+            total_seconds = int(delta.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            tempo_execucao_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+            # --- FIM DA CORREÇÃO ---
+
+    total_perguntas = 0
+    if instancia.checklist_usado:
+        total_perguntas = Pergunta.objects.filter(
+            topico__checklist=instancia.checklist_usado).count()
+
+    summary_stats = {
+        'total_itens': total_perguntas,
+        'nao_conformidade_maior': respostas_queryset.filter(grau_nc='NC MAIOR').count(),
+        'nao_conformidade_menor': respostas_queryset.filter(grau_nc='NC MENOR').count(),
+        'desvios_solucionados': respostas_queryset.filter(desvio_solucionado=True).count(),
+        'oportunidades_melhoria': respostas_queryset.filter(oportunidade_melhoria=True).count(),
+        'nao_aplicaveis': respostas_queryset.filter(opcao_resposta__status='NA').count(),
+    }
+
+    context = {
+        'title': f'Detalhes da Auditoria #{instancia.id}',
+        'instancia': instancia,
+        'respostas_map': respostas_map,
+        'tempo_execucao': tempo_execucao_str,  # Passa a string formatada
+        'summary_stats': summary_stats,
+    }
+    return render(request, 'auditorias/detalhes_historico.html', context)
 
 _____________________________________
 
@@ -6141,6 +6416,62 @@ class Migration(migrations.Migration):
 
 _____________________________________
 
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\migrations\0025_resposta_desvio_solucionado_resposta_grau_nc_and_more.py
+
+# Generated by Django 5.2.3 on 2025-10-21 18:34
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('auditorias', '0024_alter_opcaoporcentagem_options_and_more'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='resposta',
+            name='desvio_solucionado',
+            field=models.BooleanField(blank=True, null=True, verbose_name='Desvio Solucionado na Hora'),
+        ),
+        migrations.AddField(
+            model_name='resposta',
+            name='grau_nc',
+            field=models.CharField(blank=True, choices=[('NC MAIOR', 'NC Maior'), ('NC MENOR', 'NC Menor')], max_length=20, null=True, verbose_name='Grau da Não Conformidade'),
+        ),
+        migrations.AddField(
+            model_name='resposta',
+            name='oportunidade_melhoria',
+            field=models.BooleanField(blank=True, null=True, verbose_name='Oportunidade de Melhoria'),
+        ),
+    ]
+
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\migrations\0026_alter_resposta_data_resposta.py
+
+# Generated by Django 5.2.3 on 2025-10-22 17:48
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('auditorias', '0025_resposta_desvio_solucionado_resposta_grau_nc_and_more'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='resposta',
+            name='data_resposta',
+            field=models.DateTimeField(blank=True, null=True, verbose_name='Data da Resposta'),
+        ),
+    ]
+
+_____________________________________
+
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\migrations\__init__.py
 
 
@@ -6591,6 +6922,787 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 _____________________________________
 
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\detalhes_auditoria.html
+
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
+
+{% block pagetitle %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">Visualização completa das informações e respostas da auditoria</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="{% url backurl %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Seção 1: Cabeçalho da Auditoria -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-info-circle"></i> Informações da Execução
+        </h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-hashtag"></i> ID da Execução
+                </div>
+                <div class="info-value">{{ object.id }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-calendar-check"></i> Data de Execução
+                </div>
+                <div class="info-value">{{ object.data_execucao|date:"d/m/Y" }}</div>
+            </div>
+            
+            {% if object.get_data_conclusao %}
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clock"></i> Data de Conclusão
+                </div>
+                <div class="info-value">{{ object.get_data_conclusao|date:"d/m/Y H:i" }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-user-check"></i> Auditor
+                </div>
+                <div class="info-value">{{ object.responsavel.get_full_name|default:object.auditoria_agendada.responsavel.get_full_name|default:"N/A" }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-map-marker-alt"></i> Local de Execução
+                </div>
+                <div class="info-value">{{ object.local_execucao.nome|default:"N/A" }}</div>
+            </div>
+            
+            {% if object.turno %}
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clock"></i> Turno
+                </div>
+                <div class="info-value">{{ object.turno.descricao }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-tools"></i> Ferramenta
+                </div>
+                <div class="info-value">
+                    <span class="badge badge-secondary">
+                        {{ object.auditoria_agendada.ferramenta.nome|default:"N/A" }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-clipboard-list"></i> Checklist Utilizado
+                </div>
+                <div class="info-value">
+                    {% if object.checklistusado %}
+                        {{ object.checklistusado.nome }} <span class="badge badge-info">V{{ object.checklistusado.version }}</span>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if object.auditoria_agendada.modelos.exists %}
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">
+                    <i class="fas fa-file-alt"></i> Modelo(s) de Auditoria
+                </div>
+                <div class="info-value">
+                    {% for modelo in object.auditoria_agendada.modelos.all %}
+                        <span class="badge badge-info">{{ modelo.descricao }}</span>{% if not forloop.last %} {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Seção 2: Respostas do Checklist -->
+{% if dados_estruturados %}
+    {% for item in dados_estruturados %}
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);">
+            <h3 class="card-title" style="color: white; font-size: 18px;">
+                <i class="fas fa-layer-group"></i> {{ item.topico.descricao }}
+            </h3>
+        </div>
+        <div class="card-body">
+            {% if item.perguntas_respostas %}
+                {% for pr in item.perguntas_respostas %}
+                <div class="pergunta-container" style="{% if not forloop.last %}margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--border);{% endif %}">
+                    <!-- Descrição da Pergunta -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <div style="min-width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                                {{ forloop.counter }}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 16px; margin-bottom: 8px;">
+                                    {{ pr.pergunta.descricao }}
+                                    {% if pr.pergunta.obrigatoria %}
+                                        <span class="badge badge-error" style="font-size: 11px; margin-left: 8px;">OBRIGATÓRIA</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Tipos de resposta permitidos -->
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                                    {% if pr.pergunta.respostalivre %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-keyboard"></i> Resposta Livre
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.foto %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-camera"></i> Foto
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.criaropcao %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-list"></i> Opção
+                                        </span>
+                                    {% endif %}
+                                    {% if pr.pergunta.porcentagem %}
+                                        <span class="badge badge-info" style="font-size: 11px;">
+                                            <i class="fas fa-percent"></i> Porcentagem
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resposta -->
+                    <div style="margin-left: 44px;">
+                        {% if pr.resposta %}
+                            <div style="background: var(--background); border-left: 4px solid var(--primary); padding: 16px; border-radius: var(--radius-md);">
+                                <div style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">
+                                    <i class="fas fa-reply"></i> Resposta
+                                </div>
+                                
+                                <!-- Opção de Resposta -->
+                                {% if pr.resposta.opcao_resposta %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--radius-md); 
+                                            {% if pr.resposta.opcao_resposta.status == 'CONFORME' %}background: rgba(34, 197, 94, 0.1); color: #16a34a;
+                                            {% elif pr.resposta.opcao_resposta.status == 'NAOCONFORME' %}background: rgba(239, 68, 68, 0.1); color: #dc2626;
+                                            {% elif pr.resposta.opcao_resposta.status == 'NA' %}background: rgba(148, 163, 184, 0.1); color: #64748b;
+                                            {% elif pr.resposta.opcao_resposta.status == 'DESVIOSOLUCIONADO' %}background: rgba(251, 191, 36, 0.1); color: #f59e0b;
+                                            {% endif %}">
+                                            {% if pr.resposta.opcao_resposta.status == 'CONFORME' %}
+                                                <i class="fas fa-check-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'NAOCONFORME' %}
+                                                <i class="fas fa-times-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'NA' %}
+                                                <i class="fas fa-minus-circle"></i>
+                                            {% elif pr.resposta.opcao_resposta.status == 'DESVIOSOLUCIONADO' %}
+                                                <i class="fas fa-exclamation-circle"></i>
+                                            {% endif %}
+                                            <span style="font-weight: 600; font-size: 15px;">{{ pr.resposta.opcao_resposta.descricao }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Opção de Porcentagem -->
+                                {% if pr.resposta.opcao_porcentagem %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--radius-md); background: {{ pr.resposta.opcao_porcentagem.cor|default:'#e5e7eb' }};">
+                                            <i class="fas fa-percent"></i>
+                                            <span style="font-weight: 600; font-size: 15px;">{{ pr.resposta.opcao_porcentagem.descricao }}</span>
+                                            <span class="badge badge-secondary">Peso: {{ pr.resposta.opcao_porcentagem.peso }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Resposta Livre (Texto) -->
+                                {% if pr.resposta.respostalivre_texto %}
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">{{ pr.resposta.respostalivre_texto }}</div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Anexos (Fotos) -->
+                                {% if pr.resposta.anexos.exists %}
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">
+                                            <i class="fas fa-paperclip"></i> Anexos ({{ pr.resposta.anexos.count }})
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+                                            {% for anexo in pr.resposta.anexos.all %}
+                                                <div class="anexo-item">
+                                                    <a href="{{ anexo.arquivo.url }}" target="_blank" style="text-decoration: none;">
+                                                        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 1; background: var(--background);">
+                                                            {% if anexo.arquivo.url|slice:"-4:" in '.jpg,.png,.gif,jpeg,.webp' or anexo.arquivo.url|slice:"-5:" in '.jpeg' %}
+                                                                <img src="{{ anexo.arquivo.url }}" alt="Anexo" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s;">
+                                                                <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px;">
+                                                                    <i class="fas fa-image"></i>
+                                                                </div>
+                                                            {% else %}
+                                                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
+                                                                    <i class="fas fa-file" style="font-size: 32px; margin-bottom: 8px;"></i>
+                                                                    <div style="font-size: 11px; text-align: center; padding: 0 8px; word-break: break-word;">{{ anexo.arquivo.name|slice:"-20:" }}</div>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </a>
+                                                    <div style="margin-top: 8px; text-align: center;">
+                                                        <a href="{{ anexo.arquivo.url }}" download class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 12px;">
+                                                            <i class="fas fa-download"></i> Download
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Se não houver resposta em nenhum campo -->
+                                {% if not pr.resposta.opcao_resposta and not pr.resposta.opcao_porcentagem and not pr.resposta.respostalivre_texto and not pr.resposta.anexos.exists %}
+                                    <div style="color: var(--text-muted); font-style: italic;">
+                                        <i class="fas fa-info-circle"></i> Nenhuma resposta registrada
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div style="background: var(--background); border-left: 4px solid var(--text-muted); padding: 16px; border-radius: var(--radius-md); color: var(--text-muted); font-style: italic;">
+                                <i class="fas fa-question-circle"></i> Pergunta não respondida
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <p>Nenhuma pergunta encontrada neste tópico.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: 64px 24px;">
+            <i class="fas fa-clipboard-list" style="font-size: 64px; color: var(--text-muted); opacity: 0.3; margin-bottom: 24px;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 12px;">Nenhum dado disponível</h3>
+            <p style="color: var(--text-muted);">Esta auditoria não possui checklist ou respostas registradas.</p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extracss %}
+<style>
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .info-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-label i {
+        margin-right: 6px;
+        color: var(--primary);
+    }
+    
+    .info-value {
+        font-size: 15px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .pergunta-container {
+        transition: all 0.2s ease;
+    }
+    
+    .anexo-item img:hover {
+        transform: scale(1.05);
+    }
+    
+    @media print {
+        .btn, .content-header button, .content-header a {
+            display: none !important;
+        }
+        
+        .card {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        .pergunta-container {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    // Lightbox simples para imagens
+    document.addEventListener('DOMContentLoaded', function() {
+        const images = document.querySelectorAll('.anexo-item img');
+        
+        images.forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                const lightbox = document.createElement('div');
+                lightbox.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; cursor: zoom-out;';
+                
+                const imgClone = document.createElement('img');
+                imgClone.src = this.src;
+                imgClone.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px;';
+                
+                lightbox.appendChild(imgClone);
+                document.body.appendChild(lightbox);
+                
+                lightbox.addEventListener('click', function() {
+                    document.body.removeChild(lightbox);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\detalhes_historico.html
+
+{% extends 'auditorias/base.html' %}
+{% load auditoria_extras %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para garantir um visual moderno e acessível, usando as variáveis CSS existentes */
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border, #e0e0e0); /* Fallback for accessibility */
+    }
+
+    .report-header .content-title {
+        font-size: 1.75rem; /* Maior e mais legível */
+        color: var(--text-primary, #333);
+        margin-bottom: 4px;
+    }
+
+    .report-header .content-subtitle {
+        font-size: 1rem;
+        color: var(--text-secondary, #666);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        padding: 12px 0;
+        border-bottom: 1px dashed var(--border-light, #f0f0f0);
+    }
+
+    .info-item strong {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary, #666);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .info-item span {
+        font-size: 1rem;
+        color: var(--text-primary, #333);
+        font-weight: 500;
+    }
+
+    .info-item .progress-value {
+        font-weight: bold;
+        color: var(--primary, #007bff);
+        font-size: 1.1rem;
+    }
+
+    .section-topic {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid var(--border, #e0e0e0);
+        border-radius: var(--radius-md, 8px);
+        background-color: var(--bg-card, #fff); /* Fundo sutil */
+    }
+
+    .section-topic-header {
+        font-size: 1.3rem;
+        color: var(--primary, #007bff);
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--primary-light, #e9f5ff); /* Linha de destaque */
+    }
+
+    .question-item {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px dashed var(--border-light, #f0f0f0);
+    }
+
+    .question-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .question-text {
+        font-weight: 600;
+        color: var(--text-primary, #333);
+        margin-bottom: 8px;
+        font-size: 1.05rem;
+    }
+
+    .answer-details {
+        padding-left: 20px;
+        border-left: 3px solid var(--border, #e0e0e0);
+        margin-top: 10px;
+    }
+
+    .answer-details p {
+        margin-bottom: 6px;
+    }
+
+    .answer-details strong {
+        font-weight: 500;
+        color: var(--text-secondary, #666);
+        margin-right: 5px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-top: 4px; /* Espaçamento para acessibilidade */
+    }
+
+    .badge-error { background-color: var(--error-bg, #fef2f2); color: var(--error, #dc2626); border: 1px solid var(--error-light, #fca5a5); }
+    .badge-success { background-color: var(--success-bg, #f0fdf4); color: var(--success, #10b981); border: 1px solid var(--success-light, #a7f3d0); }
+    .badge-warning { background-color: var(--warning-bg, #fffbeb); color: var(--warning, #f59e0b); border: 1px solid var(--warning-light, #fcd34d); }
+    .badge-secondary { background-color: var(--secondary-bg, #f3f4f6); color: var(--text-secondary, #6b7280); border: 1px solid var(--border, #e5e7eb); }
+
+    .observation-box {
+        background: var(--bg-secondary, #f8f8f8);
+        padding: 15px;
+        border-radius: var(--radius-sm, 4px);
+        border: 1px solid var(--border-light, #f0f0f0);
+        margin-top: 8px;
+        white-space: pre-wrap; /* Preserva quebras de linha e espaços */
+    }
+
+    .photo-gallery {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .photo-gallery a {
+        display: block;
+        height: 100px;
+        width: 100px;
+        overflow: hidden;
+        border-radius: var(--radius-sm, 4px);
+        border: 2px solid var(--border, #e0e0e0);
+        transition: border-color 0.2s;
+    }
+
+    .photo-gallery a:hover {
+        border-color: var(--primary, #007bff);
+    }
+
+    .photo-gallery img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .summary-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 20px 10px;
+        border-radius: var(--radius-md, 8px);
+        transition: transform 0.2s;
+        border: 1px solid var(--border-light, #f0f0f0);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary, #666);
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    /* Cores específicas para as estatísticas */
+    .stat-card.default { background: var(--bg-secondary, #f9fafb); }
+    .stat-card.error { background: rgba(220, 38, 38, 0.08); }
+    .stat-card.warning { background: rgba(245, 158, 11, 0.08); }
+    .stat-card.primary { background: rgba(37, 99, 235, 0.08); }
+    .stat-card.success { background: rgba(16, 185, 129, 0.08); }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .report-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .report-header a {
+            margin-top: 15px;
+            width: 100%;
+            text-align: center;
+        }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        .summary-stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+    }
+</style>
+
+<div class="report-header">
+    <div>
+        <h1 class="content-title" id="report-title">Relatório da Auditoria #{{ instancia.id }}</h1>
+        <p class="content-subtitle">Detalhes e respostas da execução concluída.</p>
+    </div>
+    <a href="{% url 'auditorias:historico_concluidas' %}" class="btn btn-secondary" aria-label="Voltar para a lista de histórico de auditorias concluídas">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        Voltar ao Histórico
+    </a>
+</div>
+
+<section class="card" aria-labelledby="audit-details">
+    <div class="card-header">
+        <h2 class="card-title" id="audit-details">Informações da Auditoria</h2>
+    </div>
+    <div class="card-body">
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Modelo de Auditoria:</strong>
+                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.descricao }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+            </div>
+            <div class="info-item">
+                <strong>Checklist:</strong>
+                <span>{{ instancia.checklist_usado.nome }} (V{{ instancia.checklist_usado.version }})</span>
+            </div>
+            <div class="info-item">
+                <strong>Local:</strong>
+                <span>{{ instancia.local_execucao|default:"N/A" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Pilar:</strong>
+                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.pilar.nome|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+            </div>
+            <div class="info-item">
+                <strong>Categoria:</strong>
+                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.descricao|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+            </div>
+            <div class="info-item">
+                <strong>Auditor:</strong>
+                <span>{{ instancia.responsavel.get_full_name|default:instancia.responsavel.username }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Data de Realização:</strong>
+                <span>{{ instancia.get_data_conclusao|date:"d/m/Y - H:i"|default:"--" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Tempo de Execução:</strong>
+                <span>{{ tempo_execucao|default:"N/A" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Preenchimento (Conclusão):</strong>
+                <span class="progress-value">{{ instancia.get_percentual_conclusao|floatformat:2 }}%</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top: 24px;" aria-labelledby="audit-summary">
+    <div class="card-header">
+        <h2 class="card-title" id="audit-summary">Resumo da Auditoria</h2>
+    </div>
+    <div class="card-body">
+        <div class="summary-stats-grid">
+            <div class="stat-card default">
+                <div class="stat-value" style="color: var(--text-primary);">{{ summary_stats.total_itens }}</div>
+                <p class="stat-label">Total de Itens</p>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-value" style="color: var(--error);">{{ summary_stats.nao_conformidade_maior }}</div>
+                <p class="stat-label" style="color: var(--error-dark, #991b1b);">NC Maior</p>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-value" style="color: var(--warning);">{{ summary_stats.nao_conformidade_menor }}</div>
+                <p class="stat-label" style="color: var(--warning-dark, #b45309);">NC Menor</p>
+            </div>
+            <div class="stat-card primary">
+                <div class="stat-value" style="color: var(--primary);">{{ summary_stats.desvios_solucionados }}</div>
+                <p class="stat-label" style="color: var(--primary-dark, #1e40af);">Desvios Solucionados</p>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value" style="color: var(--success);">{{ summary_stats.oportunidades_melhoria }}</div>
+                <p class="stat-label" style="color: var(--success-dark, #065f46);">Oport. de Melhoria</p>
+            </div>
+            <div class="stat-card default">
+                <div class="stat-value" style="color: var(--text-secondary);">{{ summary_stats.nao_aplicaveis }}</div>
+                <p class="stat-label">N/A</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top: 24px;" aria-labelledby="checklist-responses">
+    <div class="card-header">
+        <h2 class="card-title" id="checklist-responses">Respostas do Checklist</h2>
+    </div>
+    <div class="card-body">
+        {% if instancia.checklist_usado %}
+            {% for topico in instancia.checklist_usado.topicos.all %}
+                <div class="section-topic" role="region" aria-labelledby="topico-{{ topico.id }}">
+                    <h3 class="section-topic-header" id="topico-{{ topico.id }}">
+                        {{ topico.descricao }}
+                    </h3>
+
+                    {% for pergunta in topico.perguntas.all %}
+                        {% with resposta=respostas_map|get_item:pergunta.id %}
+                        <div class="question-item">
+                            <p class="question-text" id="pergunta-{{ pergunta.id }}">
+                                {{ forloop.counter }}. {{ pergunta.descricao }}
+                            </p>
+
+                            {% if resposta %}
+                                <div class="answer-details" aria-labelledby="pergunta-{{ pergunta.id }}">
+
+                                    {% if resposta.opcao_resposta %}
+                                        <p><strong>Resposta:</strong>
+                                            {% if 'NAO_CONFORME' in resposta.opcao_resposta.status %}
+                                                <span class="badge badge-error">{{ resposta.opcao_resposta.descricao }}</span>
+                                            {% elif 'CONFORME' in resposta.opcao_resposta.status %}
+                                                <span class="badge badge-success">{{ resposta.opcao_resposta.descricao }}</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">{{ resposta.opcao_resposta.descricao }}</span>
+                                            {% endif %}
+                                        </p>
+                                    {% endif %}
+
+                                    {% if resposta.desvio_solucionado %}
+                                        <p style="margin-top: 8px;"><strong>Situação:</strong> 
+                                            <span class="badge badge-info">Desvio Solucionado</span>
+                                        </p>
+                                    {% endif %}
+
+                                    {% if resposta.oportunidade_melhoria %}
+                                        <p><strong>Oportunidade de Melhoria:</strong>
+                                            <span class="badge badge-success">Sim</span>
+                                        </p>
+                                    {% endif %}
+
+                                    {% if resposta.grau_nc %}
+                                        <p><strong>Grau da NC:</strong>
+                                            {% if resposta.grau_nc == 'NC MAIOR' %}
+                                                <span class="badge badge-error">{{ resposta.get_grau_nc_display }}</span>
+                                            {% else %}
+                                                <span class="badge badge-warning">{{ resposta.get_grau_nc_display }}</span>
+                                            {% endif %}
+                                        </p>
+                                    {% endif %}
+
+                                    {% if resposta.anexos.all %}
+                                        <p style="margin-top: 12px;"><strong>Fotos:</strong></p>
+                                        <div class="photo-gallery" role="list">
+                                        {% for anexo in resposta.anexos.all %}
+                                            <a href="{{ anexo.arquivo.url }}" target="_blank" title="Clique para ampliar a foto do anexo" role="listitem">
+                                                <img src="{{ anexo.arquivo.url }}" alt="Anexo da pergunta {{ forloop.parentloop.counter }}" loading="lazy">
+                                            </a>
+                                        {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if resposta.resposta_livre_texto %}
+                                        <p style="margin-top: 12px;"><strong>Resposta Livre:</strong></p>
+                                        <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); white-space: pre-wrap; line-height: 1.5;">
+                                            {{ resposta.resposta_livre_texto }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <p class="answer-details" style="color: var(--text-muted);"><em>Não respondida</em></p>
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Checklist não encontrado para esta auditoria.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+_____________________________________
+
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\execucoes.html
 
 {% extends 'auditorias/lista_generica.html' %}
@@ -7030,8 +8142,8 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         <span class="badge badge-success">{{ object.status }}</span>
     </td>
     <td>
-        <a href="#" class="btn btn-secondary btn-icon" title="Ver Relatório">
-            <i class="fas fa-chart-bar"></i>
+        <a href="{% url 'auditorias:detalhes_historico_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Ver Detalhes">
+            <i class="fas fa-eye"></i>
         </a>
     </td>
 {% endblock %}
@@ -8065,6 +9177,768 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     });
     </script>
 {% endblock %}
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\checklists\comparar_versoes.html
+
+{% extends 'auditorias/base.html' %}
+
+{% load comparacao_filter %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">Compare diferentes versões do checklist "{{ original.nome }}" para identificar alterações.</p>
+        </div>
+        <a href="{% url 'auditorias:historico_versoes_checklist' original.pk %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Histórico
+        </a>
+    </div>
+</div>
+
+{% if not versoes_comparadas %}
+<!-- ========================= SELEÇÃO DE VERSÕES ========================= -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Selecione as Versões para Comparar</h3>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" id="form-selecao-versoes">
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                <i class="fas fa-info-circle"></i> Selecione pelo menos 2 versões para realizar a comparação.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                {% for versao in versoes %}
+                <div class="version-card">
+                    <label class="version-selector">
+                        <input type="checkbox" name="versoes" value="{{ versao.pk }}" class="version-checkbox">
+                        <div class="version-content">
+                            <div class="version-header">
+                                <span class="version-badge">V{{ versao.version }}</span>
+                                {% if versao.is_latest %}
+                                <span class="badge badge-primary">Mais Recente</span>
+                                {% endif %}
+                            </div>
+                            <div class="version-info">
+                                <p class="version-name">{{ versao.nome }}</p>
+                                <p class="version-date">
+                                    <i class="fas fa-calendar"></i> {{ versao.data_cadastro|date:"d/m/Y H:i" }}
+                                </p>
+                                <div class="version-stats">
+                                    <span><i class="fas fa-list"></i> {{ versao.topicos.count }} tópicos</span>
+                                    <span>
+                                        <i class="fas fa-question-circle"></i>
+                                        {% with total=0 %}
+                                            {% for topico in versao.topicos.all %}
+                                                {% if forloop.first %}
+                                                    {{ topico.perguntas.count }}
+                                                {% else %}
+                                                    {% with total=total|add:topico.perguntas.count %}{% endwith %}
+                                                {% endif %}
+                                                {% if not forloop.first and forloop.last %}
+                                                    {% with total=total|add:topico.perguntas.count %}
+                                                        {{ total }}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if versao.topicos.count == 0 %}
+                                                0
+                                            {% elif versao.topicos.count == 1 %}
+                                                <!-- Já mostrado acima -->
+                                            {% endif %}
+                                        {% endwith %}
+                                        perguntas
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="submit" class="btn btn-primary" id="btn-comparar" disabled>
+                    <i class="fas fa-exchange-alt"></i> Comparar Versões Selecionadas
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="selecionarTodas()">
+                    <i class="fas fa-check-double"></i> Selecionar Todas
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="limparSelecao()">
+                    <i class="fas fa-times"></i> Limpar Seleção
+                </button>
+            </div>
+
+            <!-- Atalhos rápidos -->
+            <div style="margin-top: 32px; padding: 20px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">
+                    <i class="fas fa-bolt"></i> Atalhos Rápidos
+                </h4>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararPrimeiraUltima()">
+                        Primeira vs Última
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararUltimasDuas()">
+                        Últimas 2 Versões
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="compararUltimasTres()">
+                        Últimas 3 Versões
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<!-- ========================= COMPARAÇÃO DE VERSÕES ========================= -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Resumo das Alterações</h3>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="window.print()" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Versões sendo comparadas -->
+        <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+            {% for versao in versoes_comparadas %}
+            <div class="version-badge-large">
+                <span class="version-number">V{{ versao.version }}</span>
+                <span class="version-date">{{ versao.data_cadastro|date:"d/m/Y" }}</span>
+            </div>
+            {% if not forloop.last %}
+            <div style="display: flex; align-items: center; color: var(--text-muted);">
+                <i class="fas fa-arrow-right" style="font-size: 24px;"></i>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Estatísticas de mudanças -->
+        <div class="stats-grid">
+            <div class="stat-card stat-added">
+                <div class="stat-icon"><i class="fas fa-plus-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.topicos_adicionados }}</div>
+                    <div class="stat-label">Tópicos Adicionados</div>
+                </div>
+            </div>
+            <div class="stat-card stat-removed">
+                <div class="stat-icon"><i class="fas fa-minus-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.topicos_removidos }}</div>
+                    <div class="stat-label">Tópicos Removidos</div>
+                </div>
+            </div>
+            <div class="stat-card stat-added">
+                <div class="stat-icon"><i class="fas fa-plus"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_adicionadas }}</div>
+                    <div class="stat-label">Perguntas Adicionadas</div>
+                </div>
+            </div>
+            <div class="stat-card stat-removed">
+                <div class="stat-icon"><i class="fas fa-minus"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_removidas }}</div>
+                    <div class="stat-label">Perguntas Removidas</div>
+                </div>
+            </div>
+            <div class="stat-card stat-modified">
+                <div class="stat-icon"><i class="fas fa-edit"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comparacao_data.alteracoes_resumo.perguntas_modificadas }}</div>
+                    <div class="stat-label">Perguntas Modificadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparação detalhada lado a lado -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Comparação Detalhada</h3>
+        <div class="comparison-controls">
+            <button onclick="toggleDiferencasApenas()" class="btn btn-sm btn-secondary" id="btn-filtro">
+                <i class="fas fa-filter"></i> Mostrar Apenas Diferenças
+            </button>
+            <button onclick="expandirTodos()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-expand-alt"></i> Expandir Todos
+            </button>
+            <button onclick="recolherTodos()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-compress-alt"></i> Recolher Todos
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="comparison-table-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">Elemento</th>
+                        {% for versao in versoes_comparadas %}
+                        <th>
+                            <div class="version-header-cell">
+                                <span class="version-badge">V{{ versao.version }}</span>
+                                <span class="version-date-small">{{ versao.data_cadastro|date:"d/m/Y" }}</span>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="comparison-body">
+                    {% for topico in comparacao_data.topicos_comparados %}
+                    <tr class="topico-row" data-topico="{{ topico.nome }}">
+                        <td class="element-name">
+                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome }}')">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <strong>{{ topico.nome }}</strong>
+                        </td>
+                        {% for versao in versoes_comparadas %}
+                        <td class="topico-info">
+                            <span class="badge badge-info">{{ topico.perguntas_agrupadas|length }} perguntas</span>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    
+                    {% for pergunta_grupo in topico.perguntas_agrupadas %}
+                    <tr class="pergunta-row hidden" data-topico="{{ topico.nome }}">
+                        <td class="element-name sub-element">
+                            <i class="fas fa-question-circle"></i>
+                            {{ pergunta_grupo.descricao }}
+                        </td>
+                        
+                        {% for versao in versoes_comparadas %}
+                        <td class="version-data {% if not pergunta_grupo.versoes_dados|get_item:versao.pk %}version-empty{% endif %}">
+                            {% with pergunta=pergunta_grupo.versoes_dados|get_item:versao.pk %}
+                            {% if pergunta %}
+                                <div class="pergunta-details">
+                                    {% if pergunta.obrigatoria %}
+                                    <span class="detail-badge badge-required">Obrigatória</span>
+                                    {% endif %}
+                                    {% if pergunta.resposta_livre %}
+                                    <span class="detail-badge">Texto Livre</span>
+                                    {% endif %}
+                                    {% if pergunta.foto %}
+                                    <span class="detail-badge">📷 Foto</span>
+                                    {% endif %}
+                                    {% if pergunta.criar_opcao %}
+                                    <span class="detail-badge">Opções</span>
+                                    {% endif %}
+                                    {% if pergunta.porcentagem %}
+                                    <span class="detail-badge">% Porcentagem</span>
+                                    {% endif %}
+                                    
+                                    {% if pergunta.opcoes_resposta %}
+                                    <div class="opcoes-list">
+                                        <strong>Opções de Resposta:</strong>
+                                        <ul>
+                                        {% for opcao in pergunta.opcoes_resposta %}
+                                            <li>{{ opcao.descricao }} <span class="status-{{ opcao.status|lower }}">({{ opcao.status_display }})</span></li>
+                                        {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if pergunta.opcoes_porcentagem %}
+                                    <div class="opcoes-list">
+                                        <strong>Opções de Porcentagem:</strong>
+                                        <ul>
+                                        {% for opcao in pergunta.opcoes_porcentagem %}
+                                            <li>{{ opcao.descricao }} (Peso: {{ opcao.peso }})</li>
+                                        {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="empty-indicator">—</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 24px; text-align: center;">
+    <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" class="btn btn-secondary">
+        <i class="fas fa-redo"></i> Nova Comparação
+    </a>
+</div>
+
+{% endif %}
+
+<style>
+/* Estilos para seleção de versões */
+.version-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.version-selector {
+    display: block;
+    cursor: pointer;
+}
+
+.version-selector input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.version-selector input[type="checkbox"]:checked + .version-content {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.version-content {
+    padding: 20px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.version-card:hover .version-content {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.version-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.version-badge {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.version-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 8px 0;
+}
+
+.version-date {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 4px 0;
+}
+
+.version-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.version-stats span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Estilos para comparação */
+.version-badge-large {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border);
+}
+
+.version-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.version-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.stat-added {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--success);
+}
+
+.stat-removed {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: var(--error);
+}
+
+.stat-modified {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: var(--warning);
+}
+
+.stat-icon {
+    font-size: 32px;
+    color: inherit;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.comparison-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.comparison-table-container {
+    overflow-x: auto;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 16px;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.comparison-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.version-header-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.version-date-small {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.topico-row {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+}
+
+.topico-info {
+    text-align: center;
+}
+
+.element-name {
+    font-weight: 600;
+}
+
+.sub-element {
+    padding-left: 48px !important;
+    font-weight: 400;
+}
+
+.expand-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 8px;
+    transition: transform 0.2s;
+}
+
+.expand-btn.expanded i {
+    transform: rotate(90deg);
+}
+
+.pergunta-row.hidden {
+    display: none;
+}
+
+.version-empty {
+    background: rgba(0, 0, 0, 0.02);
+    text-align: center;
+}
+
+.empty-indicator {
+    color: var(--text-muted);
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.pergunta-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+.badge-required {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+}
+
+.opcoes-list {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.opcoes-list ul {
+    margin: 4px 0 0 0;
+    padding-left: 20px;
+}
+
+.opcoes-list li {
+    margin: 4px 0;
+}
+
+.status-conforme { color: var(--success); font-weight: 600; }
+.status-nao_conforme { color: var(--error); font-weight: 600; }
+.status-desvio_solucionado { color: var(--warning); font-weight: 600; }
+.status-na { color: var(--text-muted); }
+
+@media print {
+    .card-header button,
+    .comparison-controls,
+    .content-header a {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+// Template tag personalizado para acessar dicionário no template
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.version-checkbox');
+    const btnComparar = document.getElementById('btn-comparar');
+    
+    if (checkboxes.length > 0 && btnComparar) {
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', atualizarBotaoComparar);
+        });
+        atualizarBotaoComparar();
+    }
+});
+
+function atualizarBotaoComparar() {
+    const checkboxes = document.querySelectorAll('.version-checkbox:checked');
+    const btnComparar = document.getElementById('btn-comparar');
+    
+    if (checkboxes.length >= 2) {
+        btnComparar.disabled = false;
+        btnComparar.innerHTML = `<i class="fas fa-exchange-alt"></i> Comparar ${checkboxes.length} Versões`;
+    } else {
+        btnComparar.disabled = true;
+        btnComparar.innerHTML = '<i class="fas fa-exchange-alt"></i> Selecione pelo menos 2 versões';
+    }
+}
+
+function selecionarTodas() {
+    document.querySelectorAll('.version-checkbox').forEach(cb => cb.checked = true);
+    atualizarBotaoComparar();
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.version-checkbox').forEach(cb => cb.checked = false);
+    atualizarBotaoComparar();
+}
+
+function compararPrimeiraUltima() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 2) {
+        checkboxes[0].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+function compararUltimasDuas() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 2) {
+        checkboxes[checkboxes.length - 2].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+function compararUltimasTres() {
+    const checkboxes = Array.from(document.querySelectorAll('.version-checkbox'));
+    limparSelecao();
+    if (checkboxes.length >= 3) {
+        checkboxes[checkboxes.length - 3].checked = true;
+        checkboxes[checkboxes.length - 2].checked = true;
+        checkboxes[checkboxes.length - 1].checked = true;
+        atualizarBotaoComparar();
+    }
+}
+
+function toggleTopico(btn, topicoNome) {
+    const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+    const isExpanded = btn.classList.contains('expanded');
+    
+    btn.classList.toggle('expanded');
+    
+    perguntasRows.forEach(row => {
+        if (isExpanded) {
+            row.classList.add('hidden');
+        } else {
+            row.classList.remove('hidden');
+        }
+    });
+}
+
+function expandirTodos() {
+    const allBtns = document.querySelectorAll('.expand-btn');
+    allBtns.forEach(btn => {
+        if (!btn.classList.contains('expanded')) {
+            const topicoRow = btn.closest('tr.topico-row');
+            const topicoNome = topicoRow.dataset.topico;
+            
+            btn.classList.add('expanded');
+            const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+            perguntasRows.forEach(row => row.classList.remove('hidden'));
+        }
+    });
+}
+
+function recolherTodos() {
+    const allBtns = document.querySelectorAll('.expand-btn.expanded');
+    allBtns.forEach(btn => {
+        const topicoRow = btn.closest('tr.topico-row');
+        const topicoNome = topicoRow.dataset.topico;
+        
+        btn.classList.remove('expanded');
+        const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+        perguntasRows.forEach(row => row.classList.add('hidden'));
+    });
+}
+
+let mostrandoApenasDiferencas = false;
+
+function toggleDiferencasApenas() {
+    mostrandoApenasDiferencas = !mostrandoApenasDiferencas;
+    const btn = document.getElementById('btn-filtro');
+    const todasLinhas = document.querySelectorAll('.topico-row, .pergunta-row');
+    
+    if (mostrandoApenasDiferencas) {
+        btn.innerHTML = '<i class="fas fa-eye"></i> Mostrar Todas';
+        
+        expandirTodos();
+        
+        const perguntasRows = document.querySelectorAll('.pergunta-row');
+        perguntasRows.forEach(row => {
+            const cells = row.querySelectorAll('.version-data');
+            const hasEmpty = Array.from(cells).some(cell => cell.classList.contains('version-empty'));
+            
+            if (hasEmpty) {
+                row.style.display = '';
+                return;
+            }
+            
+            const contents = Array.from(cells).map(cell => cell.innerHTML.trim());
+            const allEqual = contents.every(content => content === contents[0]);
+            
+            if (allEqual) {
+                row.style.display = 'none';
+            }
+        });
+        
+        const topicoRows = document.querySelectorAll('.topico-row');
+        topicoRows.forEach(topicoRow => {
+            const topicoNome = topicoRow.dataset.topico;
+            const perguntasVisiveis = document.querySelectorAll(
+                `tr.pergunta-row[data-topico="${topicoNome}"]:not([style*="display: none"])`
+            );
+            
+            if (perguntasVisiveis.length === 0) {
+                topicoRow.style.display = 'none';
+            }
+        });
+        
+    } else {
+        btn.innerHTML = '<i class="fas fa-filter"></i> Mostrar Apenas Diferenças';
+        
+        todasLinhas.forEach(row => {
+            row.style.display = '';
+        });
+        
+        recolherTodos();
+    }
+}
+
+</script>
+{% endblock %}
+
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\checklists\form.html
@@ -9579,58 +11453,370 @@ _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\checklists\historico.html
 
-{% extends 'auditorias/lista_generica.html' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Versões - {{ original.nome }}</title>
+    {% load static %}
+    {% include 'auditorias/partials/_head.html' %}
+</head>
+<body>
+    <div class="app-container">
+        {% include 'auditorias/partials/_sidebar.html' %}
+        
+        <main class="main-content">
+            {% include 'auditorias/partials/_header.html' %}
+            
+            <div class="content-area">
+                {% include 'auditorias/partials/_messages.html' %}
+                
+                <!-- Conteúdo do Histórico -->
+                <div class="content-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 class="content-title">Histórico de Versões - {{ original.nome }}</h2>
+                            <p class="content-subtitle">Visualize todas as versões criadas para este checklist.</p>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}" class="btn btn-primary">
+                                <i class="fas fa-exchange-alt"></i> Comparar Versões
+                            </a>
+                            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para a Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-{% block page_title %}Histórico de Versões: {{ original.nome }}{% endblock %}
+                <div class="card">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 class="card-title">Lista de Versões</h3>
+                                <p class="card-subtitle">
+                                    {% if versoes.count %}
 
-{# Remove o botão "Novo" e a barra de busca #}
-{% block search_form %}{% endblock %}
-{% block content_header %}
-<div class="content-header">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <h2 class="content-title">Histórico de Versões: {{ original.nome }}</h2>
-            <p class="content-subtitle">Visualize todas as versões criadas para este checklist.</p>
-        </div>
-        <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar para a Lista
-        </a>
+                                        {{ versoes.count }} vers{{ versoes.count|pluralize:"ão,ões" }} encontrada{{ versoes.count|pluralize:",s" }}
+
+                                    {% else %}
+                                        Nenhuma versão encontrada
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        {% if versoes %}
+                        <div class="table-container">
+                            <table class="table" id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Versão</th> 
+                                        <th>Nome</th> 
+                                        <th>Status</th> 
+                                        <th>Data de Criação</th> 
+                                        <th>Tópicos</th> 
+                                        <th>Perguntas</th> 
+                                        <th style="width: 200px;">Ações</th> 
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for versao in versoes %}
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 600; color: var(--text-primary);">
+                                                <span style="font-size: 18px; color: var(--primary);">V{{ versao.version }}</span> 
+                                                {% if versao.is_latest %}
+                                                <span class="badge badge-primary" style="margin-left: 8px;">Mais Recente</span> 
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 500; color: var(--text-primary);">
+                                                {{ versao.nome }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if versao.ativo %}
+                                                <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span> 
+                                            {% else %}
+                                                <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span> 
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ versao.data_cadastro|date:"d/m/Y H:i" }}</td> 
+                                        <td>
+                                            <span class="badge badge-info">
+                                                <i class="fas fa-list"></i> {{ versao.topicos.count }} 
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">
+                                                <i class="fas fa-question-circle"></i>
+                                                
+                                                {# MODIFICADO: A lógica complexa foi removida e substituída por esta linha simples #}
+                                                {{ versao.total_perguntas }}
+
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a href="{% url 'auditorias:editar_checklist' versao.pk %}" 
+                                                class="btn btn-secondary btn-icon" 
+                                                title="Visualizar Versão"> 
+                                                    <i class="fas fa-eye"></i> 
+                                                </a>
+                                                <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}?versoes={{ versao.pk }}" 
+                                                class="btn btn-primary btn-icon" 
+                                                title="Selecionar para Comparar"> 
+                                                    <i class="fas fa-code-branch"></i> 
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 64px 24px; color: var(--text-muted);">
+                            <i class="fas fa-history" style="font-size: 64px; margin-bottom: 24px; opacity: 0.3;"></i>
+                            <h3 style="margin-bottom: 12px; color: var(--text-secondary);">Nenhuma versão encontrada</h3>
+                            <p style="margin-bottom: 24px;">Este checklist ainda não possui versões cadastradas.</p>
+                            <a href="{% url 'auditorias:lista_checklists' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para a Lista
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </main>
     </div>
-</div>
-{% endblock %}
 
-{% block table_headers %}
-    <th>Versão</th>
-    <th>Status</th>
-    <th>Data de Criação</th>
-    <th style="width: 120px;">Ações</th>
-{% endblock %}
+    {% include 'auditorias/partials/_scripts.html' %}
 
-{% block table_row %}
-    <td>
-        <div style="font-weight: 600; color: var(--text-primary);">
-            Versão {{ object.version }}
-            {% if object.is_latest %}
-                <span class="badge badge-primary">Mais Recente</span>
-            {% endif %}
-        </div>
-    </td>
-    <td>
-        {% if object.ativo %}
-            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Ativo</span>
-        {% else %}
-            <span class="badge badge-error"><i class="fas fa-times-circle"></i> Inativo</span>
-        {% endif %}
-    </td>
-    <td>{{ object.data_cadastro|date:"d/m/Y H:i" }}</td>
-    <td>
-        <div class="action-buttons">
-            <a href="{% url 'auditorias:editar_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Visualizar Versão">
-                <i class="fas fa-eye"></i>
-            </a>
-        </div>
-    </td>
-{% endblock %}
+    <style>
+    /* Estilos específicos para a página de histórico */
+    .content-header {
+        margin-bottom: 32px;
+    }
+
+    .content-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .content-subtitle {
+        font-size: 15px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 24px;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .card-subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .table thead {
+        background: var(--bg-tertiary);
+    }
+
+    .table th,
+    .table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .table th {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(37, 99, 235, 0.03);
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .badge-primary {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--primary);
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .badge-error {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+    }
+
+    .badge-info {
+        background: rgba(14, 165, 233, 0.1);
+        color: #0ea5e9;
+    }
+
+    .badge-secondary {
+        background: rgba(100, 116, 139, 0.1);
+        color: var(--text-secondary);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-icon {
+        padding: 10px;
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+    }
+
+    .btn-icon i {
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .content-header > div {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start !important;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .table {
+            font-size: 13px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+        }
+    }
+    </style>
+
+    <script>
+    // Script para animações e interações
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar animação de fade-in nas linhas da tabela
+        const tableRows = document.querySelectorAll('.table tbody tr');
+        tableRows.forEach((row, index) => {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+    });
+    </script>
+</body>
+</html>
+
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\checklists\lista.html
@@ -13008,6 +15194,46 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
     });
 </script>
 {% endblock %}
+
+
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templatetags\auditoria_extras.py
+
+# auditorias/templatetags/auditoria_extras.py
+
+from django import template
+
+register = template.Library()
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templatetags\comparacao_filter.py
+
+from django import template
+
+register = template.Library()
+
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    Template filter para acessar itens de um dicionário por chave.
+    Uso: {{ dict|get_item:key }}
+    """
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templatetags\__init__.py
+
 
 
 _____________________________________

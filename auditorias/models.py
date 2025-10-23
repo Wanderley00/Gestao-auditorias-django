@@ -632,13 +632,26 @@ class Resposta(models.Model):
         null=True, blank=True,
         verbose_name="Texto da Resposta Livre"
     )
+
+    # --- ADICIONE OS CAMPOS ABAIXO ---
+    oportunidade_melhoria = models.BooleanField(
+        null=True, blank=True, verbose_name="Oportunidade de Melhoria"
+    )
+    desvio_solucionado = models.BooleanField(
+        null=True, blank=True, verbose_name="Desvio Solucionado na Hora"
+    )
+    grau_nc = models.CharField(
+        max_length=20,
+        null=True, blank=True,
+        choices=[('NC MAIOR', 'NC Maior'), ('NC MENOR', 'NC Menor')],
+        verbose_name="Grau da Não Conformidade"
+    )
     data_resposta = models.DateTimeField(
-        auto_now_add=True, verbose_name="Data da Resposta")
+        verbose_name="Data da Resposta", null=True, blank=True)
 
     class Meta:
         verbose_name = "Resposta"
         verbose_name_plural = "Respostas"
-        # Garante que só haja uma resposta por pergunta em cada auditoria
         unique_together = ('auditoria_instancia', 'pergunta')
 
     def __str__(self):

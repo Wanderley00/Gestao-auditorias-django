@@ -5,40 +5,48 @@ from .models import (
     Auditoria, AuditoriaInstancia, Checklist, Topico, Pergunta,
     OpcaoResposta, OpcaoPorcentagem, Resposta, AnexoResposta
 )
-
 import base64
 import uuid
 from django.core.files.base import ContentFile
-from rest_framework import serializers
+
+# --- CAMPO Base64 CORRIGIDO E MELHORADO ---
+# Renomeado para Base64FileField para ser mais genérico
 
 
-class Base64ImageField(serializers.ImageField):
+class Base64FileField(serializers.FileField):
     """
-    Um campo de serializer que lida com imagens codificadas em Base64.
+    Um campo de serializer que lida com arquivos codificados em Base64,
+    aceitando tanto o formato raw quanto o formato com prefixo "data:".
     """
 
     def to_internal_value(self, data):
-        # Verifica se o dado recebido é uma string e tem o formato Base64
-        if isinstance(data, str) and data.startswith('data:image'):
-            # Separa o formato do conteúdo Base64
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
+        # Verifica se o dado é uma string Base64
+        if isinstance(data, str):
+            # Se tiver o prefixo 'data:[...];base64,', remove-o
+            if 'base64,' in data:
+                header, data = data.split(';base64,')
 
-            # Gera um nome de arquivo único
-            file_name = f"{uuid.uuid4()}.{ext}"
-            # Decodifica a string Base64 e a transforma em um arquivo que o Django entende
-            data = ContentFile(base64.b64decode(imgstr), name=file_name)
+            try:
+                # Decodifica os dados e cria um ContentFile
+                decoded_file = base64.b64decode(data)
+                # Gera um nome de arquivo único. Você pode adicionar uma extensão padrão se quiser.
+                file_name = str(uuid.uuid4())[:12]
+                # Usa o ContentFile que o Django entende
+                data = ContentFile(decoded_file, name=f'{file_name}.jpg')
+            except (TypeError, ValueError):
+                self.fail('invalid_file')
 
         return super().to_internal_value(data)
 
-
-# --- Serializers para a estrutura do Checklist ---
+# --- O RESTO DOS SERIALIZERS CONTINUA IGUAL ---
 
 
 class OpcaoRespostaSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcaoResposta
         fields = ['id', 'descricao', 'status']
+
+# ... (outros serializers como OpcaoPorcentagemSerializer, PerguntaSerializer, etc. continuam aqui sem alterações) ...
 
 
 class OpcaoPorcentagemSerializer(serializers.ModelSerializer):
@@ -76,23 +84,16 @@ class ChecklistSerializer(serializers.ModelSerializer):
         fields = ['id', 'nome', 'topicos']
 
 
-# --- Serializers para a Auditoria (simplificado) ---
-
 class AuditoriaPaiSerializer(serializers.ModelSerializer):
     """ Serializer enriquecido para a Auditoria 'pai' """
     modelo_auditoria_nome = serializers.SerializerMethodField()
     checklist_nome = serializers.SerializerMethodField()
-    # NOVO CAMPO: Para o nome do local
     local_nome = serializers.SerializerMethodField()
-    # FORMATANDO A DATA
     data_criacao = serializers.DateTimeField(format="%d/%m/%Y", read_only=True)
-
     ferramenta_nome = serializers.CharField(
         source='ferramenta.nome', read_only=True)
-
     programacao = serializers.CharField(
         source='get_programacao_display', read_only=True)
-
     criado_por_nome = serializers.CharField(
         source='criado_por.get_full_name', read_only=True, default='Sistema')
 
@@ -103,7 +104,7 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
             'data_criacao',
             'modelo_auditoria_nome',
             'checklist_nome',
-            'local_nome',  # Usaremos este campo unificado
+            'local_nome',
             'ferramenta_nome',
             'programacao',
             'criado_por_nome',
@@ -120,9 +121,6 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
         return 'N/A'
 
     def get_local_nome(self, obj):
-        """
-        Retorna o nome do local específico com base no nível organizacional.
-        """
         if obj.nivel_organizacional == 'SUBSETOR' and obj.local_subsetor:
             return obj.local_subsetor.nome
         if obj.nivel_organizacional == 'SETOR' and obj.local_setor:
@@ -133,15 +131,8 @@ class AuditoriaPaiSerializer(serializers.ModelSerializer):
             return obj.local_empresa.nome
         return 'Local não definido'
 
-# --- Serializer para os Detalhes de UMA Auditoria ---
-
 
 class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer completo para uma única Instância de Auditoria,
-    incluindo o checklist completo.
-    """
-    # Usamos um SerializerMethodField para buscar o checklist de forma customizada
     checklist = serializers.SerializerMethodField()
 
     class Meta:
@@ -149,10 +140,6 @@ class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'data_execucao', 'checklist']
 
     def get_checklist(self, obj):
-        # --- ALTERAÇÃO AQUI ---
-        # A lógica antiga buscava o checklist através do modelo de auditoria do pai.
-        # A nova lógica usa o campo 'checklist_usado', que é a fonte definitiva da verdade
-        # para esta instância específica, seja ela passada (V1) ou futura (V2).
         if obj.checklist_usado:
             return ChecklistSerializer(obj.checklist_usado).data
         return None
@@ -161,8 +148,13 @@ class AuditoriaInstanciaDetailSerializer(serializers.ModelSerializer):
 class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
     auditoria_info = AuditoriaPaiSerializer(
         source='auditoria_agendada', read_only=True)
-
     status = serializers.CharField(source='status_execucao', read_only=True)
+
+    local_execucao_nome = serializers.CharField(
+        source='local_execucao.nome', read_only=True, default='N/A')
+
+    total_perguntas = serializers.IntegerField(
+        source='get_total_perguntas', read_only=True)
 
     class Meta:
         model = AuditoriaInstancia
@@ -172,20 +164,18 @@ class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
             'executada',
             'status',
             'auditoria_info',
+            'local_execucao_nome',
+            'total_perguntas',
         ]
 
 
 class RespostaSerializer(serializers.ModelSerializer):
-    """
-    Serializer para receber, validar e CRIAR os dados de uma única resposta,
-    incluindo anexos de fotos.
-    """
     pergunta_id = serializers.IntegerField(write_only=True)
-    # Novo campo para receber uma lista de imagens em Base64
+    # --- ATUALIZADO: Usando o novo campo Base64FileField ---
     anexos_base64 = serializers.ListField(
-        child=Base64ImageField(),
-        required=False,    # O campo não é obrigatório
-        write_only=True    # Usado apenas para receber dados, não para exibir
+        child=Base64FileField(),  # <<<--- MUDANÇA AQUI
+        required=False,
+        write_only=True
     )
 
     class Meta:
@@ -195,23 +185,28 @@ class RespostaSerializer(serializers.ModelSerializer):
             'opcao_resposta',
             'opcao_porcentagem',
             'resposta_livre_texto',
-            'anexos_base64',  # Adicione o novo campo aqui
+            'anexos_base64',
+            'oportunidade_melhoria',
+            'desvio_solucionado',
+            'grau_nc',
+            'data_resposta',
         ]
 
     def create(self, validated_data):
-        # Pega a lista de anexos (fotos) e remove do dicionário principal
+        # --- ADICIONE ESTAS LINHAS PARA DEBUG ---
+        # print("--- DADOS VALIDADOS PELO SERIALIZER ---", validated_data)
         anexos_data = validated_data.pop('anexos_base64', [])
+        # print("--- ANEXOS ENCONTRADOS ---", "Sim" if anexos_data else "Não")
+        # --- FIM DAS LINHAS DE DEBUG ---
 
-        # Pega a instância da auditoria que passamos da view
         instancia = self.context['auditoria_instancia']
 
-        # Cria o objeto Resposta com os dados restantes
-        resposta = Resposta.objects.create(
+        resposta, created = Resposta.objects.update_or_create(
             auditoria_instancia=instancia,
-            **validated_data
+            pergunta_id=validated_data.get('pergunta_id'),
+            defaults=validated_data
         )
 
-        # Se houver anexos, cria os objetos AnexoResposta
         for anexo_file in anexos_data:
             AnexoResposta.objects.create(resposta=resposta, arquivo=anexo_file)
 

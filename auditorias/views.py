@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import csv
 from django.http import HttpResponse
-
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -39,7 +39,8 @@ from cadastros_base.models import Turno
 from usuarios.models import Usuario
 
 import json
-
+from django.db.models import Min, Max
+from django.db.models import Max, Q
 from django.db.models import Q, F, Value
 from django.db.models.functions import Concat
 
@@ -672,24 +673,37 @@ def criar_checklist(request):
 
 def _create_new_version_from_request(request, checklist_original):
     """
-    Cria uma nova versão de um checklist populando-a diretamente
-    com os dados do request.POST, evitando conflitos de ID.
+    Cria uma nova versão de um checklist, garantindo que o número da versão
+    seja sempre o próximo da sequência, independentemente de qual versão foi editada.
     """
-    # 1. Cria o novo objeto Checklist (a nova versão)
+    # --- INÍCIO DA CORREÇÃO ---
+    # 1. Encontra o checklist "pai" (a primeira versão) para agrupar todas as versões.
+    base_checklist = checklist_original.original_checklist or checklist_original
+
+    # 2. Encontra o número da versão mais alta existente para este checklist.
+    latest_version_number = Checklist.objects.filter(
+        Q(pk=base_checklist.pk) | Q(original_checklist=base_checklist)
+    ).aggregate(max_version=Max('version'))['max_version'] or 0
+
+    # 3. O número da nova versão será o mais alto + 1 (ex: se o max for 2, a nova será 3).
+    new_version_number = latest_version_number + 1
+    # --- FIM DA CORREÇÃO ---
+
+    # 4. Cria o novo objeto Checklist com o número de versão correto.
     nova_versao = Checklist.objects.create(
         nome=request.POST.get('nome'),
         ativo=request.POST.get('ativo') == 'on',
         ferramenta_id=request.POST.get('ferramenta') or None,
-        version=checklist_original.version + 1,
+        version=new_version_number,  # <-- CORRIGIDO
         is_latest=True,
-        original_checklist=checklist_original.original_checklist or checklist_original
+        original_checklist=base_checklist
     )
 
-    # 2. Re-processa a estrutura do formulário, mas criando tudo para a nova versão
+    # (O restante da função para copiar os tópicos e perguntas continua o mesmo)
+    # ... (código existente para processar a estrutura do checklist)
     topicos_data = {}
     for key in request.POST:
         if key.startswith('topico-descricao['):
-            # ID do formulário (pode ser '123' ou 'new-1')
             topico_id_form = key.split('[')[1].split(']')[0]
             topicos_data[topico_id_form] = {
                 'descricao': request.POST.get(key),
@@ -697,19 +711,15 @@ def _create_new_version_from_request(request, checklist_original):
             }
 
     for topico_id_form, topico_info in topicos_data.items():
-        # Cria um novo tópico para a nova versão
         novo_topico = Topico.objects.create(
             checklist=nova_versao,
             descricao=topico_info['descricao'],
             ordem=int(topico_info['ordem']) if topico_info['ordem'] else 0
         )
 
-        # Processa as perguntas associadas a este tópico no formulário
         for key in request.POST:
             if key.startswith(f'pergunta-descricao[{topico_id_form}-'):
                 pergunta_id_full = key.split('[')[1].split(']')[0]
-
-                # Cria uma nova pergunta para o novo tópico
                 nova_pergunta = Pergunta.objects.create(
                     topico=novo_topico,
                     descricao=request.POST.get(key),
@@ -727,10 +737,10 @@ def _create_new_version_from_request(request, checklist_original):
                         f'pergunta-porcentagem[{pergunta_id_full}]') == 'on'
                 )
 
-                # Processa as opções de resposta para esta pergunta
                 for opt_key in request.POST:
                     if opt_key.startswith(f'opcao-resposta-descricao[{pergunta_id_full}-'):
-                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        opt_id_full = opt_key.split('[')[1].split(']')[
+                            0]
                         OpcaoResposta.objects.create(
                             pergunta=nova_pergunta,
                             descricao=request.POST.get(opt_key),
@@ -738,10 +748,10 @@ def _create_new_version_from_request(request, checklist_original):
                                 f'opcao-resposta-status[{opt_id_full}]', 'CONFORME')
                         )
 
-                # Processa as opções de porcentagem para esta pergunta
                 for opt_key in request.POST:
                     if opt_key.startswith(f'opcao-porcentagem-descricao[{pergunta_id_full}-'):
-                        opt_id_full = opt_key.split('[')[1].split(']')[0]
+                        opt_id_full = opt_key.split('[')[1].split(']')[
+                            0]
                         OpcaoPorcentagem.objects.create(
                             pergunta=nova_pergunta,
                             descricao=request.POST.get(opt_key),
@@ -758,39 +768,49 @@ def _create_new_version_from_request(request, checklist_original):
 def editar_checklist(request, pk):
     """
     Ao editar um checklist, cria uma nova versão (clone) com as modificações
-    e atualiza as auditorias futuras.
+    e atualiza as auditorias futuras. A nova versão será sempre a mais recente.
     """
-    checklist_antigo = get_object_or_404(Checklist, pk=pk)
+    checklist_a_ser_editado = get_object_or_404(Checklist, pk=pk)
 
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # 1. Cria a nova versão diretamente a partir dos dados do formulário
+                # --- INÍCIO DA CORREÇÃO ---
+                # 1. Encontra o checklist "pai" e a versão que é atualmente a mais recente.
+                base_checklist = checklist_a_ser_editado.original_checklist or checklist_a_ser_editado
+                versao_mais_recente_anterior = Checklist.objects.filter(
+                    Q(pk=base_checklist.pk) | Q(
+                        original_checklist=base_checklist),
+                    is_latest=True
+                ).first()
+                # --- FIM DA CORREÇÃO ---
+
+                # 2. Cria a nova versão (a função interna agora calcula o número da versão corretamente).
                 novo_checklist = _create_new_version_from_request(
-                    request, checklist_antigo)
+                    request, checklist_a_ser_editado)
 
-                # 2. Desativa a versão antiga, marcando-a como não sendo a mais recente
-                checklist_antigo.is_latest = False
-                checklist_antigo.save()
+                # 3. Desativa a versão que ERA a mais recente, marcando-a como 'is_latest=False'.
+                if versao_mais_recente_anterior:
+                    versao_mais_recente_anterior.is_latest = False
+                    versao_mais_recente_anterior.save()
 
-                # 3. Encontra todos os Modelos de Auditoria que usavam a versão antiga
-                modelos_afetados_ids = list(ModeloAuditoria.objects.filter(
-                    checklist=checklist_antigo
-                ).values_list('id', flat=True))
+                # 4. Encontra todos os Modelos de Auditoria que usavam a versão mais recente anterior.
+                if versao_mais_recente_anterior:
+                    modelos_afetados_ids = list(ModeloAuditoria.objects.filter(
+                        checklist=versao_mais_recente_anterior
+                    ).values_list('id', flat=True))
 
-                if modelos_afetados_ids:
-                    # 5. Atualiza esses modelos para apontarem para o NOVO checklist
-                    ModeloAuditoria.objects.filter(
-                        id__in=modelos_afetados_ids).update(checklist=novo_checklist)
+                    if modelos_afetados_ids:
+                        # 5. Atualiza esses modelos para apontarem para o NOVO checklist.
+                        ModeloAuditoria.objects.filter(
+                            id__in=modelos_afetados_ids).update(checklist=novo_checklist)
 
-                    # 6. Atualiza APENAS as instâncias de auditoria com status "Agendada"
-                    #    (ou seja, com data estritamente maior que hoje)
-                    AuditoriaInstancia.objects.filter(
-                        auditoria_agendada__modelos__id__in=modelos_afetados_ids,
-                        executada=False,
-                        # --- ESTA É A LINHA QUE VAMOS ALTERAR ---
-                        data_execucao__gt=timezone.now().date()  # Alterado de __gte para __gt
-                    ).update(checklist_usado=novo_checklist)
+                        # 6. Atualiza APENAS as instâncias de auditoria futuras.
+                        AuditoriaInstancia.objects.filter(
+                            auditoria_agendada__modelos__id__in=modelos_afetados_ids,
+                            executada=False,
+                            data_execucao__gt=timezone.now().date()
+                        ).update(checklist_usado=novo_checklist)
 
                 messages.success(
                     request, f'Checklist "{novo_checklist.nome}" atualizado para a versão {novo_checklist.version} com sucesso!')
@@ -801,17 +821,16 @@ def editar_checklist(request, pk):
             import traceback
             print(traceback.format_exc())
 
-    # O contexto para o método GET continua o mesmo
+    # O contexto para o método GET (para exibir o formulário) continua o mesmo.
     context = {
-        'checklist': checklist_antigo,
-        'object': checklist_antigo,
+        'checklist': checklist_a_ser_editado,
+        'object': checklist_a_ser_editado,
         'ferramentas': FerramentaDigital.objects.all(),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
-        'title': f'Editar Checklist: {checklist_antigo.nome} (V{checklist_antigo.version})',
+        'title': f'Editar Checklist: {checklist_a_ser_editado.nome} (V{checklist_a_ser_editado.version})',
         'back_url': 'auditorias:lista_checklists'
     }
     return render(request, 'auditorias/checklists/form.html', context)
-
 
 # Supondo que seus models (AuditoriaInstancia, Checklist, SubSetor, Topico, etc.)
 # estejam importados corretamente.
@@ -1057,23 +1076,30 @@ def deletar_checklist(request, pk):
 
 @login_required
 def historico_versoes_checklist(request, pk):
-    """Lista todas as versões de um checklist específico."""
+    """
+    Lista todas as versões de um checklist específico.
+    """
     checklist_atual = get_object_or_404(Checklist, pk=pk)
 
     # Encontra o checklist original (V1) para buscar todas as suas versões
     original = checklist_atual.original_checklist or checklist_atual
 
-    # Busca todas as versões relacionadas, incluindo o original, ordenando da mais nova para a mais antiga
-    versoes = original.versions.all() | Checklist.objects.filter(pk=original.pk)
-    versoes = versoes.order_by('-version')
+    # MODIFICAÇÃO: A consulta agora 'anota' (annotate) em cada versão
+    # a contagem total de perguntas, somando as de todos os seus tópicos.
+    versoes = Checklist.objects.filter(
+        Q(pk=original.pk) | Q(original_checklist=original)
+    ).prefetch_related(
+        'topicos'
+    ).annotate(
+        total_perguntas=Count('topicos__perguntas')
+    ).order_by('-version')
 
     context = {
-        'page_obj': versoes,  # Usando page_obj para reutilizar o template
+        'versoes': versoes,
         'original': original,
-        'title': f'Histórico de Versões: {original.nome}',
-        # Apenas para o template não quebrar
-        'create_url': 'auditorias:criar_checklist',
+        'title': f'Histórico de Versões - {original.nome}',
     }
+
     return render(request, 'auditorias/checklists/historico.html', context)
 
 
@@ -1128,11 +1154,11 @@ def comparar_versoes_checklist(request, pk):
 def _gerar_dados_comparacao(versoes):
     """
     Gera estrutura de dados para comparação entre versões.
-    Retorna um dicionário com as diferenças detectadas.
+    Retorna um dicionário com as diferenças detectadas organizadas para exibição lado a lado.
     """
     comparacao = {
         'versoes_info': [],
-        'topicos_diff': [],
+        'topicos_comparados': [],
         'alteracoes_resumo': {
             'topicos_adicionados': 0,
             'topicos_removidos': 0,
@@ -1143,7 +1169,8 @@ def _gerar_dados_comparacao(versoes):
     }
 
     # Informações básicas de cada versão
-    for v in versoes:
+    versoes_list = list(versoes)
+    for v in versoes_list:
         comparacao['versoes_info'].append({
             'id': v.pk,
             'version': v.version,
@@ -1153,74 +1180,116 @@ def _gerar_dados_comparacao(versoes):
             'total_perguntas': sum(t.perguntas.count() for t in v.topicos.all()),
         })
 
-    # Análise detalhada das diferenças
-    if len(versoes) >= 2:
-        # Compara tópicos
-        todas_versoes_topicos = {}
-        for v in versoes:
-            todas_versoes_topicos[v.version] = {
-                t.descricao: {
-                    'ordem': t.ordem,
-                    'perguntas': {
-                        p.descricao: {
-                            'ordem': p.ordem,
-                            'obrigatoria': p.obrigatoria,
-                            'resposta_livre': p.resposta_livre,
-                            'foto': p.foto,
-                            'criar_opcao': p.criar_opcao,
-                            'porcentagem': p.porcentagem,
-                            'opcoes_resposta': [{'descricao': o.descricao, 'status': o.status}
-                                                for o in p.opcoes_resposta.all()],
-                            'opcoes_porcentagem': [{'descricao': o.descricao, 'peso': o.peso}
-                                                   for o in p.opcoes_porcentagem.all()],
-                        } for p in t.perguntas.all()
-                    }
-                } for t in v.topicos.all()
-            }
+    # Criar estrutura de dados para cada versão
+    versoes_data = {}
+    for v in versoes_list:
+        versoes_data[v.pk] = {}
+        for topico in v.topicos.all():
+            if topico.descricao not in versoes_data[v.pk]:
+                versoes_data[v.pk][topico.descricao] = []
 
-        # Detecta tópicos adicionados/removidos
-        versao_base = list(versoes)[0]
-        versao_comparada = list(versoes)[-1]
+            for pergunta in topico.perguntas.all():
+                versoes_data[v.pk][topico.descricao].append({
+                    'id': pergunta.pk,
+                    'descricao': pergunta.descricao,
+                    'ordem': pergunta.ordem,
+                    'obrigatoria': pergunta.obrigatoria,
+                    'resposta_livre': pergunta.resposta_livre,
+                    'foto': pergunta.foto,
+                    'criar_opcao': pergunta.criar_opcao,
+                    'porcentagem': pergunta.porcentagem,
+                    'opcoes_resposta': [
+                        {'descricao': o.descricao, 'status': o.status,
+                            'status_display': o.get_status_display()}
+                        for o in pergunta.opcoes_resposta.all()
+                    ],
+                    'opcoes_porcentagem': [
+                        {'descricao': o.descricao, 'peso': o.peso}
+                        for o in pergunta.opcoes_porcentagem.all()
+                    ],
+                })
 
-        topicos_base = set(todas_versoes_topicos[versao_base.version].keys())
-        topicos_comparada = set(
-            todas_versoes_topicos[versao_comparada.version].keys())
+    # Obter todos os tópicos únicos
+    todos_topicos = set()
+    for v_pk in versoes_data:
+        todos_topicos.update(versoes_data[v_pk].keys())
 
-        topicos_adicionados = topicos_comparada - topicos_base
-        topicos_removidos = topicos_base - topicos_comparada
-        topicos_comuns = topicos_base & topicos_comparada
+    # Análise de alterações entre primeira e última versão
+    if len(versoes_list) >= 2:
+        primeira_versao = versoes_list[0]
+        ultima_versao = versoes_list[-1]
+
+        topicos_primeira = set(versoes_data[primeira_versao.pk].keys())
+        topicos_ultima = set(versoes_data[ultima_versao.pk].keys())
 
         comparacao['alteracoes_resumo']['topicos_adicionados'] = len(
-            topicos_adicionados)
+            topicos_ultima - topicos_primeira)
         comparacao['alteracoes_resumo']['topicos_removidos'] = len(
-            topicos_removidos)
+            topicos_primeira - topicos_ultima)
 
-        # Analisa perguntas em tópicos comuns
-        for topico_desc in topicos_comuns:
-            perguntas_base = set(
-                todas_versoes_topicos[versao_base.version][topico_desc]['perguntas'].keys())
-            perguntas_comparada = set(
-                todas_versoes_topicos[versao_comparada.version][topico_desc]['perguntas'].keys())
+        # Contar perguntas
+        for topico in topicos_primeira & topicos_ultima:
+            pergs_primeira = versoes_data[primeira_versao.pk][topico]
+            pergs_ultima = versoes_data[ultima_versao.pk][topico]
 
-            perguntas_adicionadas = perguntas_comparada - perguntas_base
-            perguntas_removidas = perguntas_base - perguntas_comparada
-            perguntas_comuns = perguntas_base & perguntas_comparada
+            desc_primeira = [p['descricao'] for p in pergs_primeira]
+            desc_ultima = [p['descricao'] for p in pergs_ultima]
 
             comparacao['alteracoes_resumo']['perguntas_adicionadas'] += len(
-                perguntas_adicionadas)
+                set(desc_ultima) - set(desc_primeira))
             comparacao['alteracoes_resumo']['perguntas_removidas'] += len(
-                perguntas_removidas)
+                set(desc_primeira) - set(desc_ultima))
 
-            # Detecta perguntas modificadas
-            for pergunta_desc in perguntas_comuns:
-                perg_base = todas_versoes_topicos[versao_base.version][topico_desc]['perguntas'][pergunta_desc]
-                perg_comp = todas_versoes_topicos[versao_comparada.version][topico_desc]['perguntas'][pergunta_desc]
+            # Contar modificadas
+            for p1 in pergs_primeira:
+                for p2 in pergs_ultima:
+                    if p1['descricao'] == p2['descricao']:
+                        # Verifica se outras propriedades mudaram
+                        if (p1['obrigatoria'] != p2['obrigatoria'] or
+                            p1['resposta_livre'] != p2['resposta_livre'] or
+                            p1['foto'] != p2['foto'] or
+                            p1['criar_opcao'] != p2['criar_opcao'] or
+                            p1['porcentagem'] != p2['porcentagem'] or
+                            p1['opcoes_resposta'] != p2['opcoes_resposta'] or
+                                p1['opcoes_porcentagem'] != p2['opcoes_porcentagem']):
+                            comparacao['alteracoes_resumo']['perguntas_modificadas'] += 1
+                        break
 
-                if perg_base != perg_comp:
-                    comparacao['alteracoes_resumo']['perguntas_modificadas'] += 1
+    # Organizar dados para exibição lado a lado
+    for topico_nome in sorted(todos_topicos):
+        topico_data = {
+            'nome': topico_nome,
+            'perguntas_agrupadas': []
+        }
 
-        # Estrutura detalhada para exibição
-        comparacao['topicos_diff'] = todas_versoes_topicos
+        # Coletar todas as perguntas únicas deste tópico de todas as versões
+        todas_perguntas_desc = set()
+        for v_pk in versoes_data:
+            if topico_nome in versoes_data[v_pk]:
+                for p in versoes_data[v_pk][topico_nome]:
+                    todas_perguntas_desc.add(p['descricao'])
+
+        # Para cada descrição de pergunta única, criar uma linha de comparação
+        for pergunta_desc in sorted(todas_perguntas_desc):
+            linha_pergunta = {
+                'descricao': pergunta_desc,
+                'versoes_dados': {}
+            }
+
+            # Para cada versão, buscar a pergunta com essa descrição
+            for v in versoes_list:
+                v_pk = v.pk
+                linha_pergunta['versoes_dados'][v_pk] = None
+
+                if topico_nome in versoes_data[v_pk]:
+                    for p in versoes_data[v_pk][topico_nome]:
+                        if p['descricao'] == pergunta_desc:
+                            linha_pergunta['versoes_dados'][v_pk] = p
+                            break
+
+            topico_data['perguntas_agrupadas'].append(linha_pergunta)
+
+        comparacao['topicos_comparados'].append(topico_data)
 
     return comparacao
 
@@ -2017,6 +2086,10 @@ class SubmeterAuditoriaAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        # --- ADICIONE ESTA LINHA PARA DEBUG ---
+        # print("--- DADOS RECEBIDOS PELA API ---", request.data)
+        # --- FIM DA LINHA DE DEBUG ---
+
         try:
             instancia = AuditoriaInstancia.objects.get(
                 pk=pk,
@@ -2307,3 +2380,111 @@ def deletar_execucao(request, pk):
 
     # Redireciona de volta para a lista de execuções
     return redirect('auditorias:lista_execucoes')
+
+
+@login_required
+def detalhes_auditoria(request, pk):
+    """Exibe os detalhes de uma instância de auditoria concluída."""
+    try:
+        # AQUI ESTÁ A CORREÇÃO: 'checklistusado' foi corrigido para 'checklist_usado'
+        instancia = AuditoriaInstancia.objects.select_related(
+            'auditoria_agendada__responsavel',
+            'auditoria_agendada__ferramenta',
+            'local_execucao__setor__area__empresa',
+            'responsavel',
+            'checklist_usado'  # Corrigido de 'checklistusado'
+        ).prefetch_related(
+            'respostas__pergunta__topico',
+            'respostas__anexos'
+        ).get(pk=pk)
+
+        # Organizar as respostas por tópico para facilitar a exibição no template
+        respostas_por_topico = {}
+        if instancia.checklist_usado:
+            for topico in instancia.checklist_usado.topicos.all().order_by('ordem'):
+                respostas_por_topico[topico] = []
+
+        for resposta in instancia.respostas.all().order_by('pergunta__ordem'):
+            topico = resposta.pergunta.topico
+            if topico in respostas_por_topico:
+                respostas_por_topico[topico].append(resposta)
+
+        context = {
+            'instancia': instancia,
+            'respostas_por_topico': respostas_por_topico,
+            'title': f'Detalhes da Auditoria #{instancia.id}'
+        }
+        return render(request, 'auditorias/detalhes_auditoria.html', context)
+
+    except AuditoriaInstancia.DoesNotExist:
+        messages.error(
+            request, 'A instância de auditoria solicitada não foi encontrada.')
+        return redirect('auditorias:historico_concluidas')
+
+
+@login_required
+def detalhes_historico_auditoria(request, pk):
+    """
+    Exibe os detalhes de uma instância de auditoria concluída, incluindo
+    todas as perguntas e as respostas fornecidas, além de um sumário.
+    """
+    instancia = get_object_or_404(
+        AuditoriaInstancia.objects.select_related(
+            'checklist_usado',
+            'local_execucao__setor__area__empresa',
+            'auditoria_agendada__ferramenta',
+            'responsavel'
+        ).prefetch_related(
+            'auditoria_agendada__modelos__categoria__pilar',
+            'respostas__opcao_resposta',
+            'respostas__anexos'
+        ),
+        pk=pk
+    )
+
+    respostas_map = {
+        resposta.pergunta_id: resposta
+        for resposta in instancia.respostas.all()
+    }
+
+    # --- LÓGICA DE CÁLCULO DE TEMPO CORRIGIDA ---
+    tempo_execucao_str = "N/A"  # Valor padrão
+    respostas_queryset = instancia.respostas.all()
+    if respostas_queryset.count() > 1:
+        datas_respostas = respostas_queryset.aggregate(
+            primeira=Min('data_resposta'),
+            ultima=Max('data_resposta')
+        )
+        if datas_respostas['primeira'] and datas_respostas['ultima']:
+            delta = datas_respostas['ultima'] - datas_respostas['primeira']
+
+            # Formata o tempo para HH:MM:SS
+            total_seconds = int(delta.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            tempo_execucao_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+            # --- FIM DA CORREÇÃO ---
+
+    total_perguntas = 0
+    if instancia.checklist_usado:
+        total_perguntas = Pergunta.objects.filter(
+            topico__checklist=instancia.checklist_usado).count()
+
+    summary_stats = {
+        'total_itens': total_perguntas,
+        'nao_conformidade_maior': respostas_queryset.filter(grau_nc='NC MAIOR').count(),
+        'nao_conformidade_menor': respostas_queryset.filter(grau_nc='NC MENOR').count(),
+        'desvios_solucionados': respostas_queryset.filter(desvio_solucionado=True).count(),
+        'oportunidades_melhoria': respostas_queryset.filter(oportunidade_melhoria=True).count(),
+        'nao_aplicaveis': respostas_queryset.filter(opcao_resposta__status='NA').count(),
+    }
+
+    context = {
+        'title': f'Detalhes da Auditoria #{instancia.id}',
+        'instancia': instancia,
+        'respostas_map': respostas_map,
+        'tempo_execucao': tempo_execucao_str,  # Passa a string formatada
+        'summary_stats': summary_stats,
+    }
+    return render(request, 'auditorias/detalhes_historico.html', context)

@@ -1,5 +1,7 @@
 {% extends 'auditorias/base.html' %}
 
+{% load comparacao_filter %}
+
 {% block title %}{{ title }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 
@@ -47,12 +49,26 @@
                                 </p>
                                 <div class="version-stats">
                                     <span><i class="fas fa-list"></i> {{ versao.topicos.count }} tópicos</span>
-                                    <span><i class="fas fa-question-circle"></i> 
-                                        {% with total_perguntas=0 %}
+                                    <span>
+                                        <i class="fas fa-question-circle"></i>
+                                        {% with total=0 %}
                                             {% for topico in versao.topicos.all %}
-                                                {% with total_perguntas=total_perguntas|add:topico.perguntas.count %}{% endwith %}
+                                                {% if forloop.first %}
+                                                    {{ topico.perguntas.count }}
+                                                {% else %}
+                                                    {% with total=total|add:topico.perguntas.count %}{% endwith %}
+                                                {% endif %}
+                                                {% if not forloop.first and forloop.last %}
+                                                    {% with total=total|add:topico.perguntas.count %}
+                                                        {{ total }}
+                                                    {% endwith %}
+                                                {% endif %}
                                             {% endfor %}
-                                            {{ total_perguntas }}
+                                            {% if versao.topicos.count == 0 %}
+                                                0
+                                            {% elif versao.topicos.count == 1 %}
+                                                <!-- Já mostrado acima -->
+                                            {% endif %}
                                         {% endwith %}
                                         perguntas
                                     </span>
@@ -104,9 +120,6 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 class="card-title">Resumo das Alterações</h3>
             <div style="display: flex; gap: 8px;">
-                <button onclick="exportarComparacao()" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-download"></i> Exportar Comparação
-                </button>
                 <button onclick="window.print()" class="btn btn-sm btn-secondary">
                     <i class="fas fa-print"></i> Imprimir
                 </button>
@@ -191,7 +204,7 @@
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th style="width: 30%;">Elemento</th>
+                        <th style="width: 35%;">Elemento</th>
                         {% for versao in versoes_comparadas %}
                         <th>
                             <div class="version-header-cell">
@@ -203,65 +216,79 @@
                     </tr>
                 </thead>
                 <tbody id="comparison-body">
-                    {% for versao in versoes_comparadas %}
-                        {% for topico in versao.topicos.all %}
-                        <tr class="topico-row" data-topico="{{ topico.descricao }}">
-                            <td class="element-name">
-                                <button class="expand-btn" onclick="toggleTopico(this)">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                                <strong>{{ topico.descricao }}</strong>
-                            </td>
-                            <td colspan="{{ versoes_comparadas|length }}" class="topico-info">
-                                <span class="badge badge-info">{{ topico.perguntas.count }} perguntas</span>
-                            </td>
-                        </tr>
+                    {% for topico in comparacao_data.topicos_comparados %}
+                    <tr class="topico-row" data-topico="{{ topico.nome }}">
+                        <td class="element-name">
+                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome }}')">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <strong>{{ topico.nome }}</strong>
+                        </td>
+                        {% for versao in versoes_comparadas %}
+                        <td class="topico-info">
+                            <span class="badge badge-info">{{ topico.perguntas_agrupadas|length }} perguntas</span>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    
+                    {% for pergunta_grupo in topico.perguntas_agrupadas %}
+                    <tr class="pergunta-row hidden" data-topico="{{ topico.nome }}">
+                        <td class="element-name sub-element">
+                            <i class="fas fa-question-circle"></i>
+                            {{ pergunta_grupo.descricao }}
+                        </td>
                         
-                        {% for pergunta in topico.perguntas.all %}
-                        <tr class="pergunta-row hidden" data-topico="{{ topico.descricao }}" data-pergunta="{{ pergunta.pk }}">
-                            <td class="element-name sub-element">
-                                <i class="fas fa-question-circle"></i>
-                                {{ pergunta.descricao|truncatechars:80 }}
-                            </td>
-                            {% for v_comp in versoes_comparadas %}
-                                {% if v_comp.pk == versao.pk %}
-                                <td class="version-data">
-                                    <div class="pergunta-details">
-                                        {% if pergunta.obrigatoria %}
-                                        <span class="detail-badge badge-required">Obrigatória</span>
-                                        {% endif %}
-                                        {% if pergunta.resposta_livre %}
-                                        <span class="detail-badge">Texto Livre</span>
-                                        {% endif %}
-                                        {% if pergunta.foto %}
-                                        <span class="detail-badge">📷 Foto</span>
-                                        {% endif %}
-                                        {% if pergunta.criar_opcao %}
-                                        <span class="detail-badge">Opções</span>
-                                        {% endif %}
-                                        {% if pergunta.porcentagem %}
-                                        <span class="detail-badge">% Porcentagem</span>
-                                        {% endif %}
-                                        
-                                        {% if pergunta.opcoes_resposta.all %}
-                                        <div class="opcoes-list">
-                                            <strong>Opções de Resposta:</strong>
-                                            <ul>
-                                            {% for opcao in pergunta.opcoes_resposta.all %}
-                                                <li>{{ opcao.descricao }} <span class="status-{{ opcao.status|lower }}">({{ opcao.get_status_display }})</span></li>
-                                            {% endfor %}
-                                            </ul>
-                                        </div>
-                                        {% endif %}
+                        {% for versao in versoes_comparadas %}
+                        <td class="version-data {% if not pergunta_grupo.versoes_dados|get_item:versao.pk %}version-empty{% endif %}">
+                            {% with pergunta=pergunta_grupo.versoes_dados|get_item:versao.pk %}
+                            {% if pergunta %}
+                                <div class="pergunta-details">
+                                    {% if pergunta.obrigatoria %}
+                                    <span class="detail-badge badge-required">Obrigatória</span>
+                                    {% endif %}
+                                    {% if pergunta.resposta_livre %}
+                                    <span class="detail-badge">Texto Livre</span>
+                                    {% endif %}
+                                    {% if pergunta.foto %}
+                                    <span class="detail-badge">📷 Foto</span>
+                                    {% endif %}
+                                    {% if pergunta.criar_opcao %}
+                                    <span class="detail-badge">Opções</span>
+                                    {% endif %}
+                                    {% if pergunta.porcentagem %}
+                                    <span class="detail-badge">% Porcentagem</span>
+                                    {% endif %}
+                                    
+                                    {% if pergunta.opcoes_resposta %}
+                                    <div class="opcoes-list">
+                                        <strong>Opções de Resposta:</strong>
+                                        <ul>
+                                        {% for opcao in pergunta.opcoes_resposta %}
+                                            <li>{{ opcao.descricao }} <span class="status-{{ opcao.status|lower }}">({{ opcao.status_display }})</span></li>
+                                        {% endfor %}
+                                        </ul>
                                     </div>
-                                </td>
-                                {% else %}
-                                <td class="version-data">—</td>
-                                {% endif %}
-                            {% endfor %}
-                        </tr>
+                                    {% endif %}
+                                    
+                                    {% if pergunta.opcoes_porcentagem %}
+                                    <div class="opcoes-list">
+                                        <strong>Opções de Porcentagem:</strong>
+                                        <ul>
+                                        {% for opcao in pergunta.opcoes_porcentagem %}
+                                            <li>{{ opcao.descricao }} (Peso: {{ opcao.peso }})</li>
+                                        {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="empty-indicator">—</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
                         {% endfor %}
-                        {% endfor %}
+                    </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -442,6 +469,7 @@
     padding: 16px;
     border: 1px solid var(--border);
     text-align: left;
+    vertical-align: top;
 }
 
 .comparison-table th {
@@ -467,6 +495,10 @@
 .topico-row {
     background: var(--bg-tertiary);
     font-weight: 600;
+}
+
+.topico-info {
+    text-align: center;
 }
 
 .element-name {
@@ -496,6 +528,17 @@
     display: none;
 }
 
+.version-empty {
+    background: rgba(0, 0, 0, 0.02);
+    text-align: center;
+}
+
+.empty-indicator {
+    color: var(--text-muted);
+    font-size: 24px;
+    font-weight: 300;
+}
+
 .pergunta-details {
     display: flex;
     flex-direction: column;
@@ -509,6 +552,7 @@
     border-radius: 4px;
     font-size: 11px;
     margin-right: 4px;
+    margin-bottom: 4px;
 }
 
 .badge-required {
@@ -533,9 +577,9 @@
     margin: 4px 0;
 }
 
-.status-conforme { color: var(--success); }
-.status-nao_conforme { color: var(--error); }
-.status-desvio_solucionado { color: var(--warning); }
+.status-conforme { color: var(--success); font-weight: 600; }
+.status-nao_conforme { color: var(--error); font-weight: 600; }
+.status-desvio_solucionado { color: var(--warning); font-weight: 600; }
 .status-na { color: var(--text-muted); }
 
 @media print {
@@ -548,7 +592,7 @@
 </style>
 
 <script>
-// Controle de seleção de versões
+// Template tag personalizado para acessar dicionário no template
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.version-checkbox');
     const btnComparar = document.getElementById('btn-comparar');
@@ -615,27 +659,44 @@ function compararUltimasTres() {
     }
 }
 
-// Funções de comparação
-function toggleTopico(btn) {
-    const topicoRow = btn.closest('tr');
-    const topicoName = topicoRow.dataset.topico;
-    const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoName}"]`);
+function toggleTopico(btn, topicoNome) {
+    const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+    const isExpanded = btn.classList.contains('expanded');
     
     btn.classList.toggle('expanded');
-    perguntasRows.forEach(row => row.classList.toggle('hidden'));
+    
+    perguntasRows.forEach(row => {
+        if (isExpanded) {
+            row.classList.add('hidden');
+        } else {
+            row.classList.remove('hidden');
+        }
+    });
 }
 
 function expandirTodos() {
-    document.querySelectorAll('.expand-btn').forEach(btn => {
+    const allBtns = document.querySelectorAll('.expand-btn');
+    allBtns.forEach(btn => {
         if (!btn.classList.contains('expanded')) {
-            btn.click();
+            const topicoRow = btn.closest('tr.topico-row');
+            const topicoNome = topicoRow.dataset.topico;
+            
+            btn.classList.add('expanded');
+            const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+            perguntasRows.forEach(row => row.classList.remove('hidden'));
         }
     });
 }
 
 function recolherTodos() {
-    document.querySelectorAll('.expand-btn.expanded').forEach(btn => {
-        btn.click();
+    const allBtns = document.querySelectorAll('.expand-btn.expanded');
+    allBtns.forEach(btn => {
+        const topicoRow = btn.closest('tr.topico-row');
+        const topicoNome = topicoRow.dataset.topico;
+        
+        btn.classList.remove('expanded');
+        const perguntasRows = document.querySelectorAll(`tr.pergunta-row[data-topico="${topicoNome}"]`);
+        perguntasRows.forEach(row => row.classList.add('hidden'));
     });
 }
 
@@ -644,19 +705,53 @@ let mostrandoApenasDiferencas = false;
 function toggleDiferencasApenas() {
     mostrandoApenasDiferencas = !mostrandoApenasDiferencas;
     const btn = document.getElementById('btn-filtro');
+    const todasLinhas = document.querySelectorAll('.topico-row, .pergunta-row');
     
     if (mostrandoApenasDiferencas) {
         btn.innerHTML = '<i class="fas fa-eye"></i> Mostrar Todas';
-        // Lógica para filtrar apenas diferenças (implementar conforme necessidade)
+        
+        expandirTodos();
+        
+        const perguntasRows = document.querySelectorAll('.pergunta-row');
+        perguntasRows.forEach(row => {
+            const cells = row.querySelectorAll('.version-data');
+            const hasEmpty = Array.from(cells).some(cell => cell.classList.contains('version-empty'));
+            
+            if (hasEmpty) {
+                row.style.display = '';
+                return;
+            }
+            
+            const contents = Array.from(cells).map(cell => cell.innerHTML.trim());
+            const allEqual = contents.every(content => content === contents[0]);
+            
+            if (allEqual) {
+                row.style.display = 'none';
+            }
+        });
+        
+        const topicoRows = document.querySelectorAll('.topico-row');
+        topicoRows.forEach(topicoRow => {
+            const topicoNome = topicoRow.dataset.topico;
+            const perguntasVisiveis = document.querySelectorAll(
+                `tr.pergunta-row[data-topico="${topicoNome}"]:not([style*="display: none"])`
+            );
+            
+            if (perguntasVisiveis.length === 0) {
+                topicoRow.style.display = 'none';
+            }
+        });
+        
     } else {
         btn.innerHTML = '<i class="fas fa-filter"></i> Mostrar Apenas Diferenças';
-        // Mostrar todas as linhas novamente
+        
+        todasLinhas.forEach(row => {
+            row.style.display = '';
+        });
+        
+        recolherTodos();
     }
 }
 
-function exportarComparacao() {
-    // Implementar exportação para CSV ou PDF
-    alert('Funcionalidade de exportação em desenvolvimento');
-}
 </script>
 {% endblock %}

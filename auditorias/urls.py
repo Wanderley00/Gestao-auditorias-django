@@ -102,4 +102,11 @@ urlpatterns = [
     path('checklists/<int:pk>/comparar/', views.comparar_versoes_checklist,
          name='comparar_versoes_checklist'),
 
+    path('historico/<int:pk>/detalhes/',
+         views.detalhes_auditoria, name='detalhes_auditoria'),
+
+
+    path('historico/<int:pk>/visualizar/',
+         views.detalhes_historico_auditoria, name='detalhes_historico_auditoria'),
+
 ]
