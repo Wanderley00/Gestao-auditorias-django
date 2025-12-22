@@ -10,3 +10,6 @@ python manage.py collectstatic --no-input
 
 # Aplicar migrações no banco de dados
 python manage.py migrate
+
+# Criar superusuário
+python create_superuser.py
