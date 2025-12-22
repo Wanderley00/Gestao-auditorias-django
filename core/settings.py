@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*', '100.000.000.000']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -88,18 +88,6 @@ DATABASES = {
         conn_max_age=600
     )
 }
-
-# Configuração para PostgreSQL (comentado)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'auditorias_db',
-#         'USER': 'postgres',
-#         'PASSWORD': 'password',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -250,18 +238,6 @@ if not DEBUG:
         }
     }
 
-    # Configurações de banco para produção
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'auditorias_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
-    }
-
 # Configurações de mensagens
 MESSAGE_TAGS = {
     messages.DEBUG: 'debug',
@@ -287,30 +263,6 @@ USE_TZ = True
 # Configurações de arquivos estáticos para produção
 if not DEBUG:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
-# Configurações de CORS (se usando API)
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-# ]
-# CORS_ALLOW_CREDENTIALS = True
-
-# Configurações do Django REST Framework (se usando)
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework.authentication.SessionAuthentication',
-#         'rest_framework.authentication.TokenAuthentication',
-#     ],
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.IsAuthenticated',
-#     ],
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 20,
-# }
-
-# teste wanderley add informações
-# teste add informações 2
-# teste de arquivo adicionado algos
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
