@@ -1,292 +1,312 @@
 {% extends 'auditorias/base.html' %}
-
-{% block title %}Dashboard - Sistema de Auditorias{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <h2 class="content-title">Bem-vindo ao Sistema de Auditorias</h2>
-    <p class="content-subtitle">Gerencie suas auditorias, checklists e relatórios de forma eficiente</p>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-<!-- Cards de Estatísticas -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
-    <div class="card">
-        <div class="card-body" style="padding: 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-                        {{ total_auditorias }}
-                    </h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Total de Auditorias</p>
-                </div>
-                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-            </div>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                <span style="color: var(--success); font-size: 12px; font-weight: 600;">
-                    <i class="fas fa-arrow-up"></i> +12% este mês
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body" style="padding: 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
-                        {{ total_modelos }}
-                    </h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Modelos de Auditoria</p>
-                </div>
-                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-            </div>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                <span style="color: var(--success); font-size: 12px; font-weight: 600;">
-                    <i class="fas fa-arrow-up"></i> +5% este mês
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body" style="padding: 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 32px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">
-                        {{ total_checklists }}
-                    </h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Checklists Ativos</p>
-                </div>
-                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
-                    <i class="fas fa-list-check"></i>
-                </div>
-            </div>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                <span style="color: var(--warning); font-size: 12px; font-weight: 600;">
-                    <i class="fas fa-minus"></i> Estável
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body" style="padding: 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 32px; font-weight: 700; color: var(--error); margin-bottom: 8px;">
-                        {{ instancias_pendentes }}
-                    </h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Pendentes</p>
-                </div>
-                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                <span style="color: var(--error); font-size: 12px; font-weight: 600;">
-                    <i class="fas fa-exclamation-triangle"></i> Requer atenção
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Seção Principal -->
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
-    <!-- Auditorias Recentes -->
-    <div class="card">
-        <div class="card-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3 class="card-title">Auditorias Recentes</h3>
-                    <p class="card-subtitle">Últimas auditorias criadas no sistema</p>
-                </div>
-                <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-eye"></i>
-                    Ver Todas
-                </a>
-            </div>
-        </div>
-        <div class="card-body">
-            {% if auditorias_recentes %}
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Responsável</th>
-                                <th>Ferramenta</th>
-                                <th>Data Início</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for auditoria in auditorias_recentes %}
-                            <tr>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
-                                            {{ auditoria.responsavel.first_name.0|default:auditoria.responsavel.username.0|upper }}
-                                        </div>
-                                        <div>
-                                            <div style="font-weight: 600; color: var(--text-primary);">
-                                                {{ auditoria.responsavel.get_full_name|default:auditoria.responsavel.username }}
-                                            </div>
-                                            <div style="font-size: 12px; color: var(--text-muted);">
-                                                {{ auditoria.responsavel.email }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info">
-                                        {{ auditoria.ferramenta.nome|default:"N/A" }}
-                                    </span>
-                                </td>
-                                <td>{{ auditoria.data_inicio|date:"d/m/Y" }}</td>
-                                <td>
-                                    <span class="badge badge-success">Ativa</span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="{% url 'auditorias:editar_auditoria' auditoria.pk %}" class="btn btn-secondary btn-icon" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'auditorias:deletar_auditoria' auditoria.pk %}" class="btn btn-danger btn-icon" title="Deletar">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
-                    <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-                    <h4 style="margin-bottom: 8px;">Nenhuma auditoria encontrada</h4>
-                    <p>Crie sua primeira auditoria para começar</p>
-                    <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary" style="margin-top: 16px;">
-                        <i class="fas fa-plus"></i>
-                        Criar Auditoria
-                    </a>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Ações Rápidas -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Ações Rápidas</h3>
-            <p class="card-subtitle">Acesso rápido às principais funcionalidades</p>
-        </div>
-        <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary" style="justify-content: flex-start;">
-                    <i class="fas fa-plus"></i>
-                    Nova Auditoria
-                </a>
-                
-                <a href="{% url 'auditorias:criar_checklist' %}" class="btn btn-secondary" style="justify-content: flex-start;">
-                    <i class="fas fa-list-check"></i>
-                    Novo Checklist
-                </a>
-                
-                <a href="{% url 'auditorias:criar_modelo_auditoria' %}" class="btn btn-secondary" style="justify-content: flex-start;">
-                    <i class="fas fa-file-alt"></i>
-                    Novo Modelo
-                </a>
-                
-                <a href="{% url 'auditorias:criar_pilar' %}" class="btn btn-secondary" style="justify-content: flex-start;">
-                    <i class="fas fa-columns"></i>
-                    Novo Pilar
-                </a>
-                
-                <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
-                
-                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="btn btn-secondary" style="justify-content: flex-start;">
-                    <i class="fas fa-tools"></i>
-                    Ferramentas
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Gráficos e Estatísticas Adicionais -->
-<div style="margin-top: 32px;">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Visão Geral do Sistema</h3>
-            <p class="card-subtitle">Estatísticas e métricas importantes</p>
-        </div>
-        <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
-                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-                        {{ total_pilares }}
-                    </div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">Pilares Cadastrados</div>
-                </div>
-                
-                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 8px;">
-                        85%
-                    </div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">Taxa de Conformidade</div>
-                </div>
-                
-                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">
-                        12
-                    </div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">Não Conformidades</div>
-                </div>
-                
-                <div style="text-align: center; padding: 24px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-                        7
-                    </div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">Dias Médio Resolução</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Atualizar dados em tempo real (opcional)
-    function atualizarDashboard() {
-        // Implementar atualização via AJAX se necessário
-        console.log('Dashboard atualizado');
+<style>
+    /* Variáveis e Layout */
+    :root {
+        --dash-bg: #f8fafc;
+        --card-white: #ffffff;
+    }
+    
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
     }
 
-    // Atualizar a cada 5 minutos
-    setInterval(atualizarDashboard, 300000);
+    /* KPI Cards */
+    .kpi-card {
+        background: var(--card-white);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-left: 5px solid transparent;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-    // Animações para os cards de estatísticas
-    document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            
-            setTimeout(() => {
-                card.style.transition = 'all 0.5s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    });
+    .kpi-info h4 { margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+    .kpi-info .value { font-size: 28px; font-weight: 800; color: #1e293b; margin-top: 5px; }
+    
+    .kpi-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+    /* Cores Específicas dos KPIs */
+    .kpi-realizadas { border-left-color: #10b981; }
+    .kpi-realizadas .kpi-icon { background: #dcfce7; color: #10b981; }
+
+    .kpi-planejadas { border-left-color: #3b82f6; }
+    .kpi-planejadas .kpi-icon { background: #dbeafe; color: #3b82f6; }
+
+    .kpi-eficiencia { border-left-color: #6366f1; }
+    .kpi-eficiencia .kpi-icon { background: #e0e7ff; color: #6366f1; }
+
+    .kpi-nc { border-left-color: #ef4444; }
+    .kpi-nc .kpi-icon { background: #fee2e2; color: #ef4444; }
+
+    /* Gráficos Containers */
+    .chart-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card-chart {
+        background: var(--card-white);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .card-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .card-header-custom h3 { font-size: 16px; font-weight: 700; color: #333; margin: 0; }
+
+    /* Tabela */
+    .table-responsive { overflow-x: auto; }
+    .table-modern { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table-modern th { text-align: left; padding: 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+    .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .table-modern tr:hover td { background: #f8fafc; }
+
+    /* Responsivo */
+    @media (max-width: 1024px) {
+        .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        .chart-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        .dashboard-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">Dashboard de Auditorias</h2>
+            <p class="content-subtitle">Indicadores de desempenho e programação (Ano Atual)</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            {# Botão Voltar #}
+            <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+
+            {# Botão Agendar (Já existia) #}
+            <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Agendar Auditoria
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="kpi-card kpi-realizadas">
+        <div class="kpi-info">
+            <h4>Realizadas</h4>
+            <div class="value">{{ kpi_realizadas }}</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-planejadas">
+        <div class="kpi-info">
+            <h4>Planejadas</h4>
+            <div class="value">{{ kpi_planejadas }}</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-eficiencia">
+        <div class="kpi-info">
+            <h4>Eficiência</h4>
+            <div class="value">{{ kpi_eficiencia }}%</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+    </div>
+
+    <div class="kpi-card kpi-nc">
+        <div class="kpi-info">
+            <h4>Itens Não Conforme</h4>
+            <div class="value">{{ kpi_nc }}</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    </div>
+</div>
+
+<div class="chart-row">
+    <div class="card-chart">
+        <div class="card-header-custom">
+            <h3>Desempenho Mensal</h3>
+        </div>
+        <div id="chartMensal"></div>
+    </div>
+
+    <div class="card-chart">
+        <div class="card-header-custom">
+            <h3>Conformidade Geral</h3>
+        </div>
+        <div id="chartConformidade"></div>
+    </div>
+</div>
+
+<div class="chart-row" style="grid-template-columns: 1fr 2fr;">
+    <div class="card-chart">
+        <div class="card-header-custom">
+            <h3>Auditorias por Local (Top 10)</h3>
+        </div>
+        <div id="chartLocais"></div>
+    </div>
+
+    <div class="card-chart">
+        <div class="card-header-custom">
+            <h3>Próximas Auditorias Agendadas</h3>
+            <a href="{% url 'auditorias:lista_execucoes' %}" style="font-size: 12px; color: #3b82f6; text-decoration: none;">Ver todas</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Local</th>
+                        <th>Ferramenta</th>
+                        <th>Auditor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aud in proximas_auditorias %}
+                    <tr>
+                        <td><span style="font-weight: 600;">{{ aud.data_execucao|date:"d/m/Y" }}</span></td>
+                        <td>{{ aud.local_execucao.nome|default:"A definir" }}</td>
+                        <td><span class="badge badge-secondary">{{ aud.auditoria_agendada.ferramenta.nome }}</span></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 24px; height: 24px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">
+                                    {{ aud.responsavel.first_name.0|default:'U' }}
+                                </div>
+                                {{ aud.responsavel.get_full_name|default:aud.responsavel.username }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #999; padding: 20px;">Nenhuma auditoria agendada para os próximos dias.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- DADOS DO BACKEND ---
+    const labelsMeses = JSON.parse('{{ chart_meses_labels|safe }}');
+    const dataPlanejado = JSON.parse('{{ chart_series_planejado|safe }}');
+    const dataRealizado = JSON.parse('{{ chart_series_realizado|safe }}');
+    
+    const labelsLocais = JSON.parse('{{ chart_locais_labels|safe }}');
+    const dataLocais = JSON.parse('{{ chart_locais_series|safe }}');
+    
+    const dataConformidade = JSON.parse('{{ chart_conformidade_series|safe }}');
+
+    // 1. GRÁFICO MENSAL (COLUNAS MISTAS)
+    var optionsMensal = {
+        series: [{
+            name: 'Planejado',
+            data: dataPlanejado
+        }, {
+            name: 'Realizado',
+            data: dataRealizado
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+            toolbar: { show: false }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                borderRadius: 4
+            },
+        },
+        dataLabels: { enabled: false },
+        stroke: { show: true, width: 2, colors: ['transparent'] },
+        xaxis: { categories: labelsMeses },
+        fill: { opacity: 1 },
+        colors: ['#3b82f6', '#10b981'], // Azul (Plan), Verde (Real)
+        tooltip: {
+            y: { formatter: function (val) { return val + " auditorias" } }
+        }
+    };
+    new ApexCharts(document.querySelector("#chartMensal"), optionsMensal).render();
+
+    // 2. GRÁFICO DE PIZZA (CONFORMIDADE)
+    var optionsPizza = {
+        series: dataConformidade, // [Conforme, Não Conforme]
+        labels: ['Itens Conformes', 'Itens Não Conformes'],
+        chart: {
+            type: 'donut',
+            height: 350
+        },
+        colors: ['#10b981', '#ef4444'], // Verde, Vermelho
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total Itens',
+                            formatter: function (w) {
+                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        dataLabels: { enabled: false }
+    };
+    new ApexCharts(document.querySelector("#chartConformidade"), optionsPizza).render();
+
+    // 3. GRÁFICO DE BARRAS HORIZONTAIS (LOCAIS)
+    var optionsLocais = {
+        series: [{
+            name: 'Auditorias',
+            data: dataLocais
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+            toolbar: { show: false }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+                barHeight: '60%'
+            }
+        },
+        dataLabels: { enabled: true },
+        xaxis: { categories: labelsLocais },
+        colors: ['#f59e0b'] // Amarelo/Laranja igual imagem
+    };
+    new ApexCharts(document.querySelector("#chartLocais"), optionsLocais).render();
+
 </script>
 {% endblock %}
-

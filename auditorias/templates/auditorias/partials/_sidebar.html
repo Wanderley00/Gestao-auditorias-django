@@ -18,14 +18,6 @@
     <div class="sidebar-nav" id="sidebarNav">
 
         <div class="nav-section">
-            <div class="nav-section-title">Principal</div>
-            <a href="{% url 'auditorias:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.app_name == 'auditorias' %}active{% endif %}">
-                <i class="fas fa-tachometer-alt"></i>
-                <span class="nav-item-text">Dashboard</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
             <div class="nav-section-title">Gerenciamento de Auditorias</div>
             <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
                 <i class="fas fa-calendar-alt"></i>
@@ -40,6 +32,11 @@
             <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
                 <i class="fas fa-history"></i>
                 <span class="nav-item-text">Histórico</span>
+            </a>
+
+            <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
+                <i class="fas fa-flag-checkered"></i>
+                <span class="nav-item-text">Planos de Ação</span>
             </a>
             
             <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-item {% if '/auditorias/modelos-auditoria/' in request.path %}active{% endif %}">

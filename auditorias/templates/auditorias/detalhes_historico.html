@@ -2,397 +2,565 @@
 {% load auditoria_extras %}
 
 {% block title %}{{ title }}{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{% block page_title %}Relatório de Auditoria{% endblock %}
 
 {% block content %}
 <style>
-    /* Estilos para garantir um visual moderno e acessível, usando as variáveis CSS existentes */
-    .report-header {
+    /* --- ESTILOS GERAIS --- */
+    .report-paper {
+        background: white;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px;
+        border-radius: 4px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Cabeçalho */
+    .report-header-section {
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 20px;
+        margin-bottom: 30px;
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border, #e0e0e0); /* Fallback for accessibility */
+        align-items: flex-start;
     }
 
-    .report-header .content-title {
-        font-size: 1.75rem; /* Maior e mais legível */
-        color: var(--text-primary, #333);
-        margin-bottom: 4px;
-    }
-
-    .report-header .content-subtitle {
-        font-size: 1rem;
-        color: var(--text-secondary, #666);
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-    }
-
-    .info-item {
-        padding: 12px 0;
-        border-bottom: 1px dashed var(--border-light, #f0f0f0);
-    }
-
-    .info-item strong {
-        display: block;
-        font-size: 0.85rem;
-        color: var(--text-secondary, #666);
-        margin-bottom: 4px;
+    .report-title h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .info-item span {
-        font-size: 1rem;
-        color: var(--text-primary, #333);
-        font-weight: 500;
+    .report-meta {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 5px;
     }
 
-    .info-item .progress-value {
-        font-weight: bold;
-        color: var(--primary, #007bff);
-        font-size: 1.1rem;
+    .section-formal-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        padding-left: 10px;
+        border-left: 4px solid var(--primary);
+        letter-spacing: 0.05em;
     }
 
-    .section-topic {
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid var(--border, #e0e0e0);
-        border-radius: var(--radius-md, 8px);
-        background-color: var(--bg-card, #fff); /* Fundo sutil */
-    }
-
-    .section-topic-header {
-        font-size: 1.3rem;
-        color: var(--primary, #007bff);
-        margin-bottom: 15px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid var(--primary-light, #e9f5ff); /* Linha de destaque */
-    }
-
-    .question-item {
-        margin-bottom: 20px;
-        padding-bottom: 20px;
-        border-bottom: 1px dashed var(--border-light, #f0f0f0);
-    }
-
-    .question-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .question-text {
-        font-weight: 600;
-        color: var(--text-primary, #333);
-        margin-bottom: 8px;
-        font-size: 1.05rem;
-    }
-
-    .answer-details {
-        padding-left: 20px;
-        border-left: 3px solid var(--border, #e0e0e0);
-        margin-top: 10px;
-    }
-
-    .answer-details p {
-        margin-bottom: 6px;
-    }
-
-    .answer-details strong {
-        font-weight: 500;
-        color: var(--text-secondary, #666);
-        margin-right: 5px;
-    }
-
-    .badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin-top: 4px; /* Espaçamento para acessibilidade */
-    }
-
-    .badge-error { background-color: var(--error-bg, #fef2f2); color: var(--error, #dc2626); border: 1px solid var(--error-light, #fca5a5); }
-    .badge-success { background-color: var(--success-bg, #f0fdf4); color: var(--success, #10b981); border: 1px solid var(--success-light, #a7f3d0); }
-    .badge-warning { background-color: var(--warning-bg, #fffbeb); color: var(--warning, #f59e0b); border: 1px solid var(--warning-light, #fcd34d); }
-    .badge-secondary { background-color: var(--secondary-bg, #f3f4f6); color: var(--text-secondary, #6b7280); border: 1px solid var(--border, #e5e7eb); }
-
-    .observation-box {
-        background: var(--bg-secondary, #f8f8f8);
-        padding: 15px;
-        border-radius: var(--radius-sm, 4px);
-        border: 1px solid var(--border-light, #f0f0f0);
-        margin-top: 8px;
-        white-space: pre-wrap; /* Preserva quebras de linha e espaços */
-    }
-
-    .photo-gallery {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-
-    .photo-gallery a {
-        display: block;
-        height: 100px;
-        width: 100px;
-        overflow: hidden;
-        border-radius: var(--radius-sm, 4px);
-        border: 2px solid var(--border, #e0e0e0);
-        transition: border-color 0.2s;
-    }
-
-    .photo-gallery a:hover {
-        border-color: var(--primary, #007bff);
-    }
-
-    .photo-gallery img {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
-    }
-
-    .summary-stats-grid {
+    /* Grid de Informações */
+    .info-grid-formal {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
+        background: #f8fafc;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        margin-bottom: 30px;
     }
 
-    .stat-card {
+    .info-box label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .info-box span {
+        font-size: 14px;
+        color: #0f172a;
+        font-weight: 500;
+    }
+
+    /* --- RESUMO ESTATÍSTICO (ATUALIZADO COM ÍCONES) --- */
+    .stats-strip {
+        display: flex;
+        gap: 1px;
+        background: #e2e8f0;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 40px;
+    }
+
+    .stat-item {
+        flex: 1;
+        background: white;
+        padding: 15px 10px;
         text-align: center;
-        padding: 20px 10px;
-        border-radius: var(--radius-md, 8px);
-        transition: transform 0.2s;
-        border: 1px solid var(--border-light, #f0f0f0);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
     }
 
-    .stat-card:hover {
+    /* Estilo para links no resumo */
+    a.stat-item {
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    a.stat-item:hover {
+        background-color: #f8fafc;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         transform: translateY(-2px);
     }
 
-    .stat-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 5px;
+    .stat-icon-large {
+        font-size: 20px;
+        margin-bottom: 2px;
     }
 
-    .stat-label {
-        font-size: 0.9rem;
-        color: var(--text-secondary, #666);
-        margin: 0;
+    .stat-number {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .stat-desc {
+        font-size: 10px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    /* --- TABELA DE ITENS --- */
+    .topic-section {
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+    }
+
+    .topic-header {
+        background: #1e293b;
+        color: white;
+        padding: 10px 15px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+    }
+
+    .audit-table th, .audit-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .audit-table td.col-details { vertical-align: top; }
+
+    .audit-table th {
+        background: #f1f5f9;
+        text-align: center;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        font-size: 11px;
+    }
+
+    .col-id { width: 5%; text-align: center; color: #94a3b8; font-weight: bold; }
+    .col-desc { width: 40%; }
+    .col-grau { width: 10%; text-align: center; }
+    .col-resp { width: 15%; text-align: center; }
+    .col-details { width: 30%; }
+
+    /* ÍCONES DE GRAU (TABELA) */
+    .grade-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 14px;
+    }
+    
+    /* CORES PADRONIZADAS (USADAS NO RESUMO E NA TABELA) */
+    /* Verde */
+    .color-conforme { color: #16a34a; }
+    .bg-conforme { background: #dcfce7; }
+    
+    /* Vermelho */
+    .color-nc-maior { color: #dc2626; }
+    .bg-nc-maior { background: #fee2e2; }
+    
+    /* Laranja */
+    .color-nc-menor { color: #ea580c; }
+    .bg-nc-menor { background: #ffedd5; }
+    
+    /* Azul */
+    .color-solucionado { color: #0284c7; }
+    .bg-solucionado { background: #e0f2fe; }
+    
+    /* Roxo */
+    .color-oportunidade { color: #7c3aed; }
+    .bg-oportunidade { background: #ede9fe; }
+    
+    /* Cinza */
+    .color-na { color: #64748b; }
+    .bg-na { background: #f1f5f9; }
+
+    /* Aplicação nas classes da tabela */
+    .grade-conforme { color: #16a34a; background: #dcfce7; }
+    .grade-nc-maior { color: #dc2626; background: #fee2e2; }
+    .grade-nc-menor { color: #ea580c; background: #ffedd5; }
+    .grade-solucionado { color: #0284c7; background: #e0f2fe; }
+    .grade-oportunidade { color: #7c3aed; background: #ede9fe; }
+    .grade-na { color: #64748b; background: #f1f5f9; }
+
+    /* Resultado Texto */
+    .result-text { font-weight: 700; text-transform: uppercase; font-size: 11px; }
+    .text-conforme { color: #16a34a; }
+    .text-nao-conforme { color: #dc2626; }
+    .text-na { color: #64748b; }
+
+    /* Detalhes */
+    .detail-block {
+        background: #f8fafc;
+        border-left: 3px solid #cbd5e1;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12px;
+    }
+    
+    .detail-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748b;
+        display: block;
+        margin-bottom: 2px;
         text-transform: uppercase;
     }
 
-    /* Cores específicas para as estatísticas */
-    .stat-card.default { background: var(--bg-secondary, #f9fafb); }
-    .stat-card.error { background: rgba(220, 38, 38, 0.08); }
-    .stat-card.warning { background: rgba(245, 158, 11, 0.08); }
-    .stat-card.primary { background: rgba(37, 99, 235, 0.08); }
-    .stat-card.success { background: rgba(16, 185, 129, 0.08); }
+    .detail-text { color: #334155; white-space: pre-wrap; }
 
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .report-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .report-header a {
-            margin-top: 15px;
-            width: 100%;
-            text-align: center;
-        }
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-        .summary-stats-grid {
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        }
+    .photo-grid { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .photo-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0; cursor: zoom-in; }
+
+    .badge-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 4px; }
+    .resp-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 10px; text-transform: uppercase; text-align: center; border: 1px solid transparent; white-space: nowrap; }
+    
+    .resp-conforme { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .resp-nao-conforme { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .resp-na { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .resp-solucionado-check { background: #fef3c7; color: #92400e; border-color: #fde68a; display: flex; align-items: center; gap: 4px; }
+
+    .report-actions { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 20px; max-width: 1100px; margin-left: auto; margin-right: auto; }
+
+    @media print {
+        body { background: white; -webkit-print-color-adjust: exact; }
+        .sidebar, .main-header, .report-actions, .app-container { display: none !important; }
+        .report-paper { box-shadow: none; border: none; padding: 0; margin: 0; width: 100%; max-width: 100%; }
+        .content-area { padding: 0; }
+        .main-content { margin-left: 0 !important; }
+        .topic-section { page-break-inside: avoid; }
+        tr { page-break-inside: avoid; }
+        .grade-icon, .stat-item { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 </style>
 
-<div class="report-header">
-    <div>
-        <h1 class="content-title" id="report-title">Relatório da Auditoria #{{ instancia.id }}</h1>
-        <p class="content-subtitle">Detalhes e respostas da execução concluída.</p>
-    </div>
-    <a href="{% url 'auditorias:historico_concluidas' %}" class="btn btn-secondary" aria-label="Voltar para a lista de histórico de auditorias concluídas">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        Voltar ao Histórico
+<div class="report-actions">
+    <a href="{% url 'auditorias:historico_concluidas' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
     </a>
+    <button class="btn btn-primary" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir Relatório
+    </button>
 </div>
 
-<section class="card" aria-labelledby="audit-details">
-    <div class="card-header">
-        <h2 class="card-title" id="audit-details">Informações da Auditoria</h2>
-    </div>
-    <div class="card-body">
-        <div class="info-grid">
-            <div class="info-item">
-                <strong>Modelo de Auditoria:</strong>
-                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.descricao }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+<div class="report-paper">
+    
+    <div class="report-header-section">
+        <div class="report-title">
+            {% if instancia.auditoria_agendada.local_empresa.logo %}
+                <img src="{{ instancia.auditoria_agendada.local_empresa.logo.url }}" alt="Logo" style="height: 40px; margin-bottom: 10px;">
+            {% endif %}
+            <h1>Relatório de Auditoria</h1>
+            <div class="report-meta">Nº Registro: #{{ instancia.id }} | Gerado em: {% now "d/m/Y H:i" %}</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">Resultado Final</div>
+            <div style="font-size: 28px; font-weight: 800; color: var(--primary);">
+                {{ taxa_conformidade|floatformat:1 }}%
             </div>
-            <div class="info-item">
-                <strong>Checklist:</strong>
-                <span>{{ instancia.checklist_usado.nome }} (V{{ instancia.checklist_usado.version }})</span>
-            </div>
-            <div class="info-item">
-                <strong>Local:</strong>
-                <span>{{ instancia.local_execucao|default:"N/A" }}</span>
-            </div>
-            <div class="info-item">
-                <strong>Pilar:</strong>
-                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.pilar.nome|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-            </div>
-            <div class="info-item">
-                <strong>Categoria:</strong>
-                <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.descricao|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-            </div>
-            <div class="info-item">
-                <strong>Auditor:</strong>
-                <span>{{ instancia.responsavel.get_full_name|default:instancia.responsavel.username }}</span>
-            </div>
-            <div class="info-item">
-                <strong>Data de Realização:</strong>
-                <span>{{ instancia.get_data_conclusao|date:"d/m/Y - H:i"|default:"--" }}</span>
-            </div>
-            <div class="info-item">
-                <strong>Tempo de Execução:</strong>
-                <span>{{ tempo_execucao|default:"N/A" }}</span>
-            </div>
-            <div class="info-item">
-                <strong>Preenchimento (Conclusão):</strong>
-                <span class="progress-value">{{ instancia.get_percentual_conclusao|floatformat:2 }}%</span>
-            </div>
+            <div style="font-size: 11px; color: #64748b;">de Conformidade</div>
         </div>
     </div>
-</section>
 
-<section class="card" style="margin-top: 24px;" aria-labelledby="audit-summary">
-    <div class="card-header">
-        <h2 class="card-title" id="audit-summary">Resumo da Auditoria</h2>
-    </div>
-    <div class="card-body">
-        <div class="summary-stats-grid">
-            <div class="stat-card default">
-                <div class="stat-value" style="color: var(--text-primary);">{{ summary_stats.total_itens }}</div>
-                <p class="stat-label">Total de Itens</p>
-            </div>
-            <div class="stat-card error">
-                <div class="stat-value" style="color: var(--error);">{{ summary_stats.nao_conformidade_maior }}</div>
-                <p class="stat-label" style="color: var(--error-dark, #991b1b);">NC Maior</p>
-            </div>
-            <div class="stat-card warning">
-                <div class="stat-value" style="color: var(--warning);">{{ summary_stats.nao_conformidade_menor }}</div>
-                <p class="stat-label" style="color: var(--warning-dark, #b45309);">NC Menor</p>
-            </div>
-            <div class="stat-card primary">
-                <div class="stat-value" style="color: var(--primary);">{{ summary_stats.desvios_solucionados }}</div>
-                <p class="stat-label" style="color: var(--primary-dark, #1e40af);">Desvios Solucionados</p>
-            </div>
-            <div class="stat-card success">
-                <div class="stat-value" style="color: var(--success);">{{ summary_stats.oportunidades_melhoria }}</div>
-                <p class="stat-label" style="color: var(--success-dark, #065f46);">Oport. de Melhoria</p>
-            </div>
-            <div class="stat-card default">
-                <div class="stat-value" style="color: var(--text-secondary);">{{ summary_stats.nao_aplicaveis }}</div>
-                <p class="stat-label">N/A</p>
-            </div>
+    <div class="info-grid-formal">
+        <div class="info-box">
+            <label>Modelo de Auditoria</label>
+            <span>{% for m in instancia.auditoria_agendada.modelos.all %}{{ m.descricao }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+        </div>
+        <div class="info-box">
+            <label>Checklist</label>
+            <span>{{ instancia.checklist_usado.nome }} (V{{ instancia.checklist_usado.version }})</span>
+        </div>
+        <div class="info-box">
+            <label>Local Auditado</label>
+            <span>{{ instancia.local_execucao.nome|default:"Não definido" }}</span>
+        </div>
+        <div class="info-box">
+            <label>Pilar</label>
+            <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.pilar.nome|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+        </div>
+        <div class="info-box">
+            <label>Categoria</label>
+            <span>{% for modelo in instancia.auditoria_agendada.modelos.all %}{{ modelo.categoria.descricao|default:"N/A" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+        </div>
+        <div class="info-box">
+            <label>Auditor Responsável</label>
+            <span>{{ instancia.responsavel.get_full_name|default:instancia.responsavel.username }}</span>
+        </div>
+        <div class="info-box">
+            <label>Data de Execução</label>
+            <span>{{ instancia.get_data_conclusao|date:"d/m/Y - H:i"|default:"--" }}</span>
+        </div>
+        <div class="info-box">
+            <label>Tempo de Execução</label>
+            <span>{{ tempo_execucao }}</span>
+        </div>
+        <div class="info-box">
+            <label>Preenchimento:</label>
+            <span class="progress-value">{{ instancia.get_percentual_conclusao|floatformat:2 }}%</span>
         </div>
     </div>
-</section>
 
-<section class="card" style="margin-top: 24px;" aria-labelledby="checklist-responses">
-    <div class="card-header">
-        <h2 class="card-title" id="checklist-responses">Respostas do Checklist</h2>
+    <div class="section-formal-title">Resumo da Auditoria</div>
+
+    <div class="stats-strip">
+        <div class="stat-item">
+            <i class="fas fa-list-ol stat-icon-large" style="color: var(--text-primary);"></i>
+            <span class="stat-number" style="color: var(--text-primary);">{{ summary_stats.total_itens }}</span>
+            <span class="stat-desc">Itens</span>
+        </div>
+        
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_auditoria_id={{ instancia.id }}" class="stat-item" title="Ver Planos">
+            <i class="fas fa-tools stat-icon-large color-solucionado"></i>
+            <span class="stat-number color-solucionado">{{ summary_stats.desvios_solucionados }}</span>
+            <span class="stat-desc">Resolvidos</span>
+        </a>
+
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_auditoria_id={{ instancia.id }}" class="stat-item" title="Ver Planos">
+            <i class="fas fa-lightbulb stat-icon-large color-oportunidade"></i>
+            <span class="stat-number color-oportunidade">{{ summary_stats.oportunidades_melhoria }}</span>
+            <span class="stat-desc">Oportunidades</span>
+        </a>
+        
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_auditoria_id={{ instancia.id }}" class="stat-item" title="Ver Planos">
+            <i class="fas fa-arrow-up stat-icon-large color-nc-maior"></i>
+            <span class="stat-number color-nc-maior">{{ summary_stats.nao_conformidade_maior }}</span>
+            <span class="stat-desc">NC Maior</span>
+        </a>
+        
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_auditoria_id={{ instancia.id }}" class="stat-item" title="Ver Planos">
+            <i class="fas fa-arrow-down stat-icon-large color-nc-menor"></i>
+            <span class="stat-number color-nc-menor">{{ summary_stats.nao_conformidade_menor }}</span>
+            <span class="stat-desc">NC Menor</span>
+        </a>
+
+        <div class="stat-item">
+            <i class="fas fa-ban stat-icon-large color-na"></i>
+            <span class="stat-number color-na">{{ summary_stats.nao_aplicaveis }}</span>
+            <span class="stat-desc">N/A</span>
+        </div>
     </div>
-    <div class="card-body">
-        {% if instancia.checklist_usado %}
-            {% for topico in instancia.checklist_usado.topicos.all %}
-                <div class="section-topic" role="region" aria-labelledby="topico-{{ topico.id }}">
-                    <h3 class="section-topic-header" id="topico-{{ topico.id }}">
-                        {{ topico.descricao }}
-                    </h3>
 
+    {% if instancia.checklist_usado %}
+        {% for topico in instancia.checklist_usado.topicos.all %}
+        <div class="topic-section">
+            <div class="topic-header">
+                <span>{{ topico.descricao }}</span>
+            </div>
+            
+            <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">#</th>
+                        <th class="col-desc">Descrição do Item</th>
+                        <th class="col-grau">Grau</th>
+                        <th class="col-resp">Resultado</th>
+                        <th class="col-details">Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for pergunta in topico.perguntas.all %}
                         {% with resposta=respostas_map|get_item:pergunta.id %}
-                        <div class="question-item">
-                            <p class="question-text" id="pergunta-{{ pergunta.id }}">
-                                {{ forloop.counter }}. {{ pergunta.descricao }}
-                            </p>
+                        <tr>
+                            <td class="col-id">{{ forloop.counter }}</td>
+                            
+                            <td class="col-desc">
+                                <div>{{ pergunta.descricao }}</div>
+                                {% if pergunta.obrigatoria %}
+                                    <small style="color: var(--error); font-size: 9px;">* Obrigatório</small>
+                                {% endif %}
+                            </td>
 
-                            {% if resposta %}
-                                <div class="answer-details" aria-labelledby="pergunta-{{ pergunta.id }}">
+                            <td class="col-grau">
+                                {% if resposta %}
+                                    {% if resposta.opcao_resposta.status == 'NA' %}
+                                        <div class="grade-icon grade-na" title="Não Aplicável">
+                                            <i class="fas fa-ban"></i>
+                                        </div>
+                                    
+                                    {% elif resposta.desvio_solucionado %}
+                                        <div class="grade-icon grade-solucionado" title="Desvio Solucionado">
+                                            <i class="fas fa-tools"></i>
+                                        </div>
 
-                                    {% if resposta.opcao_resposta %}
-                                        <p><strong>Resposta:</strong>
-                                            {% if 'NAO_CONFORME' in resposta.opcao_resposta.status %}
-                                                <span class="badge badge-error">{{ resposta.opcao_resposta.descricao }}</span>
-                                            {% elif 'CONFORME' in resposta.opcao_resposta.status %}
-                                                <span class="badge badge-success">{{ resposta.opcao_resposta.descricao }}</span>
-                                            {% else %}
-                                                <span class="badge badge-secondary">{{ resposta.opcao_resposta.descricao }}</span>
-                                            {% endif %}
-                                        </p>
+                                    {% elif resposta.oportunidade_melhoria %}
+                                        <div class="grade-icon grade-oportunidade" title="Oportunidade de Melhoria">
+                                            <i class="fas fa-lightbulb"></i>
+                                        </div>
+
+                                    {% elif resposta.grau_nc == 'NC MAIOR' %}
+                                        <div class="grade-icon grade-nc-maior" title="Não Conformidade Maior">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </div>
+
+                                    {% elif resposta.grau_nc == 'NC MENOR' %}
+                                        <div class="grade-icon grade-nc-menor" title="Não Conformidade Menor">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </div>
+
+                                    {% elif resposta.opcao_resposta.status == 'NAO_CONFORME' %}
+                                        <div class="grade-icon grade-nc-maior" title="Não Conforme">
+                                            <i class="fas fa-times"></i>
+                                        </div>
+
+                                    {% else %}
+                                        <div class="grade-icon grade-conforme" title="Conforme">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #cbd5e1;">-</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="col-resp">
+                                {% if resposta %}
+                                    {% if resposta.opcao_resposta.status == 'NA' %}
+                                        <span class="result-text text-na">N/A</span>
+                                    {% elif resposta.opcao_resposta.status == 'NAO_CONFORME' and not resposta.desvio_solucionado %}
+                                        <span class="result-text text-nao-conforme">Não Conforme</span>
+                                    {% else %}
+                                        <span class="result-text text-conforme">Conforme</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #cbd5e1;">-</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="col-details">
+                                {% if resposta %}
+                                    {% if resposta.resposta_livre_texto %}
+                                        <div class="detail-block">
+                                            <span class="detail-label">Observação:</span>
+                                            <span class="detail-text">{{ resposta.resposta_livre_texto }}</span>
+                                        </div>
                                     {% endif %}
 
-                                    {% if resposta.desvio_solucionado %}
-                                        <p style="margin-top: 8px;"><strong>Situação:</strong> 
-                                            <span class="badge badge-info">Desvio Solucionado</span>
-                                        </p>
+                                    {% if resposta.descricao_desvio_nao_solucionado %}
+                                        <div class="detail-block" style="border-left-color: var(--error);">
+                                            <span class="detail-label color-nc-maior">Detalhe do Desvio:</span>
+                                            <span class="detail-text">{{ resposta.descricao_desvio_nao_solucionado }}</span>
+                                        </div>
                                     {% endif %}
 
-                                    {% if resposta.oportunidade_melhoria %}
-                                        <p><strong>Oportunidade de Melhoria:</strong>
-                                            <span class="badge badge-success">Sim</span>
-                                        </p>
+                                    {% if resposta.descricao_desvio_solucionado %}
+                                        <div class="detail-block" style="border-left-color: var(--warning);">
+                                            <span class="detail-label color-nc-menor">Ação Tomada:</span>
+                                            <span class="detail-text">{{ resposta.descricao_desvio_solucionado }}</span>
+                                        </div>
                                     {% endif %}
 
-                                    {% if resposta.grau_nc %}
-                                        <p><strong>Grau da NC:</strong>
-                                            {% if resposta.grau_nc == 'NC MAIOR' %}
-                                                <span class="badge badge-error">{{ resposta.get_grau_nc_display }}</span>
-                                            {% else %}
-                                                <span class="badge badge-warning">{{ resposta.get_grau_nc_display }}</span>
-                                            {% endif %}
-                                        </p>
+                                    {% if resposta.descricao_oportunidade_melhoria %}
+                                        <div class="detail-block" style="border-left-color: #7c3aed;"> {# Cor Roxa #}
+                                            <span class="detail-label color-oportunidade">Oportunidade de Melhoria:</span>
+                                            <span class="detail-text">{{ resposta.descricao_oportunidade_melhoria }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if resposta.planos_de_acao.all %}
+                                        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 5px;">
+                                            {% for plano in resposta.planos_de_acao.all %}
+                                                
+                                                {# Lógica para definir a URL correta baseada no status #}
+                                                {% if plano.status_plano == 'CONCLUIDO' or plano.status_plano == 'CANCELADO' or plano.status_plano == 'ARQUIVADO' %}
+                                                    {# Se for finalizado, manda para o histórico #}
+                                                    <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_id={{ plano.id }}&mode=finished" 
+                                                {% else %}
+                                                    {# Se for ativo, manda para a lista normal #}
+                                                    <a href="{% url 'auditorias:lista_planos_de_acao' %}?search_id={{ plano.id }}" 
+                                                {% endif %}
+                                                
+                                                   target="_blank" 
+                                                   title="Gerenciar Plano de Ação #{{ plano.id }}"
+                                                   style="font-size: 12px; font-weight: 700; color: #0066cc; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                                    
+                                                    <i class="fas fa-external-link-alt"></i> PA #{{ plano.id }}
+                                                    
+                                                    {# Ícones de Status #}
+                                                    {% if plano.status_plano == 'CONCLUIDO' %}
+                                                        <i class="fas fa-check-circle" style="color: #16a34a;" title="Concluído"></i>
+                                                    {% elif plano.status_plano == 'CANCELADO' %}
+                                                        <i class="fas fa-ban" style="color: #dc2626;" title="Recusado"></i>
+                                                    {% elif plano.status_plano == 'ARQUIVADO' %}
+                                                        <i class="fas fa-archive" style="color: #0ea5e9;" title="Arquivado"></i>
+                                                    {% endif %}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
                                     {% endif %}
 
                                     {% if resposta.anexos.all %}
-                                        <p style="margin-top: 12px;"><strong>Fotos:</strong></p>
-                                        <div class="photo-gallery" role="list">
-                                        {% for anexo in resposta.anexos.all %}
-                                            <a href="{{ anexo.arquivo.url }}" target="_blank" title="Clique para ampliar a foto do anexo" role="listitem">
-                                                <img src="{{ anexo.arquivo.url }}" alt="Anexo da pergunta {{ forloop.parentloop.counter }}" loading="lazy">
-                                            </a>
-                                        {% endfor %}
+                                        <div class="photo-grid">
+                                            {% for anexo in resposta.anexos.all %}
+                                                <a href="{{ anexo.arquivo.url }}" target="_blank">
+                                                    <img src="{{ anexo.arquivo.url }}" class="photo-thumb" alt="Evidência">
+                                                </a>
+                                            {% endfor %}
                                         </div>
                                     {% endif %}
-
-                                    {% if resposta.resposta_livre_texto %}
-                                        <p style="margin-top: 12px;"><strong>Resposta Livre:</strong></p>
-                                        <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); white-space: pre-wrap; line-height: 1.5;">
-                                            {{ resposta.resposta_livre_texto }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% else %}
-                                <p class="answer-details" style="color: var(--text-muted);"><em>Não respondida</em></p>
-                            {% endif %}
-                        </div>
+                                {% endif %}
+                            </td>
+                        </tr>
                         {% endwith %}
                     {% endfor %}
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>Checklist não encontrado para esta auditoria.</p>
-        {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: #94a3b8;">
+            <p>Nenhum checklist vinculado a esta auditoria.</p>
+        </div>
+    {% endif %}
+
+    <div style="margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8;">
+        <div>Sistema de Gestão de Auditorias</div>
+        <div>Página gerada automaticamente</div>
     </div>
-</section>
+
+</div>
 {% endblock %}

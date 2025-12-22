@@ -21,6 +21,10 @@ from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import RespostaSerializer
 
+from planos_de_acao.models import Forum, MensagemForum
+
+from django.views.decorators.http import require_POST
+
 # Altere ListAPIView para incluir RetrieveAPIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -31,14 +35,13 @@ from .models import (
     Pilar, CategoriaAuditoria, Norma, RequisitoNorma, FerramentaDigital,
     Checklist, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem,
     FerramentaCausaRaiz, ModeloAuditoria, Auditoria, AuditoriaInstancia, Resposta,
-    CATEGORIAS_AUDITORIA
+    CATEGORIAS_AUDITORIA, PlanoDeAcao, Investimento, EvidenciaPlano, HistoricoPlanoAcao
 )
 from organizacao.models import Empresa, Area, Setor, SubSetor
 from ativos.models import Ativo
 from cadastros_base.models import Turno
 from usuarios.models import Usuario
 
-import json
 from django.db.models import Min, Max
 from django.db.models import Max, Q
 from django.db.models import Q, F, Value
@@ -48,22 +51,120 @@ from django.utils import timezone
 
 from django.db import transaction
 
+from django.db.models.functions import TruncMonth
+from django.db.models import Count, Q
+
+import json
+
+from calendar import monthrange
+from datetime import date
+
 # ============================================================================
 # VIEWS PRINCIPAIS - DASHBOARD E LISTAGENS
 # ============================================================================
 
 
+def registrar_historico(plano, usuario, descricao, tipo='STATUS'):
+    """Função auxiliar para registrar eventos no histórico."""
+    HistoricoPlanoAcao.objects.create(
+        plano=plano,
+        usuario=usuario,
+        descricao=descricao,
+        tipo=tipo
+    )
+
+
 @login_required
 def dashboard_auditorias(request):
-    """Dashboard principal do módulo de auditorias"""
+    # 1. Filtros Básicos (Por padrão, ano atual)
+    ano_atual = timezone.now().year
+    qs_instancias = AuditoriaInstancia.objects.filter(
+        data_execucao__year=ano_atual)
+
+    # 2. KPIs Principais
+    total_planejadas = qs_instancias.count()
+    total_realizadas = qs_instancias.filter(executada=True).count()
+
+    eficiencia = 0
+    if total_planejadas > 0:
+        eficiencia = (total_realizadas / total_planejadas) * 100
+
+    # Total de Itens Não Conformes (Respostas NC em auditorias deste ano)
+    total_nc = Resposta.objects.filter(
+        auditoria_instancia__in=qs_instancias,
+        opcao_resposta__status='NAO_CONFORME'
+    ).count()
+
+    # 3. Gráfico: Planejado vs Realizado por Mês (Barras Agrupadas)
+    dados_mensais = qs_instancias.annotate(
+        mes=TruncMonth('data_execucao')
+    ).values('mes').annotate(
+        planejado=Count('id'),
+        realizado=Count('id', filter=Q(executada=True))
+    ).order_by('mes')
+
+    # Jan, Fev...
+    meses_labels = [d['mes'].strftime('%b') for d in dados_mensais]
+    series_planejado = [d['planejado'] for d in dados_mensais]
+    series_realizado = [d['realizado'] for d in dados_mensais]
+
+    # 4. Gráfico: Auditorias por Local (Top 10)
+    # Tenta pegar o subsetor, se não tiver, pega o setor
+    locais_data = qs_instancias.values(
+        'local_execucao__nome'
+    ).annotate(qtd=Count('id')).order_by('-qtd')[:10]
+
+    # Limpeza de nomes (trata auditorias sem local definido ainda)
+    locais_labels = [l['local_execucao__nome'] if l['local_execucao__nome']
+                     else 'Não Definido' for l in locais_data]
+    locais_series = [l['qtd'] for l in locais_data]
+
+    # 5. Gráfico: Conformidade Geral (Pizza)
+    # Conta total de respostas avaliadas no período
+    total_respostas = Resposta.objects.filter(
+        auditoria_instancia__in=qs_instancias).count()
+    total_respostas_nc = Resposta.objects.filter(
+        auditoria_instancia__in=qs_instancias,
+        opcao_resposta__status='NAO_CONFORME'
+    ).count()
+
+    total_conforme = total_respostas - total_respostas_nc
+
+    # Evita gráfico vazio
+    if total_respostas == 0:
+        series_conformidade = [0, 0]
+    else:
+        series_conformidade = [total_conforme, total_respostas_nc]
+
+    # 6. Tabela: Próximas Auditorias (Agenda)
+    proximas_auditorias = qs_instancias.filter(
+        executada=False,
+        data_execucao__gte=timezone.now().date()
+    ).select_related('responsavel', 'auditoria_agendada__ferramenta').order_by('data_execucao')[:5]
+
     context = {
-        'total_auditorias': Auditoria.objects.count(),
-        'total_modelos': ModeloAuditoria.objects.count(),
-        'total_checklists': Checklist.objects.count(),
-        'total_pilares': Pilar.objects.count(),
-        'auditorias_recentes': Auditoria.objects.order_by('-data_criacao')[:5],
-        'instancias_pendentes': AuditoriaInstancia.objects.filter(executada=False).count(),
+        'title': f'Dashboard de Auditorias {ano_atual}',
+
+        # KPIs
+        'kpi_realizadas': total_realizadas,
+        'kpi_planejadas': total_planejadas,
+        'kpi_eficiencia': f"{eficiencia:.1f}".replace('.', ','),
+        'kpi_nc': total_nc,
+
+        # Listas
+        'proximas_auditorias': proximas_auditorias,
+
+        # Dados Gráficos
+        'chart_meses_labels': json.dumps(meses_labels),
+        'chart_series_planejado': json.dumps(series_planejado),
+        'chart_series_realizado': json.dumps(series_realizado),
+
+        'chart_locais_labels': json.dumps(locais_labels),
+        'chart_locais_series': json.dumps(locais_series),
+
+        'chart_conformidade_series': json.dumps(series_conformidade),
     }
+
     return render(request, 'auditorias/dashboard.html', context)
 
 
@@ -837,11 +938,9 @@ def editar_checklist(request, pk):
 # from .models import AuditoriaInstancia, Checklist, SubSetor, Topico, Pergunta, OpcaoResposta, OpcaoPorcentagem
 
 
-def _gerar_instancias_para_auditoria(auditoria):
+def _gerar_instancias_para_auditoria(auditoria, subsetores_selecionados_ids=None):
     """
-    Função responsável por apagar instâncias futuras e gerar as novas
-    com base nos parâmetros do agendamento de uma auditoria.
-    Esta função deve ser chamada DEPOIS que a auditoria e seus M2M estiverem salvos.
+    Função ATUALIZADA para gerar instâncias com base na nova lógica de agendamento.
     """
     # 1. Apaga todas as instâncias futuras que ainda não foram executadas
     auditoria.instancias.filter(
@@ -865,21 +964,20 @@ def _gerar_instancias_para_auditoria(auditoria):
     if auditoria.data_inicio:
         current_date = auditoria.data_inicio
         end_date = auditoria.data_fim
-
         if not end_date:
             if not (auditoria.pular_finais_semana and current_date.weekday() >= 5):
                 dates_to_create.append(current_date)
         else:
-            loop_limit = 365 * 5  # Limite de 5 anos para evitar loops infinitos
+            loop_limit = 365 * 5
             loops = 0
             while current_date <= end_date and loops < loop_limit:
                 loops += 1
                 if not (auditoria.pular_finais_semana and current_date.weekday() >= 5):
                     dates_to_create.append(current_date)
-
                 if auditoria.por_intervalo and auditoria.intervalo:
                     current_date += timedelta(days=auditoria.intervalo + 1)
                 elif auditoria.por_frequencia and auditoria.frequencia:
+                    # ... lógica de frequência ...
                     if auditoria.frequencia == 'DIARIO':
                         current_date += timedelta(days=1)
                     elif auditoria.frequencia == 'SEMANAL':
@@ -897,18 +995,23 @@ def _gerar_instancias_para_auditoria(auditoria):
 
     # 4. Determina os locais e turnos
     target_locations = []
-    if auditoria.nivel_organizacional == 'SUBSETOR' and auditoria.local_subsetor:
-        target_locations.append(auditoria.local_subsetor)
-    elif auditoria.nivel_organizacional == 'SETOR' and auditoria.local_setor:
-        target_locations = list(
-            auditoria.local_setor.subsetor_set.filter(ativo=True))
-    elif auditoria.nivel_organizacional == 'AREA' and auditoria.local_area:
-        target_locations = list(SubSetor.objects.filter(
-            setor__area=auditoria.local_area, ativo=True))
-    elif auditoria.nivel_organizacional == 'EMPRESA' and auditoria.local_empresa:
-        target_locations = list(SubSetor.objects.filter(
-            setor__area__empresa=auditoria.local_empresa, ativo=True))
 
+    if auditoria.agendamento_especifico:
+        # CENÁRIO 2: Locais Específicos. Usa a lista de IDs recebida.
+        if subsetores_selecionados_ids:
+            target_locations = list(SubSetor.objects.filter(
+                pk__in=subsetores_selecionados_ids))
+    else:
+        # CENÁRIO 1: Auditoria de Gestão ("Flutuante").
+        # Se o nível NÃO for Subsetor, criamos uma instância sem local definido.
+        if auditoria.nivel_organizacional != 'SUBSETOR':
+            # O 'None' indica que o local será escolhido no app
+            target_locations.append(None)
+        elif auditoria.local_subsetor:
+            # Caso especial: se o nível for Subsetor, o agendamento é para aquele local.
+            target_locations.append(auditoria.local_subsetor)
+
+    # Garante que não falhe se nenhuma localização for encontrada
     if not target_locations:
         target_locations.append(None)
 
@@ -918,7 +1021,7 @@ def _gerar_instancias_para_auditoria(auditoria):
 
     repetitions = auditoria.numero_repeticoes if auditoria.numero_repeticoes and auditoria.numero_repeticoes > 0 else 1
 
-    # 5. Cria as novas instâncias
+    # 5. Cria as novas instâncias (lógica inalterada)
     instancias_a_criar = []
     for dt in dates_to_create:
         for location in target_locations:
@@ -1551,26 +1654,13 @@ def lista_auditorias(request):
 
 @login_required
 def criar_auditoria(request):
-    """Cria uma nova auditoria agendada"""
+    """Cria uma nova auditoria agendada com a nova lógica de locais."""
     if request.method == 'POST':
-        # --- Captura todos os dados do formulário primeiro ---
-        ferramenta_id = request.POST.get('ferramenta')
-        responsavel_id = request.POST.get('responsavel')
-        nivel_organizacional = request.POST.get('nivel_organizacional')
-        data_inicio_str = request.POST.get('data_inicio')
-        data_fim_str = request.POST.get('data_fim')
-
-        local_empresa_id = request.POST.get('local_empresa') or None
-        local_area_id = request.POST.get('local_area') or None
-        local_setor_id = request.POST.get('local_setor') or None
-        local_subsetor_id = request.POST.get('local_subsetor') or None
-
-        modelos_ids = request.POST.getlist('modelos')
-        ativos_ids = request.POST.getlist('ativos_auditados')
-        turnos_ids = request.POST.getlist('turnos')
-
-        if ferramenta_id and responsavel_id and nivel_organizacional and data_inicio_str:
-            try:
+        try:
+            with transaction.atomic():
+                # --- Captura todos os dados do formulário ---
+                data_inicio_str = request.POST.get('data_inicio')
+                data_fim_str = request.POST.get('data_fim')
                 data_inicio = datetime.strptime(
                     data_inicio_str, '%Y-%m-%d').date()
                 data_fim = datetime.strptime(
@@ -1578,59 +1668,58 @@ def criar_auditoria(request):
 
                 schedule_type = request.POST.get('schedule_type')
 
-                with transaction.atomic():
+                # --- NOVA LÓGICA DE AGENDAMENTO ---
+                agendamento_especifico = request.POST.get(
+                    'agendamento_especifico') == 'on'
+                subsetores_selecionados_ids = request.POST.getlist(
+                    'subsetores_selecionados')
 
-                    # --- Monta o objeto com TODOS os dados ANTES de salvar ---
-                    auditoria = Auditoria(
-                        criado_por=request.user,
-                        ferramenta_id=ferramenta_id,
-                        responsavel_id=responsavel_id,
-                        nivel_organizacional=nivel_organizacional,
-                        data_inicio=data_inicio,
-                        data_fim=data_fim,
-                        # Atribui todos os locais aqui
-                        local_empresa_id=local_empresa_id,
-                        local_area_id=local_area_id,
-                        local_setor_id=local_setor_id,
-                        local_subsetor_id=local_subsetor_id,
-                        # Outros campos...
-                        categoria_auditoria=request.POST.get(
-                            'categoria_auditoria'),
-                        por_frequencia=schedule_type == 'por_frequencia',
-                        por_intervalo=schedule_type == 'por_intervalo',
-                        frequencia=request.POST.get('frequencia') or None,
-                        intervalo=int(request.POST.get('intervalo')
-                                      ) if request.POST.get('intervalo') else None,
-                        numero_repeticoes=int(request.POST.get('numero_repeticoes')) if request.POST.get(
-                            'numero_repeticoes') else None,
-                        pular_finais_semana=request.POST.get(
-                            'pular_finais_semana') == 'on',
-                        contem_turnos=request.POST.get('contem_turnos') == 'on'
-                    )
+                auditoria = Auditoria(
+                    criado_por=request.user,
+                    ferramenta_id=request.POST.get('ferramenta'),
+                    responsavel_id=request.POST.get('responsavel'),
+                    nivel_organizacional=request.POST.get(
+                        'nivel_organizacional'),
+                    categoria_auditoria=request.POST.get(
+                        'categoria_auditoria'),
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                    local_empresa_id=request.POST.get('local_empresa') or None,
+                    local_area_id=request.POST.get('local_area') or None,
+                    local_setor_id=request.POST.get('local_setor') or None,
+                    local_subsetor_id=request.POST.get(
+                        'local_subsetor') or None,
+                    por_frequencia=schedule_type == 'por_frequencia',
+                    por_intervalo=schedule_type == 'por_intervalo',
+                    frequencia=request.POST.get('frequencia') or None,
+                    intervalo=int(request.POST.get('intervalo')
+                                  ) if request.POST.get('intervalo') else None,
+                    numero_repeticoes=int(request.POST.get('numero_repeticoes')) if request.POST.get(
+                        'numero_repeticoes') else None,
+                    pular_finais_semana=request.POST.get(
+                        'pular_finais_semana') == 'on',
+                    contem_turnos=request.POST.get('contem_turnos') == 'on',
+                    agendamento_especifico=agendamento_especifico  # Salva o novo flag
+                )
+                auditoria.save()
 
-                    # --- Salva TUDO de uma vez (isso também dispara a criação das instâncias) ---
-                    auditoria.save()
+                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.ativos_auditados.set(
+                    request.POST.getlist('ativos_auditados'))
+                auditoria.turnos.set(request.POST.getlist('turnos'))
 
-                    # Define as relações ManyToMany DEPOIS do primeiro save
-                    if modelos_ids:
-                        auditoria.modelos.set(modelos_ids)
-                    if ativos_ids:
-                        auditoria.ativos_auditados.set(ativos_ids)
-                    if turnos_ids:
-                        auditoria.turnos.set(turnos_ids)
+                # --- CHAMA A FUNÇÃO ATUALIZADA ---
+                _gerar_instancias_para_auditoria(
+                    auditoria, subsetores_selecionados_ids)
 
-                    # --- CHAMA A NOVA FUNÇÃO AQUI ---
-                    _gerar_instancias_para_auditoria(auditoria)
+            messages.success(request, 'Auditoria criada com sucesso!')
+            return redirect('auditorias:lista_auditorias')
+        except Exception as e:
+            messages.error(request, f'Erro ao criar auditoria: {repr(e)}')
+            import traceback
+            traceback.print_exc()  # Para debug no terminal
 
-                messages.success(request, 'Auditoria criada com sucesso!')
-                return redirect('auditorias:lista_auditorias')
-
-            except Exception as e:
-                messages.error(request, f'Erro ao criar auditoria: {repr(e)}')
-        else:
-            messages.error(request, 'Campos obrigatórios não preenchidos!')
-
-    # O contexto para o método GET continua o mesmo
+    # Contexto para o método GET
     context = {
         'ferramentas': FerramentaDigital.objects.all(),
         'usuarios': Usuario.objects.filter(is_active=True),
@@ -1649,31 +1738,32 @@ def criar_auditoria(request):
 
 @login_required
 def editar_auditoria(request, pk):
-    """Edita uma auditoria existente"""
+    """Edita uma auditoria existente com a nova lógica de locais."""
     auditoria = get_object_or_404(Auditoria, pk=pk)
-
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # --- Captura todos os dados do formulário primeiro ---
                 data_inicio_str = request.POST.get('data_inicio')
                 data_fim_str = request.POST.get('data_fim')
+                auditoria.data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                auditoria.data_fim = datetime.strptime(
+                    data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
 
-                # --- Atualiza todos os campos do objeto ANTES de salvar ---
+                schedule_type = request.POST.get('schedule_type')
+
+                # --- NOVA LÓGICA DE AGENDAMENTO ---
+                agendamento_especifico = request.POST.get(
+                    'agendamento_especifico') == 'on'
+                subsetores_selecionados_ids = request.POST.getlist(
+                    'subsetores_selecionados')
+
                 auditoria.ferramenta_id = request.POST.get('ferramenta')
                 auditoria.responsavel_id = request.POST.get('responsavel')
                 auditoria.nivel_organizacional = request.POST.get(
                     'nivel_organizacional')
                 auditoria.categoria_auditoria = request.POST.get(
                     'categoria_auditoria')
-
-                # Converte as datas de string para objeto de data
-                auditoria.data_inicio = datetime.strptime(
-                    data_inicio_str, '%Y-%m-%d').date()
-                auditoria.data_fim = datetime.strptime(
-                    data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
-
-                # Atualiza todos os locais
                 auditoria.local_empresa_id = request.POST.get(
                     'local_empresa') or None
                 auditoria.local_area_id = request.POST.get(
@@ -1682,10 +1772,6 @@ def editar_auditoria(request, pk):
                     'local_setor') or None
                 auditoria.local_subsetor_id = request.POST.get(
                     'local_subsetor') or None
-
-                schedule_type = request.POST.get('schedule_type')
-
-                # Atualiza os dados de programação
                 auditoria.por_frequencia = schedule_type == 'por_frequencia'
                 auditoria.por_intervalo = schedule_type == 'por_intervalo'
                 auditoria.frequencia = request.POST.get('frequencia') or None
@@ -1697,27 +1783,27 @@ def editar_auditoria(request, pk):
                     'pular_finais_semana') == 'on'
                 auditoria.contem_turnos = request.POST.get(
                     'contem_turnos') == 'on'
+                auditoria.agendamento_especifico = agendamento_especifico  # Salva o novo flag
 
-                # --- Salva TUDO de uma vez (isso também vai recriar as instâncias futuras) ---
                 auditoria.save()
 
-                # Atualiza as relações ManyToMany
                 auditoria.modelos.set(request.POST.getlist('modelos'))
                 auditoria.ativos_auditados.set(
                     request.POST.getlist('ativos_auditados'))
                 auditoria.turnos.set(request.POST.getlist('turnos'))
 
-                # --- CHAMA A NOVA FUNÇÃO AQUI ---
-                # Ela internamente já apaga as futuras e recria as novas
-                _gerar_instancias_para_auditoria(auditoria)
+                # --- CHAMA A FUNÇÃO ATUALIZADA ---
+                _gerar_instancias_para_auditoria(
+                    auditoria, subsetores_selecionados_ids)
 
             messages.success(request, 'Auditoria atualizada com sucesso!')
             return redirect('auditorias:lista_auditorias')
-
         except Exception as e:
             messages.error(request, f'Erro ao atualizar auditoria: {repr(e)}')
+            import traceback
+            traceback.print_exc()  # Para debug
 
-    # O contexto para o método GET (para exibir o formulário preenchido)
+    # Contexto para o método GET
     context = {
         'auditoria': auditoria,
         'ferramentas': FerramentaDigital.objects.all(),
@@ -1807,6 +1893,34 @@ def get_ativos_por_local(request):
 
     ativos_data = ativos.values('id', 'tag', 'descricao')
     return JsonResponse(list(ativos_data), safe=False)
+
+# --- ADICIONE ESTA NOVA VIEW ABAIXO ---
+
+
+@login_required
+def get_subsetores_por_nivel(request):
+    """
+    Retorna subsetores filtrados por nível organizacional (Empresa, Área, ou Setor).
+    """
+    empresa_id = request.GET.get('empresa_id')
+    area_id = request.GET.get('area_id')
+    setor_id = request.GET.get('setor_id')
+
+    queryset = SubSetor.objects.filter(ativo=True)
+
+    if setor_id:
+        queryset = queryset.filter(setor_id=setor_id)
+    elif area_id:
+        queryset = queryset.filter(setor__area_id=area_id)
+    elif empresa_id:
+        queryset = queryset.filter(setor__area__empresa_id=empresa_id)
+    else:
+        # Se nenhum ID for fornecido, retorna uma lista vazia
+        queryset = queryset.none()
+
+    subsetores = queryset.values('id', 'nome').order_by('nome')
+    return JsonResponse(list(subsetores), safe=False)
+# --- FIM DA NOVA VIEW ---
 
 
 @login_required
@@ -2080,16 +2194,9 @@ class AuditoriaInstanciaDetailAPIView(RetrieveAPIView):
 
 
 class SubmeterAuditoriaAPIView(APIView):
-    """
-    Endpoint para submeter as respostas de uma instância de auditoria.
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        # --- ADICIONE ESTA LINHA PARA DEBUG ---
-        # print("--- DADOS RECEBIDOS PELA API ---", request.data)
-        # --- FIM DA LINHA DE DEBUG ---
-
         try:
             instancia = AuditoriaInstancia.objects.get(
                 pk=pk,
@@ -2102,21 +2209,30 @@ class SubmeterAuditoriaAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # --- NOVA LÓGICA PARA ATUALIZAR O LOCAL ---
+        local_execucao_id = request.data.get('local_execucao_id')
+        if local_execucao_id and instancia.local_execucao is None:
+            try:
+                subsetor = SubSetor.objects.get(pk=local_execucao_id)
+                instancia.local_execucao = subsetor
+                # Não salvamos ainda, vamos salvar junto com o 'executada=True'
+            except SubSetor.DoesNotExist:
+                return Response(
+                    {"detail": "O local de execução (subsetor) fornecido não é válido."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        # --- FIM DA NOVA LÓGICA ---
+
         respostas_data = request.data.get('respostas', [])
-
-        # Passamos a instância para o serializer através do "contexto"
         contexto = {'auditoria_instancia': instancia}
-
         respostas_serializer = RespostaSerializer(
             data=respostas_data, many=True, context=contexto)
 
         if respostas_serializer.is_valid():
-            # O método .save() agora vai chamar o método .create() que escrevemos no serializer
             respostas_serializer.save()
 
-            # Marcamos a auditoria como executada
             instancia.executada = True
-            instancia.save()
+            instancia.save()  # Agora salva o 'local_execucao' atualizado e o 'executada'
 
             return Response(
                 {"detail": "Auditoria submetida com sucesso!"},
@@ -2124,6 +2240,53 @@ class SubmeterAuditoriaAPIView(APIView):
             )
 
         return Response(respostas_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LocaisPermitidosAPIView(ListAPIView):
+    """
+    Endpoint da API que retorna a lista de SubSetores permitidos
+    para uma instância de auditoria de gestão (flutuante).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer(self, *args, **kwargs):
+        # Esta view não usa um serializer padrão, então retornamos None
+        return None
+
+    def get_queryset(self):
+        """
+        Filtra os subsetores com base no Nível Organizacional
+        definido no Agendamento "pai" da instância.
+        """
+        instancia_id = self.kwargs.get('pk')
+        try:
+            instancia = AuditoriaInstancia.objects.select_related(
+                'auditoria_agendada'
+            ).get(pk=instancia_id, responsavel=self.request.user)
+        except AuditoriaInstancia.DoesNotExist:
+            return SubSetor.objects.none()  # Retorna vazio se não encontrar
+
+        agendamento = instancia.auditoria_agendada
+        nivel = agendamento.nivel_organizacional
+
+        # Se for auditoria de gestão, busca os locais permitidos
+        if not instancia.local_execucao and not agendamento.agendamento_especifico:
+            if nivel == 'EMPRESA' and agendamento.local_empresa:
+                return SubSetor.objects.filter(setor__area__empresa=agendamento.local_empresa, ativo=True)
+            if nivel == 'AREA' and agendamento.local_area:
+                return SubSetor.objects.filter(setor__area=agendamento.local_area, ativo=True)
+            if nivel == 'SETOR' and agendamento.local_setor:
+                return SubSetor.objects.filter(setor=agendamento.local_setor, ativo=True)
+
+        # Se for auditoria específica ou nível subsetor, não retorna nada
+        # (pois o local já está definido)
+        return SubSetor.objects.none()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        # Converte o queryset em dados simples (id, nome) para o Flutter
+        data = list(queryset.values('id', 'nome'))
+        return Response(data)
 
 
 class AuditoriasConcluidasAPIView(ListAPIView):
@@ -2425,8 +2588,7 @@ def detalhes_auditoria(request, pk):
 @login_required
 def detalhes_historico_auditoria(request, pk):
     """
-    Exibe os detalhes de uma instância de auditoria concluída, incluindo
-    todas as perguntas e as respostas fornecidas, além de um sumário.
+    Exibe os detalhes de uma instância de auditoria concluída.
     """
     instancia = get_object_or_404(
         AuditoriaInstancia.objects.select_related(
@@ -2447,8 +2609,8 @@ def detalhes_historico_auditoria(request, pk):
         for resposta in instancia.respostas.all()
     }
 
-    # --- LÓGICA DE CÁLCULO DE TEMPO CORRIGIDA ---
-    tempo_execucao_str = "N/A"  # Valor padrão
+    # Cálculo de Tempo
+    tempo_execucao_str = "N/A"
     respostas_queryset = instancia.respostas.all()
     if respostas_queryset.count() > 1:
         datas_respostas = respostas_queryset.aggregate(
@@ -2457,19 +2619,38 @@ def detalhes_historico_auditoria(request, pk):
         )
         if datas_respostas['primeira'] and datas_respostas['ultima']:
             delta = datas_respostas['ultima'] - datas_respostas['primeira']
-
-            # Formata o tempo para HH:MM:SS
             total_seconds = int(delta.total_seconds())
             hours = total_seconds // 3600
             minutes = (total_seconds % 3600) // 60
             seconds = total_seconds % 60
             tempo_execucao_str = f"{hours:02}:{minutes:02}:{seconds:02}"
-            # --- FIM DA CORREÇÃO ---
 
     total_perguntas = 0
     if instancia.checklist_usado:
         total_perguntas = Pergunta.objects.filter(
             topico__checklist=instancia.checklist_usado).count()
+
+    # --- NOVA LÓGICA DE CÁLCULO DE CONFORMIDADE ---
+    # Conta quantos itens são "Não Aplicável" (NA)
+    qtd_na = respostas_queryset.filter(opcao_resposta__status='NA').count()
+
+    # Conta quantos itens são "Não Conforme" (NC)
+    # Nota: Mesmo se o desvio foi solucionado, ele conta como uma Não Conformidade no histórico
+    qtd_nc = respostas_queryset.filter(
+        opcao_resposta__status='NAO_CONFORME').count()
+
+    # Itens Aplicáveis = Total de perguntas respondidas - NAs
+    # (Usamos o count das respostas para garantir que só conta o que foi respondido)
+    total_respondido = respostas_queryset.count()
+    itens_aplicaveis = total_respondido - qtd_na
+
+    if itens_aplicaveis > 0:
+        # A nota é: (Aplicáveis - Não Conformidades) / Aplicáveis
+        taxa_conformidade = (
+            (itens_aplicaveis - qtd_nc) / itens_aplicaveis) * 100
+    else:
+        taxa_conformidade = 0.0
+    # -----------------------------------------------
 
     summary_stats = {
         'total_itens': total_perguntas,
@@ -2477,14 +2658,920 @@ def detalhes_historico_auditoria(request, pk):
         'nao_conformidade_menor': respostas_queryset.filter(grau_nc='NC MENOR').count(),
         'desvios_solucionados': respostas_queryset.filter(desvio_solucionado=True).count(),
         'oportunidades_melhoria': respostas_queryset.filter(oportunidade_melhoria=True).count(),
-        'nao_aplicaveis': respostas_queryset.filter(opcao_resposta__status='NA').count(),
+        'nao_aplicaveis': qtd_na,
     }
 
     context = {
         'title': f'Detalhes da Auditoria #{instancia.id}',
         'instancia': instancia,
         'respostas_map': respostas_map,
-        'tempo_execucao': tempo_execucao_str,  # Passa a string formatada
+        'tempo_execucao': tempo_execucao_str,
         'summary_stats': summary_stats,
+        # Passamos a nova variável para o template
+        'taxa_conformidade': taxa_conformidade,
     }
     return render(request, 'auditorias/detalhes_historico.html', context)
+
+
+@login_required
+def lista_planos_de_acao(request):
+    usuario = request.user
+
+    # 1. Base da Query (Sem filtros de status ainda)
+    queryset = PlanoDeAcao.objects.select_related(
+        'origem_resposta__auditoria_instancia__responsavel',
+        'responsavel_acao',
+        'local_execucao__setor__area__empresa',
+        'ferramenta',
+        'categoria'
+    )
+
+    # 2. Filtro de Segurança
+    if not usuario.is_superuser:
+        filtro_seguranca = Q(
+            responsavel_acao=usuario
+        ) | Q(
+            origem_resposta__auditoria_instancia__responsavel=usuario
+        ) | Q(
+            local_execucao__usuario_responsavel=usuario
+        ) | Q(
+            local_execucao__setor__usuario_responsavel=usuario
+        ) | Q(
+            local_execucao__setor__area__usuario_responsavel=usuario
+        ) | Q(
+            local_execucao__setor__area__empresa__usuario_responsavel=usuario
+        )
+        queryset = queryset.filter(filtro_seguranca).distinct()
+
+    # 3. Lógica de Modos (Ativas vs Finalizadas)
+    current_mode = request.GET.get('mode', 'active')  # Padrão é 'active'
+
+    if current_mode == 'finished':
+        # MODO FINALIZADAS: Mostra apenas o que acabou
+        queryset = queryset.filter(
+            status_plano__in=['CONCLUIDO', 'CANCELADO', 'ARQUIVADO'])
+
+        # Contagem para os Cards de Finalizadas
+        status_counts = queryset.aggregate(
+            concluidas=Count('id', filter=Q(status_plano='CONCLUIDO')),
+            recusadas=Count('id', filter=Q(status_plano='CANCELADO')),
+            arquivadas=Count('id', filter=Q(status_plano='ARQUIVADO'))
+        )
+
+        # Mapa de filtros para Finalizadas
+        status_map = {
+            'concluidas': ['CONCLUIDO'],
+            'recusadas': ['CANCELADO'],
+            'arquivadas': ['ARQUIVADO'],
+        }
+
+    else:
+        # MODO ATIVAS: Exclui o que acabou (Comportamento Padrão)
+        queryset = queryset.exclude(
+            status_plano__in=['CONCLUIDO', 'CANCELADO', 'ARQUIVADO'])
+
+        # Contagem para os Cards de Ativas
+        status_counts = queryset.aggregate(
+            recebidas=Count('id', filter=Q(status_plano='ABERTO')),
+            aguardando_validacao=Count('id', filter=Q(
+                status_plano='AGUARDANDO_VALIDACAO')),
+            implementacao=Count('id', filter=Q(
+                status_plano='EM_IMPLEMENTACAO')),
+            ag_aprovacao=Count('id', filter=Q(
+                status_plano='AGUARDANDO_APROVACAO')),
+            val_eficacia=Count('id', filter=Q(
+                status_plano='VALIDACAO_EFICACIA'))
+        )
+
+        # Mapa de filtros para Ativas
+        status_map = {
+            'recebidas': ['ABERTO'],
+            'validacao': ['AGUARDANDO_VALIDACAO'],
+            'implementacao': ['EM_IMPLEMENTACAO'],
+            'ag_aprovacao': ['AGUARDANDO_APROVACAO'],
+            'val_eficacia': ['VALIDACAO_EFICACIA'],
+        }
+
+    # 4. Aplicação do Filtro de Status Específico (Clique no Card)
+    status_filtro = request.GET.get('status', 'todos')
+    if status_filtro != 'todos' and status_filtro in status_map:
+        queryset = queryset.filter(status_plano__in=status_map[status_filtro])
+
+    # 5. Filtros de Busca (Input de Texto)
+    search_id = request.GET.get('search_id', '')
+    search_auditoria_id = request.GET.get('search_auditoria_id', '')
+
+    if search_id:
+        queryset = queryset.filter(id__icontains=search_id)
+    if search_auditoria_id:
+        queryset = queryset.filter(
+            origem_resposta__auditoria_instancia__id__icontains=search_auditoria_id)
+
+    # 6. Paginação e Contexto
+    paginator = Paginator(queryset.order_by('-data_abertura'), 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Lista de usuários para os modais
+    usuarios_ativos = Usuario.objects.filter(is_active=True).values(
+        'id', 'first_name', 'last_name', 'username')
+
+    categorias = CategoriaAuditoria.objects.filter(ativo=True)
+    subsetores = SubSetor.objects.filter(
+        ativo=True).select_related('setor__area__empresa')
+
+    context = {
+        'page_obj': page_obj,
+        'title': 'Histórico de Ações Finalizadas' if current_mode == 'finished' else 'Gerenciamento dos Planos de Ações',
+        'status_counts': status_counts,
+        'current_status': status_filtro,
+        # Enviamos o modo para o template saber qual botão mostrar
+        'current_mode': current_mode,
+        'singular': 'Plano de Ação',
+        'artigo': 'o',
+        'create_url': 'auditorias:dashboard',
+        'button_text': 'Novo Plano',
+        'empty_message': 'Nenhum plano encontrado neste status.',
+        'searches': {'id': search_id, 'auditoria_id': search_auditoria_id},
+        'usuarios_ativos': usuarios_ativos,
+        'categorias': categorias,
+        'subsetores': subsetores,
+    }
+    return render(request, 'auditorias/planos_de_acao/lista.html', context)
+
+
+@login_required
+@require_POST
+def arquivar_plano(request, pk):
+    """
+    Recebe uma requisição AJAX para arquivar um Plano de Ação.
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        motivo = data.get('motivo', '')
+
+        # Atualiza o status e o motivo
+        plano.status_plano = 'ARQUIVADO'
+        plano.motivo_arquivamento = motivo
+        plano.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Plano arquivado com sucesso!'})
+
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'error', 'message': f'Erro ao arquivar: {str(e)}'},
+            status=400
+        )
+
+
+@login_required
+def get_detalhes_plano(request, pk):
+    """Retorna dados completos do plano e da resposta de origem para o modal via AJAX"""
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+    resposta = plano.origem_resposta
+
+    lista_investimentos = []
+    total_geral_investido = 0
+
+    # =================================================================
+    # 1. LÓGICA DE EVIDÊNCIAS (FOTOS)
+    # =================================================================
+    evidencias_origem = []
+    evidencias_conclusao = []
+
+    # Busca todas as evidências atreladas diretamente ao plano
+    todas_evidencias_plano = plano.evidencias.all()
+
+    if resposta:
+        # --- CENÁRIO 1: PLANO VINDO DE AUDITORIA ---
+
+        # A. Contexto: Pega as fotos da Resposta da Auditoria
+        for anexo in resposta.anexos.all():
+            evidencias_origem.append({
+                'url': anexo.arquivo.url,
+                'nome': anexo.arquivo.name.split('/')[-1]
+            })
+
+        # B. Conclusão: Pega as fotos anexadas no Plano (EvidenciaPlano)
+        for ev in todas_evidencias_plano:
+            evidencias_conclusao.append({
+                'url': ev.arquivo.url,
+                'nome': ev.arquivo.name.split('/')[-1]
+            })
+
+    else:
+        # --- CENÁRIO 2: PLANO MANUAL (AVULSO) ---
+
+        # A. Contexto: Como não tem auditoria, as fotos que subimos na criação (EvidenciaPlano)
+        # devem aparecer aqui, como solicitado.
+        for ev in todas_evidencias_plano:
+            evidencias_origem.append({
+                'url': ev.arquivo.url,
+                'nome': ev.arquivo.name.split('/')[-1]
+            })
+
+        # B. Conclusão: Deixamos vazio por enquanto para não duplicar as imagens.
+        # (Futuramente, se houver uploads na etapa de conclusão de um plano manual,
+        # poderíamos diferenciar pela data de upload ou criar um campo 'tipo' no modelo)
+        pass
+
+    # =================================================================
+    # 2. LÓGICA DE OBSERVAÇÃO
+    # =================================================================
+    texto_observacao = "Sem observações."
+
+    if resposta:
+        # Prioridade de campos da auditoria
+        if resposta.descricao_desvio_nao_solucionado:
+            texto_observacao = resposta.descricao_desvio_nao_solucionado
+        elif resposta.descricao_oportunidade_melhoria:
+            texto_observacao = resposta.descricao_oportunidade_melhoria
+        elif resposta.descricao_desvio_solucionado:
+            texto_observacao = resposta.descricao_desvio_solucionado
+        elif resposta.resposta_livre_texto:
+            texto_observacao = resposta.resposta_livre_texto
+    else:
+        # Plano Manual: Pega do campo de observação de origem
+        if plano.observacao_origem:
+            texto_observacao = plano.observacao_origem
+
+    # =================================================================
+    # 3. INVESTIMENTOS
+    # =================================================================
+    for inv in plano.investimentos.all().order_by('-data_registro'):
+        lista_investimentos.append({
+            'descricao': inv.descricao,
+            'quantidade': inv.quantidade,
+            'valor_unitario': float(inv.valor_unitario),
+            'valor_total': float(inv.valor_total)
+        })
+        total_geral_investido += float(inv.valor_total)
+
+    # =================================================================
+    # 4. HISTÓRICO
+    # =================================================================
+    historico_data = []
+    for hist in plano.historico.all():
+        data_local = timezone.localtime(hist.data_registro)
+        historico_data.append({
+            'usuario': hist.usuario.get_full_name() if hist.usuario else "Sistema",
+            'avatar': hist.usuario.first_name[0].upper() if hist.usuario and hist.usuario.first_name else "S",
+            'descricao': hist.descricao,
+            'data': data_local.strftime('%d/%m/%Y'),
+            'hora': data_local.strftime('%H:%M'),
+            'tipo': hist.tipo
+        })
+
+    forum_id = plano.forum.id if plano.forum else None
+
+    # Monta o JSON final
+    data = {
+        'id': plano.id,
+
+        # Seção de Contexto (Topo do Modal)
+        'auditoria_pergunta': plano.titulo,
+        'auditoria_observacao': texto_observacao,
+        # <--- Agora inclui os uploads manuais aqui
+        'auditoria_evidencias': evidencias_origem,
+
+        # Seção de Tratativa
+        'causa_raiz': plano.descricao_causa_raiz or '',
+        'plano_acao': plano.descricao_acao or '',
+
+        'acoes_realizadas': plano.descricao_acao_realizada or '',
+        # <--- Fica vazio para manuais (evita duplicação)
+        'evidencias_conclusao': evidencias_conclusao,
+
+        'data_prevista': plano.data_finalizacao_prevista.strftime('%Y-%m-%d') if plano.data_finalizacao_prevista else '',
+
+        'investimentos': lista_investimentos,
+        'total_investido': total_geral_investido,
+        'historico': historico_data,
+        'forum_id': forum_id,
+    }
+    return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def aceitar_plano(request, pk):
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+    try:
+        data = json.loads(request.body)
+
+        plano.descricao_causa_raiz = data.get('causa_raiz')
+        plano.descricao_acao = data.get('acoes_propostas')
+
+        data_fim = data.get('data_finalizacao')
+        if data_fim:
+            plano.data_finalizacao_prevista = data_fim
+
+        # --- NOVA LÓGICA DE FLUXO ---
+        is_simplificado = data.get('fluxo_simplificado') == True
+        plano.fluxo_simplificado = is_simplificado
+
+        if is_simplificado:
+            # Pula a validação do auditor e já permite executar
+            plano.status_plano = 'EM_IMPLEMENTACAO'
+            msg_hist = "Aceitou o plano em Fluxo Simplificado (sem validação)."
+        else:
+            # Fluxo normal
+            plano.status_plano = 'AGUARDANDO_VALIDACAO'
+            msg_hist = "Aceitou o plano e enviou para validação."
+        # ---------------------------
+
+        plano.save()
+
+        registrar_historico(plano, request.user, msg_hist, "STATUS")
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def aprovar_planejamento(request, pk):
+    """
+    O Auditor aprova o plano proposto pelo responsável.
+    Status muda de AGUARDANDO_VALIDACAO -> EM_IMPLEMENTACAO
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    # Opcional: Verificar permissão (se o usuário é o auditor ou superuser)
+    # auditor = plano.origem_resposta.auditoria_instancia.responsavel
+    # if request.user != auditor and not request.user.is_superuser:
+    #    return JsonResponse({'status': 'error', 'message': 'Apenas o auditor pode aprovar.'}, status=403)
+
+    try:
+        # Atualiza o status
+        plano.status_plano = 'EM_IMPLEMENTACAO'
+        plano.save()
+
+        registrar_historico(
+            plano, request.user, "Aprovou o planejamento. Plano em implementação.", "STATUS")
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def adicionar_investimento(request, pk):
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+    try:
+        dados = json.loads(request.body)
+
+        # Verifica se recebeu uma lista (novo padrão) ou objeto único (legado/segurança)
+        items = dados if isinstance(dados, list) else [dados]
+
+        objs = []
+        for item in items:
+            descricao = item.get('descricao')
+            if not descricao:
+                continue  # Pula itens vazios se houver
+
+            objs.append(Investimento(
+                plano=plano,
+                descricao=descricao,
+                quantidade=int(item.get('quantidade', 1)),
+                valor_unitario=float(
+                    str(item.get('preco', 0)).replace(',', '.'))
+            ))
+
+        # Salva tudo de uma vez
+        if objs:
+            Investimento.objects.bulk_create(objs)
+
+        return JsonResponse({'status': 'success', 'message': f'{len(objs)} investimentos registrados!'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def concluir_planejamento(request, pk):
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        acoes_realizadas = request.POST.get('acoes_realizadas')
+        if acoes_realizadas:
+            plano.descricao_acao_realizada = acoes_realizadas
+
+        arquivos = request.FILES.getlist('evidencias')
+        if arquivos:
+            for f in arquivos:
+                EvidenciaPlano.objects.create(plano=plano, arquivo=f)
+
+        # --- NOVA LÓGICA DE FLUXO ---
+        if plano.fluxo_simplificado:
+            # Finaliza direto
+            plano.status_plano = 'CONCLUIDO'
+            plano.data_conclusao = timezone.now()
+            msg_hist = "Concluiu a implementação. Plano finalizado automaticamente (Fluxo Simplificado)."
+        else:
+            # Vai para aprovação do auditor
+            plano.status_plano = 'AGUARDANDO_APROVACAO'
+            # (Data conclusão real só é setada quando o auditor aprovar de fato, ou aqui como provisória)
+            plano.data_conclusao = timezone.now()
+            msg_hist = "Concluiu a implementação e enviou para aprovação."
+        # ---------------------------
+
+        plano.save()
+
+        registrar_historico(plano, request.user, msg_hist, "ANEXO")
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def avaliar_conclusao(request, pk):
+    """
+    O Auditor decide se finaliza o plano ou envia para validação de eficácia.
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        decisao = data.get('decisao')  # 'finalizar' ou 'eficacia'
+
+        if decisao == 'finalizar':
+            plano.status_plano = 'CONCLUIDO'
+            # Garante que a data de conclusão final é hoje
+            plano.data_conclusao = timezone.now()
+
+            registrar_historico(plano, request.user,
+                                "Finalizou o plano de ação.", "STATUS")
+
+        elif decisao == 'eficacia':
+            plano.status_plano = 'VALIDACAO_EFICACIA'
+            # Opcional: Limpar data de conclusão pois o processo continuará
+            # plano.data_conclusao = None
+
+            registrar_historico(plano, request.user,
+                                "Enviou para validação de eficácia.", "STATUS")
+
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Decisão inválida'}, status=400)
+
+        plano.save()
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def validar_eficacia(request, pk):
+    """
+    Etapa Final: Validação da Eficácia.
+    Status muda de VALIDACAO_EFICACIA -> CONCLUIDO
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        # 1. Salva a observação
+        obs = request.POST.get('observacao_eficacia')
+        if obs:
+            plano.observacao_eficacia = obs
+
+        # 2. Salva as evidências de eficácia (adiciona à lista existente)
+        arquivos = request.FILES.getlist('evidencias')
+        if arquivos:
+            for f in arquivos:
+                EvidenciaPlano.objects.create(plano=plano, arquivo=f)
+
+        # 3. Finaliza o Plano
+        plano.status_plano = 'CONCLUIDO'
+        plano.data_conclusao = timezone.now()  # Data real do fim do ciclo
+        plano.save()
+
+        registrar_historico(plano, request.user,
+                            "Validou a eficácia e concluiu o plano.", "STATUS")
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def recusar_plano(request, pk):
+    """
+    Recusa a etapa atual e retorna ao status anterior.
+    Se estiver em ABERTO, vai para CANCELADO (some da lista).
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        motivo = data.get('motivo')
+
+        if motivo:
+            # Salva o motivo (pode-se concatenar com histórico se desejar)
+            plano.motivo_recusa = motivo
+
+        # --- LÓGICA DE RETORNO ---
+        status_atual = plano.status_plano
+
+        if status_atual == 'ABERTO':
+            # Responsável rejeitou o plano logo de cara
+            plano.status_plano = 'CANCELADO'
+
+        elif status_atual == 'AGUARDANDO_VALIDACAO':
+            # Auditor rejeitou o planejamento -> Volta para o Responsável planejar
+            plano.status_plano = 'ABERTO'
+
+        elif status_atual == 'AGUARDANDO_APROVACAO':
+            # Auditor rejeitou a execução -> Volta para Implementação (fazer de novo/melhorar)
+            plano.status_plano = 'EM_IMPLEMENTACAO'
+
+        elif status_atual == 'VALIDACAO_EFICACIA':
+            # Se rejeitar a eficácia, volta para aprovação (ou implementação, depende da regra)
+            # Geralmente volta para o Auditor decidir o que fazer, ou para implementação
+            plano.status_plano = 'AGUARDANDO_APROVACAO'
+
+        plano.save()
+
+        registrar_historico(
+            plano, request.user, f"Recusou/Devolveu a etapa. Motivo: {motivo}", "STATUS")
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def clonar_plano(request, pk):
+    """
+    Duplica um plano de ação existente, resetando o status para ABERTO
+    e atribuindo um novo responsável.
+    """
+    plano_original = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        novo_responsavel_id = data.get('novo_responsavel')
+        orientacoes = data.get('orientacoes')
+
+        if not novo_responsavel_id or not orientacoes:
+            return JsonResponse({'status': 'error', 'message': 'Dados incompletos'}, status=400)
+
+        # --- LÓGICA DE CLONAGEM ---
+        # 1. Copia o objeto (colocando pk=None, o Django cria um novo ao salvar)
+        novo_plano = plano_original
+        novo_plano.pk = None
+        novo_plano.id = None
+
+        # 2. Define os novos dados
+        novo_plano.responsavel_acao_id = novo_responsavel_id
+        novo_plano.orientacoes_extra = orientacoes
+
+        novo_plano.origem_orientacao = 'CLONAGEM'
+
+        # 3. Reseta para o estado inicial (Como se fosse novo)
+        novo_plano.status_plano = 'ABERTO'
+        novo_plano.data_abertura = timezone.now()
+
+        # 4. Limpa dados de execução/histórico do antigo
+        novo_plano.prazo_conclusao = None  # Ou mantém o prazo original, você decide
+        novo_plano.data_conclusao = None
+        novo_plano.descricao_causa_raiz = None
+        novo_plano.descricao_acao = None
+        novo_plano.descricao_acao_realizada = None
+        novo_plano.observacao_eficacia = None
+        novo_plano.motivo_recusa = None
+        novo_plano.motivo_arquivamento = None
+        novo_plano.data_finalizacao_prevista = None
+
+        # 5. Cria um NOVO Fórum (Importante! Não podem compartilhar o chat)
+        novo_forum = Forum.objects.create(
+            nome=f"Discussão Plano Clonado - {novo_plano.titulo[:30]}..."
+        )
+        novo_plano.forum = novo_forum
+
+        novo_plano.save()
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def alterar_prazo(request, pk):
+    """
+    Altera a data de finalização prevista do plano de ação.
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        nova_data = data.get('nova_data')
+
+        if nova_data:
+            plano.data_finalizacao_prevista = nova_data
+            # Se quiser atualizar também o prazo oficial (prazo_conclusao), descomente abaixo:
+            # plano.prazo_conclusao = nova_data
+            plano.save()
+            data_fmt = datetime.strptime(
+                nova_data, '%Y-%m-%d').strftime('%d/%m/%Y')
+            registrar_historico(
+                plano, request.user, f"Alterou a data prevista para {data_fmt}.", "PRAZO")
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Data inválida'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def redirecionar_plano(request, pk):
+    """
+    Transfere a responsabilidade do plano para outro usuário.
+    MANTÉM o status atual do plano.
+    """
+    plano = get_object_or_404(PlanoDeAcao, pk=pk)
+
+    try:
+        data = json.loads(request.body)
+        novo_responsavel_id = data.get('novo_responsavel')
+        acoes_sugeridas = data.get('acoes_sugeridas')
+
+        if not novo_responsavel_id:
+            return JsonResponse({'status': 'error', 'message': 'Novo responsável é obrigatório'}, status=400)
+
+        # 1. Atualiza o responsável
+        plano.responsavel_acao_id = novo_responsavel_id
+
+        # 2. Salva as ações sugeridas
+        if acoes_sugeridas:
+            plano.orientacoes_extra = acoes_sugeridas
+
+            plano.origem_orientacao = 'REDIRECIONAMENTO'
+
+        # 3. STATUS: Mantemos o que já estava.
+        # A linha abaixo foi removida para atender sua solicitação:
+        # plano.status_plano = 'ABERTO'
+
+        plano.save()
+
+        novo_nome = plano.responsavel_acao.get_full_name()
+        registrar_historico(
+            plano, request.user, f"Redirecionou a ação para {novo_nome}.", "REDISTRIBUICAO")
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+# 1. API para LISTAR mensagens (Retorna JSON)
+@login_required
+def api_listar_mensagens(request, forum_id):
+    try:
+        forum = Forum.objects.get(id=forum_id)
+        # Verifica permissão se necessário
+
+        mensagens = []
+        for msg in forum.mensagens.all().order_by('data_envio'):
+            mensagens.append({
+                'id': msg.id,
+                'autor': msg.autor.get_full_name() or msg.autor.username,
+                'conteudo': msg.conteudo,
+                'data_envio': msg.data_envio.strftime('%d/%m/%Y às %H:%M'),
+                'is_me': msg.autor == request.user  # Para pintar de cor diferente
+            })
+
+        return JsonResponse({'mensagens': mensagens})
+    except Forum.DoesNotExist:
+        return JsonResponse({'error': 'Fórum não encontrado'}, status=404)
+
+# 2. API para ENVIAR mensagem (Recebe JSON)
+
+
+@login_required
+@require_POST
+def api_enviar_mensagem(request, forum_id):
+    try:
+        forum = get_object_or_404(Forum, id=forum_id)
+        data = json.loads(request.body)
+        conteudo = data.get('conteudo')
+
+        if conteudo:
+            MensagemForum.objects.create(
+                forum=forum,
+                autor=request.user,
+                conteudo=conteudo
+            )
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'error': 'Conteúdo vazio'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def criar_plano_manual(request):
+    try:
+        titulo = request.POST.get('titulo')
+        categoria_id = request.POST.get('categoria')
+        responsavel_id = request.POST.get('responsavel')
+        local_id = request.POST.get('local')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')  # Data do modal (Previsão)
+        observacao = request.POST.get('observacao')
+
+        if not titulo or not responsavel_id or not data_fim or not categoria_id:
+            return JsonResponse({'status': 'error', 'message': 'Preencha os campos obrigatórios.'}, status=400)
+
+        # Busca a ferramenta fixa
+        ferramenta_obj, created = FerramentaDigital.objects.get_or_create(
+            nome="Plano de Ação")
+
+        novo_plano = PlanoDeAcao(
+            titulo=titulo,
+            responsavel_acao_id=responsavel_id,
+            categoria_id=categoria_id,
+            local_execucao_id=local_id,
+            ferramenta=ferramenta_obj,
+
+            # REGRAS DE AUDITOR E OBSERVAÇÃO
+            criado_por=request.user,          # O usuário logado é o Auditor
+            observacao_origem=observacao,     # Vai para observação, não para planejamento
+
+            data_abertura=data_inicio or timezone.now(),
+
+            # REGRAS DE DATA
+            prazo_conclusao=None,             # Data Final permanece em branco
+            data_finalizacao_prevista=data_fim,  # Preenche apenas a previsão
+
+            descricao_acao=None,              # Planejamento começa vazio
+            status_plano='ABERTO',
+            tipo='NAO_CONFORMIDADE'
+        )
+
+        # Cria Fórum
+        novo_forum = Forum.objects.create(
+            nome=f"Discussão Plano Manual - {titulo[:30]}...")
+        novo_plano.forum = novo_forum
+
+        novo_plano.save()
+
+        # Uploads
+        arquivos = request.FILES.getlist('arquivos')
+        for f in arquivos:
+            EvidenciaPlano.objects.create(plano=novo_plano, arquivo=f)
+
+        registrar_historico(novo_plano, request.user,
+                            "Plano de ação criado manualmente.", "CRIACAO")
+
+        return JsonResponse({'status': 'success', 'message': 'Plano criado com sucesso!'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+def dashboard_planos_de_acao(request):
+    # 1. QuerySets Base
+    # Filtra apenas o que o usuário pode ver (reaproveitando lógica de segurança se necessário)
+    qs_total = PlanoDeAcao.objects.all()
+
+    # Pendentes: Tudo que não está finalizado
+    status_pendentes = ['ABERTO', 'AGUARDANDO_VALIDACAO',
+                        'EM_IMPLEMENTACAO', 'AGUARDANDO_APROVACAO', 'VALIDACAO_EFICACIA']
+    qs_pendentes = qs_total.filter(status_plano__in=status_pendentes)
+
+    # 2. KPIs (Cards da Esquerda)
+    total_pendentes = qs_pendentes.count()
+
+    # Colaboradores distintos com ações pendentes
+    colaboradores_pendentes = qs_pendentes.values(
+        'responsavel_acao').distinct().count()
+
+    total_geral = qs_total.count()
+    porcentagem_pendentes = (
+        total_pendentes / total_geral * 100) if total_geral > 0 else 0
+
+    # 3. Gráfico: Ações Pendentes por Status (Pizza)
+    status_data = qs_pendentes.values('status_plano').annotate(qtd=Count('id'))
+    # Você pode mapear para nomes amigáveis depois
+    status_labels = [s['status_plano'] for s in status_data]
+    status_series = [s['qtd'] for s in status_data]
+
+    # 4. Gráfico: Total de Ações Geradas por Mês (Barras)
+    # Pega os últimos 12 meses
+    historico_mes = qs_total.annotate(
+        mes=TruncMonth('data_abertura')
+    ).values('mes').annotate(qtd=Count('id')).order_by('mes')
+
+    meses_labels = [h['mes'].strftime('%b/%Y') for h in historico_mes]
+    meses_series = [h['qtd'] for h in historico_mes]
+
+    # 5. Gráfico: Ações por Ferramenta (Barras Horizontais)
+    ferramentas_data = qs_total.values('ferramenta__nome').annotate(
+        qtd=Count('id')).order_by('-qtd')[:10]
+    ferramenta_labels = [f['ferramenta__nome'] for f in ferramentas_data]
+    ferramenta_series = [f['qtd'] for f in ferramentas_data]
+
+    # 6. Gráfico: Ações por Local (Pareto/Barras) - Usando Subsetor
+    locais_data = qs_total.values('local_execucao__nome').annotate(
+        qtd=Count('id')).order_by('-qtd')[:10]
+    local_labels = [l['local_execucao__nome'] for l in locais_data]
+    local_series = [l['qtd'] for l in locais_data]
+
+    # 7. Ranking de Usuários (Top 5 Pendentes)
+    ranking_data = qs_pendentes.values(
+        'responsavel_acao__first_name', 'responsavel_acao__last_name', 'responsavel_acao__username'
+    ).annotate(qtd=Count('id')).order_by('-qtd')[:5]
+
+    ranking_list = []
+    for r in ranking_data:
+        nome = f"{r['responsavel_acao__first_name']} {r['responsavel_acao__last_name']}".strip()
+        if not nome:
+            nome = r['responsavel_acao__username']
+        ranking_list.append({'nome': nome, 'qtd': r['qtd']})
+
+    context = {
+        'title': 'Dashboard de Planos de Ação',
+        'kpi_total_pendentes': total_pendentes,
+        'kpi_colaboradores': colaboradores_pendentes,
+        'kpi_porcentagem': f"{porcentagem_pendentes:.1f}%",
+
+        # Dados para JS (converteremos no template com json_script ou direto)
+        'chart_status_labels': json.dumps(status_labels),
+        'chart_status_series': json.dumps(status_series),
+
+        'chart_mes_labels': json.dumps(meses_labels),
+        'chart_mes_series': json.dumps(meses_series),
+
+        'chart_ferramenta_labels': json.dumps(ferramenta_labels),
+        'chart_ferramenta_series': json.dumps(ferramenta_series),
+
+        'chart_local_labels': json.dumps(local_labels),
+        'chart_local_series': json.dumps(local_series),
+
+        'ranking_list': ranking_list,
+    }
+
+    return render(request, 'auditorias/planos_de_acao/dashboard.html', context)
+
+
+@login_required
+def get_dados_calendario(request):
+    """Retorna dados para o calendário de auditorias via AJAX - Com Status de Atraso"""
+    try:
+        ano = int(request.GET.get('year', timezone.now().year))
+        mes = int(request.GET.get('month', timezone.now().month))
+
+        instancias = AuditoriaInstancia.objects.filter(
+            data_execucao__year=ano,
+            data_execucao__month=mes
+        )
+
+        dados_dias = {}
+
+        for inst in instancias:
+            dia = inst.data_execucao.day
+            status_real = inst.status_execucao
+
+            # --- LÓGICA ATUALIZADA (4 STATUS) ---
+            if status_real == 'Concluída':
+                label = 'Concluído'
+                cor = 'success'   # Verde
+            elif status_real == 'Atraso':
+                label = 'Não realizado'
+                cor = 'danger'    # Vermelho
+            elif status_real == 'Pendente':
+                label = 'Pendente'
+                cor = 'warning'   # Laranja
+            else:
+                # Agendada, Em andamento, etc. viram Planejado
+                label = 'Planejado'
+                cor = 'secondary'  # Cinza
+
+            if dia not in dados_dias:
+                dados_dias[dia] = {}
+
+            chave_status = f"{label}|{cor}"
+            dados_dias[dia][chave_status] = dados_dias[dia].get(
+                chave_status, 0) + 1
+
+        return JsonResponse({
+            'dados': dados_dias,
+            'sucesso': True
+        })
+    except Exception as e:
+        return JsonResponse({'sucesso': False, 'erro': str(e)})

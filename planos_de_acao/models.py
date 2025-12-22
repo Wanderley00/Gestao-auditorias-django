@@ -4,8 +4,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-
-from auditorias.models import AuditoriaInstancia, CategoriaAuditoria, FerramentaDigital, FerramentaCausaRaiz, Topico
 from organizacao.models import Empresa, Area, Setor, SubSetor
 
 # Definição do modelo de Responsáveis de Plano de Ação por Local
@@ -81,13 +79,14 @@ class NaoConformidade(models.Model):
     # Campos de identificação
     id_nao_conformidade = models.CharField(
         max_length=50, unique=True, verbose_name="ID Não Conformidade")
+
     id_formulario = models.ForeignKey(
-        AuditoriaInstancia,
+        'auditorias.AuditoriaInstancia',  # <-- MUDANÇA AQUI
         on_delete=models.CASCADE,
         verbose_name="ID do Formulário"
     )
     titulo = models.ForeignKey(
-        Topico,
+        'auditorias.Topico',  # <-- MUDANÇA AQUI
         on_delete=models.SET_NULL,
         null=True, blank=True,
         verbose_name="Título"
@@ -109,14 +108,26 @@ class NaoConformidade(models.Model):
     perfil_responsavel = models.CharField(
         max_length=100, verbose_name="Perfil")
     forum = models.ForeignKey(
+        # Este está OK (mesmo arquivo)
         Forum, on_delete=models.SET_NULL, null=True, blank=True)
+
     ferramenta = models.ForeignKey(
-        FerramentaDigital, on_delete=models.SET_NULL, null=True, blank=True)
+        'auditorias.FerramentaDigital',  # <-- MUDANÇA AQUI
+        on_delete=models.SET_NULL, null=True, blank=True)
     categoria = models.ForeignKey(
-        CategoriaAuditoria, on_delete=models.SET_NULL, null=True, blank=True)
-    data_abertura = models.DateTimeField(auto_now_add=True)
+        'auditorias.CategoriaAuditoria',  # <-- MUDANÇA AQUI
+        on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Adicione os campos de data que estavam faltando
+    data_abertura = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data de Abertura"
+    )
     data_encerramento = models.DateTimeField(
-        verbose_name="Data de Encerramento", null=True, blank=True)
+        verbose_name="Data de Encerramento",
+        null=True,
+        blank=True
+    )
 
     # Campo para criticidade
     criticidade = models.CharField(
@@ -138,7 +149,7 @@ class NaoConformidade(models.Model):
 
     analise = models.TextField(null=True, blank=True, verbose_name="Análise")
     ferramentas_auxiliares = models.ManyToManyField(
-        FerramentaCausaRaiz,
+        'auditorias.FerramentaCausaRaiz',  # <-- MUDANÇA AQUI
         verbose_name="Ferramentas Auxiliares",
         related_name='nao_conformidades',
         blank=True
@@ -156,3 +167,18 @@ class NaoConformidade(models.Model):
         if not self.data_encerramento:
             self.data_encerramento = self.data_abertura + timedelta(days=7)
         super().save(*args, **kwargs)
+
+
+class MensagemForum(models.Model):
+    forum = models.ForeignKey(
+        Forum, on_delete=models.CASCADE, related_name='mensagens')
+    autor = models.ForeignKey(settings.AUTH_USER_MODEL,
+                              on_delete=models.SET_NULL, null=True)
+    conteudo = models.TextField()
+    data_envio = models.DateTimeField(auto_now_add=True)
+
+    # --- ADICIONE ESTE CAMPO ---
+    editado = models.BooleanField(default=False, verbose_name="Editado")
+
+    class Meta:
+        verbose_name = "Mensagem de Fórum"

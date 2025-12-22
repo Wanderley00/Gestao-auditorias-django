@@ -3,11 +3,14 @@
 from rest_framework import serializers
 from .models import (
     Auditoria, AuditoriaInstancia, Checklist, Topico, Pergunta,
-    OpcaoResposta, OpcaoPorcentagem, Resposta, AnexoResposta
+    OpcaoResposta, OpcaoPorcentagem, Resposta, AnexoResposta, PlanoDeAcao
 )
 import base64
 import uuid
 from django.core.files.base import ContentFile
+from django.utils import timezone
+
+from planos_de_acao.models import Forum
 
 # --- CAMPO Base64 CORRIGIDO E MELHORADO ---
 # Renomeado para Base64FileField para ser mais genérico
@@ -153,6 +156,10 @@ class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
     local_execucao_nome = serializers.CharField(
         source='local_execucao.nome', read_only=True, default='N/A')
 
+    # Precisamos do ID para saber se a auditoria é "flutuante" (null)
+    local_execucao_id = serializers.IntegerField(
+        source='local_execucao.id', read_only=True, allow_null=True)
+
     total_perguntas = serializers.IntegerField(
         source='get_total_perguntas', read_only=True)
 
@@ -165,6 +172,7 @@ class AuditoriaInstanciaListSerializer(serializers.ModelSerializer):
             'status',
             'auditoria_info',
             'local_execucao_nome',
+            'local_execucao_id',
             'total_perguntas',
         ]
 
@@ -190,15 +198,15 @@ class RespostaSerializer(serializers.ModelSerializer):
             'desvio_solucionado',
             'grau_nc',
             'data_resposta',
+            # --- CAMPOS ADICIONADOS ---
+            'descricao_oportunidade_melhoria',
+            'descricao_desvio_solucionado',
+            'descricao_desvio_nao_solucionado',
+            # --- FIM DOS CAMPOS ADICIONADOS ---
         ]
 
     def create(self, validated_data):
-        # --- ADICIONE ESTAS LINHAS PARA DEBUG ---
-        # print("--- DADOS VALIDADOS PELO SERIALIZER ---", validated_data)
         anexos_data = validated_data.pop('anexos_base64', [])
-        # print("--- ANEXOS ENCONTRADOS ---", "Sim" if anexos_data else "Não")
-        # --- FIM DAS LINHAS DE DEBUG ---
-
         instancia = self.context['auditoria_instancia']
 
         resposta, created = Resposta.objects.update_or_create(
@@ -210,4 +218,76 @@ class RespostaSerializer(serializers.ModelSerializer):
         for anexo_file in anexos_data:
             AnexoResposta.objects.create(resposta=resposta, arquivo=anexo_file)
 
+        # --- LÓGICA PARA CRIAR O PLANO DE AÇÃO ---
+        self.criar_plano_de_acao_se_necessario(resposta)
+        # --- FIM DA LÓGICA ---
+
         return resposta
+
+    def criar_plano_de_acao_se_necessario(self, resposta):
+        """
+        Verifica a resposta e cria um Plano de Ação se for uma
+        Não Conformidade (e não tiver sido solucionada) ou Oportunidade de Melhoria.
+        """
+        instancia = resposta.auditoria_instancia
+        agendamento = instancia.auditoria_agendada
+
+        tipo_plano = None
+
+        # 1. Verifica se é Não Conformidade
+        if resposta.opcao_resposta and resposta.opcao_resposta.status == 'NAO_CONFORME':
+            # --- CORREÇÃO AQUI ---
+            # Só cria o plano se o desvio NÃO foi solucionado na hora
+            if not resposta.desvio_solucionado:
+                tipo_plano = 'NAO_CONFORMIDADE'
+            # ---------------------
+
+        # 2. Verifica se é Oportunidade de Melhoria
+        elif resposta.oportunidade_melhoria == True:
+            tipo_plano = 'OPORTUNIDADE_MELHORIA'
+
+        if tipo_plano:
+            # Pega a categoria do primeiro modelo (pode ajustar se houver múltiplos)
+            categoria_auditoria = None
+            primeiro_modelo = agendamento.modelos.first()
+            if primeiro_modelo:
+                categoria_auditoria = primeiro_modelo.categoria
+
+            # Busca o responsável pela ação com base no local de execução
+            responsavel_do_local = None
+            if instancia.local_execucao:
+                responsavel_do_local = instancia.local_execucao.usuario_responsavel
+
+            # Verifica se já existe um plano (e, por extensão, um fórum)
+            plano_existente = PlanoDeAcao.objects.filter(
+                origem_resposta=resposta).first()
+
+            # Se o plano não existir, crie um novo fórum para ele
+            if not plano_existente:
+                novo_forum = Forum.objects.create(
+                    nome=f"Discussão Plano #{resposta.pergunta.descricao[:50]}..."
+                )
+            else:
+                novo_forum = plano_existente.forum  # Reutiliza o fórum existente
+
+            # Cria ou atualiza o plano de ação
+            PlanoDeAcao.objects.update_or_create(
+                origem_resposta=resposta,
+                defaults={
+                    'tipo': tipo_plano,
+                    'titulo': resposta.pergunta.descricao,
+                    'local_execucao': instancia.local_execucao,
+                    'ferramenta': agendamento.ferramenta,
+                    'categoria': categoria_auditoria,
+                    'data_abertura': resposta.data_resposta or timezone.now(),
+                    'responsavel_acao': responsavel_do_local,
+                    'forum': novo_forum
+                }
+            )
+
+        # 3. Se a resposta foi corrigida (não é mais NC nem Oportunidade)
+        # OU SE FOI MARCADO COMO DESVIO SOLUCIONADO (tipo_plano continuará None)
+        # e um plano já existia, devemos excluí-lo.
+        elif not tipo_plano:
+            # Encontra e deleta qualquer plano de ação obsoleto
+            PlanoDeAcao.objects.filter(origem_resposta=resposta).delete()

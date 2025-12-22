@@ -86,6 +86,10 @@ urlpatterns = [
     path('ajax/ativos-por-local/', views.get_ativos_por_local,
          name='get_ativos_por_local'),
 
+    # --- ADICIONE ESTA NOVA URL ABAIXO ---
+    path('ajax/get-subsetores-por-nivel/', views.get_subsetores_por_nivel,
+         name='get_subsetores_por_nivel'),
+
     path('ajax/preview-dates/', views.preview_audit_dates,
          name='preview_audit_dates'),
 
@@ -108,5 +112,58 @@ urlpatterns = [
 
     path('historico/<int:pk>/visualizar/',
          views.detalhes_historico_auditoria, name='detalhes_historico_auditoria'),
+
+    path('planos-de-acao/', views.lista_planos_de_acao,
+         name='lista_planos_de_acao'),
+
+    path('planos-de-acao/<int:pk>/arquivar/',
+         views.arquivar_plano, name='arquivar_plano'),
+
+    path('planos-de-acao/api/<int:pk>/detalhes/',
+         views.get_detalhes_plano, name='api_detalhes_plano'),
+
+    path('planos-de-acao/api/<int:pk>/aceitar/',
+         views.aceitar_plano, name='api_aceitar_plano'),
+
+    path('planos-de-acao/api/<int:pk>/aprovar-planejamento/',
+         views.aprovar_planejamento, name='api_aprovar_planejamento'),
+
+    path('planos-de-acao/api/<int:pk>/investir/',
+         views.adicionar_investimento, name='api_adicionar_investimento'),
+
+    path('planos-de-acao/api/<int:pk>/concluir/',
+         views.concluir_planejamento, name='api_concluir_planejamento'),
+
+    path('planos-de-acao/api/<int:pk>/avaliar-conclusao/',
+         views.avaliar_conclusao, name='api_avaliar_conclusao'),
+
+    path('planos-de-acao/api/<int:pk>/validar-eficacia/',
+         views.validar_eficacia, name='api_validar_eficacia'),
+
+    path('planos-de-acao/api/<int:pk>/recusar/',
+         views.recusar_plano, name='api_recusar_plano'),
+
+    path('planos-de-acao/api/<int:pk>/clonar/',
+         views.clonar_plano, name='api_clonar_plano'),
+
+    path('planos-de-acao/api/<int:pk>/alterar-prazo/',
+         views.alterar_prazo, name='api_alterar_prazo'),
+
+    path('planos-de-acao/api/<int:pk>/redirecionar/',
+         views.redirecionar_plano, name='api_redirecionar_plano'),
+
+    path('planos-de-acao/api/forum/<int:forum_id>/mensagens/',
+         views.api_listar_mensagens, name='api_listar_mensagens'),
+    path('planos-de-acao/api/forum/<int:forum_id>/enviar/',
+         views.api_enviar_mensagem, name='api_enviar_mensagem'),
+
+    path('planos-de-acao/criar-manual/',
+         views.criar_plano_manual, name='criar_plano_manual'),
+
+    path('planos-de-acao/dashboard/',
+         views.dashboard_planos_de_acao, name='dashboard_planos'),
+
+    path('ajax/calendario-dados/', views.get_dados_calendario,
+         name='get_dados_calendario'),
 
 ]

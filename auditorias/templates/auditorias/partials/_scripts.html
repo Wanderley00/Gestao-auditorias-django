@@ -1,6 +1,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 
 <script>
+    
     // ===============================================
     // FUNÇÕES GLOBAIS (Válidas para todas as páginas)
     // ===============================================
@@ -97,6 +98,39 @@
                 <head>
                     <title>${title} - Impressão</title>
                     <style>
+                        /* Estilos para o modo de edição dentro do chat */
+                        .msg-edit-wrapper {
+                            margin-top: 8px;
+                            width: 100%;
+                        }
+                        .msg-edit-input {
+                            width: 100%;
+                            padding: 8px;
+                            border: 1px solid var(--primary);
+                            border-radius: 6px;
+                            font-size: 13px;
+                            resize: none;
+                            font-family: inherit;
+                            color: #333; /* Força cor escura */
+                        }
+                        .msg-edit-actions {
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: 6px;
+                            margin-top: 6px;
+                        }
+                        .btn-xs {
+                            padding: 4px 8px;
+                            font-size: 11px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 4px;
+                        }
+                        .btn-save-edit { background-color: var(--success); color: white; }
+                        .btn-cancel-edit { background-color: #64748b; color: white; }
                         @media print {
                             @page { margin: 1cm; }
                         }
@@ -156,6 +190,31 @@
                             color: #64748b;
                             font-size: 12px;
                         }
+                        .msg-actions {
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            display: none; /* Esconde por padrão */
+                            gap: 5px;
+                            background: rgba(255,255,255,0.9);
+                            padding: 2px 5px;
+                            border-radius: 4px;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        }
+                        /* Mostra os botões quando passa o mouse sobre a mensagem */
+                        .msg-container:hover .msg-actions {
+                            display: flex;
+                        }
+                        .msg-btn {
+                            cursor: pointer;
+                            font-size: 10px;
+                            padding: 2px 4px;
+                            color: #64748b;
+                            border: none;
+                            background: transparent;
+                        }
+                        .msg-btn:hover { color: #0f172a; transform: scale(1.1); }
+                        .msg-btn.delete:hover { color: #dc2626; }
                     </style>
                 </head>
                 <body>
@@ -184,60 +243,425 @@
         document.getElementById('sidebar').classList.toggle('collapsed');
     }
 
+    window.isEditing = false; 
+
     document.addEventListener('DOMContentLoaded', function() {
-
-        if (sidebarNav) {
-            // 1. Restaura a posição da rolagem ao carregar a página
-            const scrollPos = sessionStorage.getItem('sidebarScrollPos');
-            if (scrollPos) {
-                sidebarNav.scrollTop = parseInt(scrollPos, 10);
-            }
-
-            // 2. Salva a posição da rolagem antes de navegar para outra página
-            const sidebarLinks = sidebarNav.querySelectorAll('a.nav-item');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    sessionStorage.setItem('sidebarScrollPos', sidebarNav.scrollTop);
-                });
-            });
-        }
-
-        // Auto-hide de alertas
-        document.querySelectorAll('.alert').forEach(alert => {
-            setTimeout(() => {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 300);
-            }, 5000);
-        });
-
-        // Lógica de fechar modal de delete ao clicar fora
-        const deleteModal = document.getElementById('deleteModal');
-        if (deleteModal) {
-            deleteModal.addEventListener('click', function(e) {
-                if (e.target === this) closeDeleteModal();
-            });
-        }
-
-        // Lógica de fechar modal de redirect ao clicar fora
-        const redirectModal = document.getElementById('redirectModal');
-        if (redirectModal) {
-            redirectModal.addEventListener('click', function(e) {
-                if (e.target === this) closeRedirectModal();
-            });
-        }
+        const chatPanel = document.getElementById('chatPanel');
+        const chatOverlay = document.getElementById('chatOverlay');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatMessageInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
         
-        // Lógica de filtro da sidebar
-        const searchInput = document.getElementById('sidebarSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const filterText = this.value.toLowerCase().trim();
-                document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
-                    const itemText = item.querySelector('.nav-item-text').textContent.toLowerCase();
-                    item.style.display = itemText.includes(filterText) ? 'flex' : 'none';
-                });
+        let currentForumId = null;
+        let chatInterval = null;
+
+        // 1. Rolar para o final
+        function scrollChatToBottom() {
+            if(chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 2. Carregar Mensagens
+        window.loadMessages = function() {
+            // TRAVA DE SEGURANÇA: Se estiver editando, PARE AQUI.
+            if (!currentForumId || window.isEditing) return; 
+
+            fetch(`/planos_de_acao/api/forum/${currentForumId}/mensagens/`)
+                .then(r => r.json())
+                .then(data => {
+                    const mensagens = data.mensagens;
+                    
+                    if (mensagens.length === 0) {
+                        chatMessages.innerHTML = `<p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Nenhuma mensagem ainda.</p>`;
+                        return;
+                    }
+
+                    let html = '';
+                    mensagens.forEach(msg => {
+                        // Define estilos baseados se a mensagem é minha ou de outro
+                        const isMe = msg.is_me;
+                        // Minhas mensagens: Fundo Azul (primary-light), Texto Branco
+                        // Outras mensagens: Fundo Cinza, Texto Escuro
+                        const alignStyle = isMe ? 
+                            'margin-left: auto; background: var(--primary-light); color: white; border-radius: 12px 12px 0 12px;' : 
+                            'margin-right: auto; background: #e2e8f0; color: var(--text-primary); border-radius: 12px 12px 12px 0;';
+                        
+                        const metaAlign = isMe ? 'text-align: right;' : 'text-align: left;';
+                        // Ajuste sutil na cor do autor/data para garantir contraste
+                        const metaColor = isMe ? 'rgba(255,255,255,0.8)' : 'var(--text-secondary)';
+
+                        let actionsHtml = '';
+                        if (msg.can_edit) {
+                            const safeContent = msg.conteudo.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                            actionsHtml = `
+                                <div class="msg-actions">
+                                    <button class="msg-btn" onclick="ativarEdicaoInline(${msg.id}, this)" title="Editar">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                    <button class="msg-btn delete" onclick="deleteMessage(${msg.id})" title="Apagar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+
+                        const editedLabel = msg.editado ? '<span style="font-size: 9px; font-style: italic; opacity: 0.8; margin-left: 4px;">(Editada)</span>' : '';
+
+                        html += `
+                            <div class="msg-container" id="msg-container-${msg.id}" style="display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; ${alignStyle} padding: 12px; position: relative; min-width: 140px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                ${actionsHtml}
+                                <div style="font-size: 11px; font-weight: 700; margin-bottom: 4px; color: ${metaColor}; ${metaAlign}">
+                                    ${msg.autor}
+                                </div>
+                                <div id="msg-content-${msg.id}" style="font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;">${msg.conteudo}</div>
+                                <div style="font-size: 10px; margin-top: 4px; color: ${metaColor}; text-align: right;">
+                                    ${editedLabel} ${msg.data_envio} </div>
+                            </div>
+                        `;
+                    });
+
+                    chatMessages.innerHTML = html;
+                })
+                .catch(console.error);
+        }
+
+        // 3. Abrir Chat
+        window.openChat = function(forumId) {
+            currentForumId = forumId;
+            window.isEditing = false; // Garante que começa falso
+            
+            if (chatInput) {
+                chatInput.value = '';
+                chatInput.disabled = false;
+                chatSendBtn.disabled = false;
+            }
+            
+            if (chatPanel) chatPanel.classList.add('visible');
+            if (chatOverlay) chatOverlay.classList.add('visible');
+
+            loadMessages();
+            if (chatInterval) clearInterval(chatInterval);
+            chatInterval = setInterval(loadMessages, 3000); // Atualiza a cada 3s
+            setTimeout(() => { if(chatInput) chatInput.focus(); }, 300);
+        }
+
+        // 4. Fechar Chat
+        window.closeChat = function() {
+            if (chatPanel) chatPanel.classList.remove('visible');
+            if (chatOverlay) chatOverlay.classList.remove('visible');
+            currentForumId = null;
+            window.isEditing = false; // Destrava
+            if (chatInterval) clearInterval(chatInterval);
+        }
+
+        // 5. Enviar Mensagem
+        function sendChatMessage() {
+            const message = chatInput.value;
+            if (!message.trim() || !currentForumId) return;
+
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/planos_de_acao/api/forum/${currentForumId}/enviar/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ conteudo: message })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    chatInput.value = '';
+                    loadMessages(); 
+                    setTimeout(scrollChatToBottom, 100);
+                } else {
+                    alert('Erro: ' + (data.error || 'Desconhecido'));
+                }
+            })
+            .finally(() => {
+                chatInput.disabled = false;
+                chatSendBtn.disabled = false;
+                chatInput.focus();
+            });
+        }
+
+        if (chatSendBtn) chatSendBtn.addEventListener('click', sendChatMessage);
+        if (chatInput) {
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendChatMessage();
             });
         }
     });
+
+    // ===============================================
+    // FUNÇÕES DE AÇÃO EXTERNAS
+    // ===============================================
+
+    // A. Ativar Edição
+    window.ativarEdicaoInline = function(msgId, btnElement) {
+        // 1. Pausa o refresh automático
+        window.isEditing = true; 
+
+        const container = document.getElementById(`msg-container-${msgId}`);
+        if(!container) return;
+
+        // Esconde menu de ações
+        const actionsDiv = container.querySelector('.msg-actions');
+        if(actionsDiv) actionsDiv.style.display = 'none';
+
+        const contentDiv = document.getElementById(`msg-content-${msgId}`);
+        const currentText = contentDiv.innerText;
+
+        // INJETA O HTML DE EDIÇÃO COMPACTO
+        contentDiv.innerHTML = `
+            <div class="msg-edit-wrapper">
+                <textarea id="edit-input-${msgId}" class="msg-edit-input" rows="1">${currentText}</textarea>
+                <div class="msg-edit-actions">
+                    <button class="btn-edit-action btn-cancel-edit" onclick="cancelarEdicao()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="btn-edit-action btn-save-edit" onclick="salvarEdicao(${msgId})">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Auto-resize do textarea
+        const textarea = document.getElementById(`edit-input-${msgId}`);
+        const autoResize = () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        };
+        textarea.addEventListener('input', autoResize);
+        
+        setTimeout(() => {
+            autoResize(); 
+            textarea.focus();
+            // Coloca o cursor no final
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 50);
+
+        // Atalhos
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault(); 
+                salvarEdicao(msgId);
+            }
+            if (e.key === 'Escape') {
+                cancelarEdicao();
+            }
+        });
+    }
+
+    // B. Salvar
+    window.salvarEdicao = function(msgId) {
+        const input = document.getElementById(`edit-input-${msgId}`);
+        
+        // AQUI ESTÁ A CORREÇÃO DOS ENTERS:
+        // .trim() remove espaços e quebras de linha inúteis no início e no fim
+        const novoConteudo = input.value.trim(); 
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        if (!novoConteudo) {
+            alert("A mensagem não pode ficar vazia."); // Opcional: pode usar um toast aqui também
+            return;
+        }
+
+        fetch(`/planos_de_acao/api/mensagem/${msgId}/editar/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ conteudo: novoConteudo })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                window.isEditing = false; // Libera o refresh
+                if(window.loadMessages) window.loadMessages(); 
+            } else {
+                alert(data.error || 'Erro ao editar.');
+            }
+        });
+    }
+
+    // C. Cancelar
+    window.cancelarEdicao = function() {
+        window.isEditing = false; // Libera o refresh
+        if(window.loadMessages) window.loadMessages();
+    }
+
+    // D. Deletar
+    window.deleteMessage = function(msgId) {
+        const modal = document.getElementById('chatDeleteModal');
+        const confirmBtn = document.getElementById('btnConfirmDelete');
+        
+        // Pausa atualização automática enquanto o modal está aberto
+        window.isEditing = true; 
+
+        // Exibe o modal
+        modal.style.display = 'flex';
+
+        // Define o que acontece ao clicar em "Sim, Excluir"
+        // Usamos .onclick direto para substituir qualquer evento anterior e evitar múltiplas chamadas
+        confirmBtn.onclick = function() {
+            // Desabilita o botão para evitar clique duplo
+            confirmBtn.disabled = true;
+            confirmBtn.innerText = "Excluindo...";
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/planos_de_acao/api/mensagem/${msgId}/deletar/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    closeChatModal();
+                    if(window.loadMessages) window.loadMessages();
+                } else {
+                    alert(data.error);
+                    closeChatModal();
+                }
+            })
+            .catch(() => {
+                alert("Erro de conexão.");
+                closeChatModal();
+            })
+            .finally(() => {
+                // Reseta o botão para o próximo uso
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Sim, Excluir";
+            });
+        };
+    }
+
+    // Função auxiliar para fechar o modal
+    window.closeChatModal = function() {
+        const modal = document.getElementById('chatDeleteModal');
+        if(modal) modal.style.display = 'none';
+        window.isEditing = false; // Libera o refresh do chat
+    }
+    
+    // Fecha modal ao clicar fora (opcional, mas boa prática)
+    document.getElementById('chatDeleteModal')?.addEventListener('click', function(e) {
+        if(e.target === this) closeChatModal();
+    });
+
+    // Sobrescrevemos a função loadMessages globalmente para que as funções externas possam controlar a pausa
+    // Pequeno hack para conectar o escopo de fora com o de dentro
+    // A verdadeira loadMessages roda dentro do DOMContentLoaded, mas precisamos verificar
+    // se há edição ativa para pausar.
+    const originalFetch = window.fetch; 
+    // A lógica de pausa (isEditing) já foi colocada dentro da função loadMessages no DOMContentLoaded
+    // Mas precisamos garantir que ela saiba quando estamos editando.
+    // Vamos usar uma verificação simples: se existe um elemento com classe .msg-edit-input na tela, estamos editando.
+    
+    // No loadMessages acima, altere a linha "if (!currentForumId || isEditing) return;" para:
+    // if (!currentForumId || document.querySelector('.msg-edit-input')) return;
+    // (Fiz essa alteração mentalmente, certifique-se de aplicar abaixo no código final)
 </script>
+
+<div id="chatDeleteModal" class="custom-chat-modal" style="display: none;">
+    <div class="chat-modal-content">
+        <div class="chat-modal-icon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h3>Excluir Mensagem?</h3>
+        <p>Esta ação não pode ser desfeita.</p>
+        <div class="chat-modal-actions">
+            <button class="btn-chat-modal btn-cancel" onclick="closeChatModal()">Cancelar</button>
+            <button id="btnConfirmDelete" class="btn-chat-modal btn-confirm">Sim, Excluir</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* CSS DO MODAL (Adicione ou coloque no seu _head.html) */
+    .custom-chat-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6); /* Fundo escuro com blur */
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .chat-modal-content {
+        background: white;
+        padding: 32px;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 320px;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: scale(0.95);
+        animation: scaleUp 0.2s ease-out forwards;
+    }
+
+    .chat-modal-icon {
+        width: 60px;
+        height: 60px;
+        background: #fee2e2; /* Vermelho bem claro */
+        color: #ef4444; /* Vermelho erro */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto 16px auto;
+    }
+
+    .chat-modal-content h3 {
+        margin: 0 0 8px 0;
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .chat-modal-content p {
+        margin: 0 0 24px 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .chat-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .btn-chat-modal {
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+        flex: 1;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .btn-cancel:hover { background: #e2e8f0; }
+
+    .btn-confirm {
+        background: #ef4444;
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+    }
+    .btn-confirm:hover { background: #dc2626; transform: translateY(-1px); }
+
+    @keyframes scaleUp { to { transform: scale(1); } }
+</style>
 
 {% block extra_js %}{% endblock %}

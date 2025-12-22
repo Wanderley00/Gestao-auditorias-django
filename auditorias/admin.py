@@ -17,7 +17,8 @@ from .models import (
     OpcaoResposta,
     OpcaoPorcentagem,
     Resposta,  # <-- ADICIONE ESTA LINHA
-    AnexoResposta  # <-- ADICIONE ESTA LINHA
+    AnexoResposta,  # <-- ADICIONE ESTA LINHA
+    PlanoDeAcao,
 )
 
 # 1. Crie uma classe Inline para os Anexos
@@ -242,3 +243,16 @@ class ChecklistAdmin(admin.ModelAdmin):
     list_filter = ('ativo', 'ferramenta')
     search_fields = ('nome',)
     inlines = [TopicoInline]
+
+
+@admin.register(PlanoDeAcao)
+class PlanoDeAcaoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'titulo', 'status_plano', 'tipo',
+                    'origem_resposta', 'criado_por', 'data_abertura')
+    list_filter = ('status_plano', 'tipo', 'fluxo_simplificado')
+    search_fields = ('titulo', 'descricao_acao')
+
+    # Isso ajuda a identificar visualmente os manuais no admin
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs

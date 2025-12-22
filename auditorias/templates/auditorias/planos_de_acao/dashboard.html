@@ -1,0 +1,230 @@
+{% extends 'auditorias/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<style>
+    :root {
+        --dash-bg: #f3f4f6;
+        --card-bg: #ffffff;
+        --text-dark: #1f2937;
+        --text-light: #6b7280;
+    }
+    
+    .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr 1fr; /* Coluna KPI + 2 Colunas Gráficos */
+        grid-template-rows: auto auto;
+        gap: 20px;
+        padding-bottom: 30px;
+    }
+
+    /* Estilo dos Cards de KPI (Esquerda) */
+    .kpi-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        grid-row: 1 / span 2; /* Ocupa as duas linhas de altura */
+    }
+
+    .kpi-card {
+        color: white;
+        padding: 25px 20px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        height: 150px;
+    }
+
+    .kpi-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 10px 0; opacity: 0.9; text-transform: uppercase; }
+    .kpi-card .value { font-size: 42px; font-weight: 800; line-height: 1; }
+
+    .kpi-blue { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+    .kpi-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .kpi-green { background: linear-gradient(135deg, #10b981, #059669); }
+
+    /* Estilo dos Cards de Gráfico */
+    .chart-card {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e5e7eb;
+        min-height: 350px;
+    }
+
+    .chart-header {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 15px;
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    /* Grid Areas */
+    .area-status { grid-column: 2; }
+    .area-mes { grid-column: 3; }
+    .area-local { grid-column: 2; }
+    .area-ferramenta { grid-column: 3; }
+
+    /* Tabela de Ranking */
+    .ranking-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .ranking-table th { text-align: left; color: var(--text-light); font-size: 12px; border-bottom: 1px solid #eee; padding: 5px; }
+    .ranking-table td { padding: 10px 5px; border-bottom: 1px solid #f9fafb; color: var(--text-dark); font-size: 14px; }
+    .ranking-badge { background: #eff6ff; color: #2563eb; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+
+    /* Responsivo */
+    @media (max-width: 1200px) {
+        .dashboard-container { grid-template-columns: 1fr 1fr; }
+        .kpi-column { grid-row: auto; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-column: 1 / -1; }
+        .kpi-card { height: 120px; }
+        .area-status, .area-mes, .area-local, .area-ferramenta { grid-column: auto; }
+    }
+    @media (max-width: 768px) {
+        .dashboard-container { grid-template-columns: 1fr; }
+        .kpi-column { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="content-title">Dashboard Analítico</h2>
+            <p class="content-subtitle">Visão geral dos indicadores de planos de ação</p>
+        </div>
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    
+    <div class="kpi-column">
+        <div class="kpi-card kpi-blue">
+            <h3>Total Pendentes</h3>
+            <div class="value">{{ kpi_total_pendentes }}</div>
+        </div>
+        <div class="kpi-card kpi-orange">
+            <h3>Colaboradores Pend.</h3>
+            <div class="value">{{ kpi_colaboradores }}</div>
+        </div>
+        <div class="kpi-card kpi-green">
+            <h3>% Pendência</h3>
+            <div class="value">{{ kpi_porcentagem }}</div>
+        </div>
+        
+        <div class="chart-card" style="flex: 1; min-height: auto;">
+            <div class="chart-header">Top Pendências</div>
+            <table class="ranking-table">
+                <thead><tr><th>Usuário</th><th style="text-align:right">Qtd</th></tr></thead>
+                <tbody>
+                    {% for user in ranking_list %}
+                    <tr>
+                        <td style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:24px; height:24px; background:#e0e7ff; color:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold;">
+                                {{ user.nome.0 }}
+                            </div>
+                            {{ user.nome|truncatechars:15 }}
+                        </td>
+                        <td style="text-align:right"><span class="ranking-badge">{{ user.qtd }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" style="text-align:center; color:#999;">Sem dados</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="chart-card area-status">
+        <div class="chart-header">Pendentes por Status</div>
+        <div id="chartStatus"></div>
+    </div>
+
+    <div class="chart-card area-mes">
+        <div class="chart-header">Evolução Mensal (Geral)</div>
+        <div id="chartMes"></div>
+    </div>
+
+    <div class="chart-card area-local">
+        <div class="chart-header">Geradas por Local</div>
+        <div id="chartLocal"></div>
+    </div>
+
+    <div class="chart-card area-ferramenta">
+        <div class="chart-header">Ações por Ferramenta</div>
+        <div id="chartFerramenta"></div>
+    </div>
+
+</div>
+
+<script>
+    // Recupera dados do Backend
+    const dataStatusLabels = JSON.parse('{{ chart_status_labels|safe }}');
+    const dataStatusSeries = JSON.parse('{{ chart_status_series|safe }}');
+    
+    const dataMesLabels = JSON.parse('{{ chart_mes_labels|safe }}');
+    const dataMesSeries = JSON.parse('{{ chart_mes_series|safe }}');
+    
+    const dataFerramentaLabels = JSON.parse('{{ chart_ferramenta_labels|safe }}');
+    const dataFerramentaSeries = JSON.parse('{{ chart_ferramenta_series|safe }}');
+    
+    const dataLocalLabels = JSON.parse('{{ chart_local_labels|safe }}');
+    const dataLocalSeries = JSON.parse('{{ chart_local_series|safe }}');
+
+    // 1. Chart: Status (Donut)
+    var optionsStatus = {
+        series: dataStatusSeries,
+        labels: dataStatusLabels,
+        chart: { type: 'donut', height: 300 },
+        colors: ['#26a69a', '#f59e0b', '#2563eb', '#9333ea', '#4ade80'], // Cores do seu sistema
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        legend: { position: 'bottom' },
+        dataLabels: { enabled: false }
+    };
+    new ApexCharts(document.querySelector("#chartStatus"), optionsStatus).render();
+
+    // 2. Chart: Meses (Barra Vertical)
+    var optionsMes = {
+        series: [{ name: 'Ações', data: dataMesSeries }],
+        chart: { type: 'bar', height: 300, toolbar: {show: false} },
+        colors: ['#f59e0b'], // Laranja/Amarelo da imagem
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+        xaxis: { categories: dataMesLabels },
+        grid: { borderColor: '#f1f1f1' }
+    };
+    new ApexCharts(document.querySelector("#chartMes"), optionsMes).render();
+
+    // 3. Chart: Local (Area ou Bar)
+    var optionsLocal = {
+        series: [{ name: 'Ações', data: dataLocalSeries }],
+        chart: { type: 'area', height: 300, toolbar: {show: false} },
+        colors: ['#b91c1c'], // Vermelho escuro da imagem
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 } },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth' },
+        xaxis: { categories: dataLocalLabels }
+    };
+    new ApexCharts(document.querySelector("#chartLocal"), optionsLocal).render();
+
+    // 4. Chart: Ferramenta (Barra Horizontal)
+    var optionsFerr = {
+        series: [{ name: 'Ações', data: dataFerramentaSeries }],
+        chart: { type: 'bar', height: 300, toolbar: {show: false} },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%' } },
+        colors: ['#0ea5e9'], // Azul ciano da imagem
+        xaxis: { categories: dataFerramentaLabels },
+        grid: { borderColor: '#f1f1f1' }
+    };
+    new ApexCharts(document.querySelector("#chartFerramenta"), optionsFerr).render();
+
+</script>
+{% endblock %}

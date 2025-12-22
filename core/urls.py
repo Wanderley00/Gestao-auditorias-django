@@ -13,7 +13,8 @@ from auditorias.views import (
     AuditoriasPendentesAPIView,
     AuditoriasConcluidasAPIView,
     AuditoriaInstanciaDetailAPIView,
-    SubmeterAuditoriaAPIView
+    SubmeterAuditoriaAPIView,
+    LocaisPermitidosAPIView,
 )
 
 
@@ -36,6 +37,8 @@ urlpatterns = [
     path('clientes/', include('clientes.urls')),
     # <-- ADICIONE ESTA LINHA
     path('fornecedores/', include('fornecedores.urls')),
+
+    path('planos_de_acao/', include('planos_de_acao.urls')),
 
     # URLs DA API E DOCUMENTAÇÃO
     # ============================================================================
@@ -63,6 +66,8 @@ api_urlpatterns = [
          name='api_auditorias_concluidas'),
     path('instancias/<int:pk>/', AuditoriaInstanciaDetailAPIView.as_view(),
          name='api_instancia_detail'),
+    path('instancias/<int:pk>/locais-permitidos/', LocaisPermitidosAPIView.as_view(),
+         name='api_instancia_locais'),
     path('instancias/<int:pk>/submeter/',
          SubmeterAuditoriaAPIView.as_view(), name='api_instancia_submeter'),
 ]

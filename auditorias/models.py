@@ -393,8 +393,20 @@ class Auditoria(models.Model):
     )
     modelos = models.ManyToManyField(
         ModeloAuditoria, verbose_name="Modelos de Auditoria")
+
+    # --- NOVO CAMPO ADICIONADO ---
+    agendamento_especifico = models.BooleanField(
+        default=False,
+        verbose_name="Agendar para locais específicos",
+        help_text="Se marcado, permite selecionar subsetores específicos. Se desmarcado, cria uma auditoria única para o nível selecionado (o local será escolhido no app)."
+    )
+
     ativos_auditados = models.ManyToManyField(
-        Ativo, verbose_name="Ativos Auditados", related_name='auditorias_agendadas')
+        Ativo,
+        verbose_name="Ativos Auditados",
+        related_name='auditorias_agendadas',
+        blank=True  # <-- MUDANÇA AQUI
+    )
     categoria_auditoria = models.CharField(
         max_length=10,
         choices=CATEGORIAS_AUDITORIA,
@@ -630,8 +642,26 @@ class Resposta(models.Model):
     )
     resposta_livre_texto = models.TextField(
         null=True, blank=True,
-        verbose_name="Texto da Resposta Livre"
+        verbose_name="Texto da Resposta Livre (Observações)"
     )
+
+    # --- CAMPOS ADICIONADOS ---
+    # Para "Oportunidade de Melhoria" = Sim
+    descricao_oportunidade_melhoria = models.TextField(
+        null=True, blank=True,
+        verbose_name="Descrição da Oportunidade de Melhoria"
+    )
+    # Para "Desvio Solucionado" = Sim
+    descricao_desvio_solucionado = models.TextField(
+        null=True, blank=True,
+        verbose_name="Descrição do Desvio Solucionado"
+    )
+    # Para "Desvio Solucionado" = Não
+    descricao_desvio_nao_solucionado = models.TextField(
+        null=True, blank=True,
+        verbose_name="Descrição do Desvio (Não Solucionado)"
+    )
+    # --- FIM DOS CAMPOS ADICIONADOS ---
 
     # --- ADICIONE OS CAMPOS ABAIXO ---
     oportunidade_melhoria = models.BooleanField(
@@ -678,3 +708,229 @@ class AnexoResposta(models.Model):
 
     def __str__(self):
         return f"Anexo para a resposta {self.resposta.id}"
+
+
+class PlanoDeAcao(models.Model):
+    """
+    Armazena uma ação corretiva ou de melhoria gerada a partir
+    de uma resposta de auditoria.
+    """
+    TIPOS_PLANO = (
+        ('NAO_CONFORMIDADE', 'Não Conformidade'),
+        ('OPORTUNIDADE_MELHORIA', 'Oportunidade de Melhoria'),
+    )
+
+    STATUS_PLANO = (
+        ('ABERTO', 'Recebido'),  # 1. Nasce aqui
+        # 2. Responsável propôs, Auditor avalia
+        ('AGUARDANDO_VALIDACAO', 'Aguardando Validação'),
+        # 3. Aprovado, Responsável executa
+        ('EM_IMPLEMENTACAO', 'Em Implementação'),
+        # 4. Feito, Auditor confere
+        ('AGUARDANDO_APROVACAO', 'Aguardando Aprovação'),
+        # 5. (Opcional) Ciclo extra
+        ('VALIDACAO_EFICACIA', 'Validação de Eficácia'),
+        ('CONCLUIDO', 'Concluído'),  # 6. Fim
+        ('CANCELADO', 'Cancelado'),
+        ('ARQUIVADO', 'Arquivado'),
+    )
+
+    # --- Vínculo com a Resposta que gerou o plano ---
+    origem_resposta = models.ForeignKey(
+        Resposta,
+        on_delete=models.CASCADE,
+        related_name='planos_de_acao',
+        verbose_name="Resposta de Origem",
+        null=True,   # <--- Essencial para o banco aceitar vazio
+        blank=True   # <--- Essencial para o formulário/admin aceitar vazio
+    )
+
+    forum = models.OneToOneField(
+        'planos_de_acao.Forum',  # <-- MUDANÇA AQUI
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Fórum de Discussão",
+        related_name='plano_de_acao'
+    )
+
+    # --- Informações copiadas para o "snapshot" ---
+    tipo = models.CharField(
+        max_length=50, choices=TIPOS_PLANO, verbose_name="Tipo de Ação")
+    titulo = models.TextField(verbose_name="Título (Descrição da Pergunta)")
+    local_execucao = models.ForeignKey(
+        SubSetor,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Local de Execução"
+    )
+    ferramenta = models.ForeignKey(
+        FerramentaDigital,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Ferramenta"
+    )
+    categoria = models.ForeignKey(
+        CategoriaAuditoria,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Categoria da Auditoria"
+    )
+    data_abertura = models.DateTimeField(
+        verbose_name="Data da Ocorrência")
+
+    # --- Gerenciamento do Plano ---
+    responsavel_acao = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Responsável pela Ação",
+        related_name='planos_de_acao_responsaveis'
+    )
+    status_plano = models.CharField(
+        max_length=50,
+        choices=STATUS_PLANO,
+        # <--- Garante que nasce como 'ABERTO' (que agora exibe "Recebido")
+        default='ABERTO',
+        verbose_name="Status"
+    )
+    prazo_conclusao = models.DateField(
+        null=True, blank=True, verbose_name="Prazo de Conclusão")
+    data_conclusao = models.DateTimeField(
+        null=True, blank=True, verbose_name="Data de Conclusão")
+
+    # --- Campos para a tratativa ---
+    descricao_causa_raiz = models.TextField(
+        null=True, blank=True, verbose_name="Descrição da Causa Raiz")
+    descricao_acao = models.TextField(
+        null=True, blank=True, verbose_name="Descrição da Ação Corretiva/Melhoria")
+
+    descricao_acao_realizada = models.TextField(
+        null=True, blank=True, verbose_name="Ações Realizadas na Conclusão")
+
+    observacao_eficacia = models.TextField(
+        null=True, blank=True, verbose_name="Observação da Eficácia")
+
+    motivo_arquivamento = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Motivo do Arquivamento"
+    )
+
+    # Campo para a data preenchida no modal "Aceitar"
+    data_finalizacao_prevista = models.DateField(
+        null=True, blank=True, verbose_name="Data Finalização Prevista"
+    )
+
+    motivo_recusa = models.TextField(
+        null=True, blank=True, verbose_name="Motivo da Recusa/Devolução")
+
+    orientacoes_extra = models.TextField(
+        null=True, blank=True, verbose_name="Orientações Adicionais (Clonagem)")
+
+    origem_orientacao = models.CharField(
+        max_length=20,
+        choices=[('CLONAGEM', 'Clonagem'),
+                 ('REDIRECIONAMENTO', 'Redirecionamento')],
+        null=True, blank=True,
+        verbose_name="Origem da Orientação"
+    )
+
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Criado por (Auditor Manual)",
+        related_name='planos_manuais'
+    )
+
+    observacao_origem = models.TextField(
+        null=True, blank=True,
+        verbose_name="Observação de Origem (Manual)"
+    )
+
+    fluxo_simplificado = models.BooleanField(
+        default=False,
+        verbose_name="Fluxo Simplificado (Sem Aprovações)"
+    )
+
+    class Meta:
+        verbose_name = "Plano de Ação"
+        verbose_name_plural = "Planos de Ação"
+        ordering = ['-data_abertura']
+
+    def __str__(self):
+        return f"Plano #{self.id} - {self.get_tipo_display()}"
+
+
+class Investimento(models.Model):
+    plano = models.ForeignKey(
+        PlanoDeAcao,
+        on_delete=models.CASCADE,
+        related_name='investimentos',
+        verbose_name="Plano de Ação"
+    )
+    descricao = models.TextField(verbose_name="Descrição do Investimento")
+    quantidade = models.PositiveIntegerField(
+        default=1, verbose_name="Quantidade")
+    valor_unitario = models.DecimalField(
+        max_digits=10, decimal_places=2, verbose_name="Preço Unitário")
+    data_registro = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def valor_total(self):
+        return self.quantidade * self.valor_unitario
+
+    class Meta:
+        verbose_name = "Investimento"
+        verbose_name_plural = "Investimentos"
+
+
+class EvidenciaPlano(models.Model):
+    plano = models.ForeignKey(
+        PlanoDeAcao,
+        on_delete=models.CASCADE,
+        related_name='evidencias',
+        verbose_name="Plano de Ação"
+    )
+    arquivo = models.FileField(
+        upload_to='evidencias_planos/', verbose_name="Arquivo")
+    data_upload = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Evidência do Plano"
+        verbose_name_plural = "Evidências do Plano"
+
+
+class HistoricoPlanoAcao(models.Model):
+    plano = models.ForeignKey(
+        PlanoDeAcao,
+        on_delete=models.CASCADE,
+        related_name='historico',
+        verbose_name="Plano de Ação"
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Usuário"
+    )
+    descricao = models.TextField(verbose_name="Descrição do Evento")
+    data_registro = models.DateTimeField(auto_now_add=True)
+
+    # Tipo de evento para facilitar ícones no frontend (opcional, mas recomendado)
+    TIPO_EVENTO = (
+        ('CRIACAO', 'Criação'),
+        ('STATUS', 'Mudança de Status'),
+        ('EDICAO', 'Edição'),
+        ('ANEXO', 'Anexo'),
+        ('REDISTRIBUICAO', 'Redistribuição'),
+        ('PRAZO', 'Alteração de Prazo'),
+    )
+    tipo = models.CharField(
+        max_length=20, choices=TIPO_EVENTO, default='STATUS')
+
+    class Meta:
+        ordering = ['-data_registro']  # Do mais recente para o mais antigo
+
+    def __str__(self):
+        return f"{self.plano.id} - {self.descricao}"

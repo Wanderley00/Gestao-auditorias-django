@@ -18,8 +18,6 @@
         </main>
     </div>
 
-    {% include 'auditorias/partials/_scripts.html' %}
-
     <div id="redirectModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -58,6 +56,23 @@
                     <button type="submit" class="btn btn-danger">Sim, Excluir</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="chatOverlay" class="chat-panel-overlay" onclick="closeChat()"></div>
+    <div id="chatPanel" class="chat-panel">
+        <div class="chat-header">
+            <h2><i class="fas fa-comments"></i> Fórum de Mensagens</h2>
+            <span class="close-btn" onclick="closeChat()">&times;</span>
+        </div>
+        <div class="chat-body" id="chatMessages">
+            <p style="color: var(--text-muted); text-align: center;">Carregando...</p>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatMessageInput" class="form-control" placeholder="Digite sua mensagem...">
+            <button class="btn btn-primary" id="chatSendBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 

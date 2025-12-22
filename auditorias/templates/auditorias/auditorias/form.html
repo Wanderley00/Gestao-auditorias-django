@@ -27,7 +27,7 @@
 </div>
 
 <h4 style="color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
-    2. Local, Modelo e Ativo
+    2. Local e Modelo
 </h4>
 <div class="form-row">
     <div class="form-group required">
@@ -72,6 +72,26 @@
     </div>
 </div>
 
+<div class="form-row single">
+     <div class="form-group">
+        <label class="toggle-switch">
+            <input type="checkbox" id="agendamento_especifico" name="agendamento_especifico" {% if auditoria.agendamento_especifico %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+        </label>
+        <span style="color: var(--text-secondary); font-size: 14px; margin-left: 12px;">Agendar para locais específicos</span>
+        <div class="field-help">Marque esta opção para selecionar subsetores individuais. Se desmarcado, será criada uma auditoria única para o nível selecionado (o local será escolhido no app).</div>
+    </div>
+</div>
+
+<div class="form-row single" id="container-subsetores-especificos" style="display:none;">
+    <div class="form-group">
+        <label for="subsetores_selecionados" class="form-label">Subsetores Específicos</label>
+        <select id="subsetores_selecionados" name="subsetores_selecionados" multiple>
+            </select>
+        <div class="field-help">Selecione um ou mais subsetores para criar uma auditoria para cada um.</div>
+    </div>
+</div>
+
 <div class="form-row">
     <div class="form-group">
         <label for="modelos" class="form-label">Modelos de Auditoria</label>
@@ -80,7 +100,7 @@
         </select>
     </div>
     <div class="form-group">
-        <label for="ativos_auditados" class="form-label">Ativos Auditados</label>
+        <label for="ativos_auditados" class="form-label">Ativos Auditados (Opcional)</label>
         <select id="ativos_auditados" name="ativos_auditados" multiple>
             {% if auditoria %}{% for a in auditoria.ativos_auditados.all %}<option value="{{ a.pk }}" selected>{{ a.tag }} - {{ a.descricao }}</option>{% endfor %}{% endif %}
         </select>
@@ -192,6 +212,12 @@ document.addEventListener('DOMContentLoaded', function() {
             direction: "asc"
         }
     });
+
+    const subsetoresTomSelect = new TomSelect('#subsetores_selecionados',{
+        plugins: ['remove_button'],
+        placeholder: 'Selecione um ou mais subsetores...',
+        sortField: { field: "text", direction: "asc" }
+    });
     
     // ===================================================================
     // LÓGICA 1: CARREGAMENTO DINÂMICO DE LOCAL, MODELO E ATIVO
@@ -201,7 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const areaSelect = document.getElementById('local_area');
     const setorSelect = document.getElementById('local_setor');
     const subsetorSelect = document.getElementById('local_subsetor');
-    const ativosSelect = document.getElementById('ativos_auditados');
+    const agendamentoEspecificoCheckbox = document.getElementById('agendamento_especifico');
+    const containerSubsetoresEspecificos = document.getElementById('container-subsetores-especificos');
 
     const containers = {
         'EMPRESA': document.getElementById('container-empresa'),
@@ -212,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function atualizarVisibilidade() {
         const nivel = nivelSelect.value;
+        
         Object.values(containers).forEach(c => c.style.display = 'none');
         if (nivel === 'EMPRESA') {
             containers.EMPRESA.style.display = 'block';
@@ -226,6 +254,71 @@ document.addEventListener('DOMContentLoaded', function() {
             Object.values(containers).forEach(c => c.style.display = 'block');
         }
         carregarAtivos();
+
+        if (nivel && nivel !== 'SUBSETOR') {
+            agendamentoEspecificoCheckbox.closest('.form-group').style.display = 'block';
+            toggleSpecificScheduling();
+        } else {
+            agendamentoEspecificoCheckbox.closest('.form-group').style.display = 'none';
+            containerSubsetoresEspecificos.style.display = 'none';
+        }
+
+        loadSubsetorsForSelection();
+    }
+
+    function toggleSpecificScheduling() {
+        if (agendamentoEspecificoCheckbox.checked) {
+            containerSubsetoresEspecificos.style.display = 'block';
+        } else {
+            containerSubsetoresEspecificos.style.display = 'none';
+        }
+    }
+
+    function loadSubsetorsForSelection() {
+        const nivel = nivelSelect.value;
+        let local_id = null;
+        let query_param = '';
+
+        if (nivel === 'SETOR' && setorSelect.value) { local_id = setorSelect.value; query_param = 'setor_id'; }
+        else if (nivel === 'AREA' && areaSelect.value) { local_id = areaSelect.value; query_param = 'area_id'; }
+        else if (nivel === 'EMPRESA' && empresaSelect.value) { local_id = empresaSelect.value; query_param = 'empresa_id'; }
+
+        subsetoresTomSelect.clear();
+        subsetoresTomSelect.clearOptions();
+        
+        if (query_param && local_id) {
+            // Esta é a URL que você criou em urls.py 
+            const url = `{% url 'auditorias:get_subsetores_por_nivel' %}?${query_param}=${local_id}`;
+
+            subsetoresTomSelect.addOption({value: '', text: 'Carregando subsetores...'});
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro na rede: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    subsetoresTomSelect.clearOptions();
+                    if (data.length > 0) {
+                        data.forEach(sub => {
+                            subsetoresTomSelect.addOption({ value: sub.id, text: sub.nome });
+                        });
+                    } else {
+                        subsetoresTomSelect.addOption({value: '', text: 'Nenhum subsetor encontrado'});
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar subsetores:', error);
+                    subsetoresTomSelect.clearOptions();
+                    subsetoresTomSelect.addOption({value: '', text: 'Erro ao carregar subsetores'});
+                });
+
+        } else if (nivel && nivel !== 'SUBSETOR') {
+            subsetoresTomSelect.addOption({value: '', text: 'Selecione um local acima para carregar'});
+        } else {
+             subsetoresTomSelect.addOption({value: '', text: 'Opção desabilitada para este nível'});
+        }
     }
 
     function popularSelect(selectElement, url, placeholder) {
@@ -237,6 +330,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const option = new Option(item.nome, item.id);
                     selectElement.add(option);
                 });
+            })
+            .catch(error => {
+                console.error('Erro ao popular select:', error);
+                selectElement.innerHTML = `<option value="">Erro ao carregar</option>`;
             });
     }
 
@@ -248,8 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (nivel === 'AREA' && areaSelect.value) local_id = areaSelect.value;
         else if (nivel === 'EMPRESA' && empresaSelect.value) local_id = empresaSelect.value;
         
-        // Limpa o Tom Select antes de carregar novos ativos
-        const ativosTomSelect = ativosSelect.tomselect;
+        const ativosTomSelect = ativos_auditados.tomselect;
         ativosTomSelect.clear();
         ativosTomSelect.clearOptions();
         ativosTomSelect.addOption({value: '', text: 'Carregando...'});
@@ -259,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    ativosTomSelect.clearOptions(); // Limpa o "Carregando..."
+                    ativosTomSelect.clearOptions();
                     if (data.length > 0) {
                         data.forEach(ativo => {
                             ativosTomSelect.addOption({
@@ -277,22 +373,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- CORREÇÃO NOS LISTENERS ---
+    agendamentoEspecificoCheckbox.addEventListener('change', toggleSpecificScheduling);
+
     nivelSelect.addEventListener('change', atualizarVisibilidade);
+    
     empresaSelect.addEventListener('change', () => {
         popularSelect(areaSelect, `{% url 'auditorias:get_areas_por_empresa' %}?empresa_id=${empresaSelect.value}`, 'Selecione uma área...');
         carregarAtivos();
+        loadSubsetorsForSelection(); // <-- ESTA LINHA FOI ADICIONADA
     });
     areaSelect.addEventListener('change', () => {
         popularSelect(setorSelect, `{% url 'auditorias:get_setores_por_area' %}?area_id=${areaSelect.value}`, 'Selecione um setor...');
         carregarAtivos();
+        loadSubsetorsForSelection(); // <-- ESTA LINHA FOI ADICIONADA
     });
     setorSelect.addEventListener('change', () => {
         popularSelect(subsetorSelect, `{% url 'auditorias:get_subsetores_por_setor' %}?setor_id=${setorSelect.value}`, 'Selecione um subsetor...');
         carregarAtivos();
+        loadSubsetorsForSelection(); // <-- ESTA LINHA FOI ADICIONADA
     });
-    subsetorSelect.addEventListener('change', carregarAtivos);
+    subsetorSelect.addEventListener('change', () => {
+        carregarAtivos();
+        // Não precisamos chamar loadSubsetorsForSelection() aqui, pois o nível "SUBSETOR" desativa o campo.
+    });
+    // --- FIM DA CORREÇÃO ---
 
-    atualizarVisibilidade();
+    atualizarVisibilidade(); // Chamada inicial
 
 
     // ===================================================================
