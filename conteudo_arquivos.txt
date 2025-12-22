@@ -6874,36 +6874,34 @@ def dashboard_planos_de_acao(request):
 
 @login_required
 def get_dados_calendario(request):
-    """Retorna dados para o calendário de auditorias via AJAX"""
+    """Retorna dados para o calendário de auditorias via AJAX - Com Status de Atraso"""
     try:
         ano = int(request.GET.get('year', timezone.now().year))
         mes = int(request.GET.get('month', timezone.now().month))
 
-        # Filtra instâncias do mês/ano solicitado
         instancias = AuditoriaInstancia.objects.filter(
             data_execucao__year=ano,
             data_execucao__month=mes
         )
 
-        # Dicionário para agrupar: dados[dia][status] = quantidade
         dados_dias = {}
 
         for inst in instancias:
             dia = inst.data_execucao.day
-            # Usa a propriedade do model que já calcula a lógica de atraso/pendente
-            status = inst.status_execucao
+            status_real = inst.status_execucao
 
-            # Normaliza os status para corresponder ao visual desejado
-            if status == 'Concluída':
+            # --- LÓGICA ATUALIZADA (4 STATUS) ---
+            if status_real == 'Concluída':
                 label = 'Concluído'
-                cor = 'success'  # Verde
-            elif status == 'Atraso':
-                label = 'Pendente'  # Ou Atrasado, conforme imagem usei Pendente laranja
-                cor = 'warning'  # Laranja/Amarelo
-            elif status == 'Pendente':
+                cor = 'success'   # Verde
+            elif status_real == 'Atraso':
+                label = 'Não realizado'
+                cor = 'danger'    # Vermelho
+            elif status_real == 'Pendente':
                 label = 'Pendente'
-                cor = 'warning'
-            else:  # Agendada
+                cor = 'warning'   # Laranja
+            else:
+                # Agendada, Em andamento, etc. viram Planejado
                 label = 'Planejado'
                 cor = 'secondary'  # Cinza
 
@@ -9644,7 +9642,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 {% block extra_filters %}{% endblock %}
 
 {% block table_headers %}
-    {# ... (Seu código da tabela permanece igual, omiti para brevidade) ... #}
     <tr>
         <th>ID Agendamento</th>
         <th>Criado por</th>
@@ -9659,7 +9656,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         <th style="width: 120px;">Ações</th>
     </tr>
     <tr class="filter-row">
-        {# ... seus filtros ... #}
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
@@ -9675,7 +9671,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 {% endblock %}
 
 {% block table_row %}
-    {# ... (Seu código das linhas permanece igual) ... #}
     <td><strong>#{{ object.id }}</strong></td>
     <td>{{ object.criado_por.get_full_name|default:object.criado_por.username|default:"Sistema" }}</td>
     <td>
@@ -9710,58 +9705,9 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </td>
 {% endblock %}
 
-{# --- INÍCIO DO CÓDIGO DO CALENDÁRIO (ADICIONADO AO FINAL DO BLOCK CONTENT OU DEPOIS DA TABELA) --- #}
-{% block extra_content %}
-<div id="calendarModal" class="modal" style="display: none; padding-top: 20px;">
-    <div class="modal-content" style="max-width: 1100px; width: 95%; border-radius: 8px; height: 90vh; display: flex; flex-direction: column;">
-        
-        <div class="modal-header" style="background: white; border-bottom: 1px solid #e2e8f0; padding: 15px 25px;">
-            <h2 style="font-size: 18px; color: #333; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-calendar-alt"></i> Calendário de Auditorias
-            </h2>
-            <span class="close-btn" onclick="closeCalendarModal()">&times;</span>
-        </div>
-
-        <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
-            
-            <div class="calendar-controls">
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-danger" onclick="mudarMes(-1)">Anterior</button>
-                    <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Hoje</button>
-                    <button class="btn btn-sm btn-danger" onclick="mudarMes(1)">Próximo</button>
-                </div>
-                <h2 id="calendarTitle" class="calendar-month-title">Dezembro 2025</h2>
-                <div style="width: 150px;"></div> </div>
-
-            <div class="calendar-grid-header">
-                <div>domingo</div>
-                <div>segunda-feira</div>
-                <div>terça-feira</div>
-                <div>quarta-feira</div>
-                <div>quinta-feira</div>
-                <div>sexta-feira</div>
-                <div>sábado</div>
-            </div>
-            
-            <div id="calendarGrid" class="calendar-grid">
-                </div>
-
-            <div class="calendar-legend">
-                <div class="legend-item"><span class="dot dot-gray"></span> Planejado</div>
-                <div class="legend-item"><span class="dot dot-blue"></span> Em andamento</div>
-                <div class="legend-item"><span class="dot dot-orange"></span> Pendente</div>
-                <div class="legend-item"><span class="dot dot-green"></span> Concluída</div>
-            </div>
-        </div>
-        
-        <div class="modal-footer" style="padding: 10px 25px;">
-            <button type="button" class="btn btn-danger" onclick="closeCalendarModal()">Fechar</button>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_css %}
+{# --- CORREÇÃO: CSS MOVIDO PARA DENTRO DE EXTRA_JS (OU CONTENT) PARA GARANTIR CARREGAMENTO --- #}
+{# Como o bloco extra_css não existe no base.html, colocamos o style aqui junto com os scripts #}
+{% block extra_js %}
     {{ block.super }}
     <style>
         .filter-row th { padding: 8px !important; vertical-align: top; }
@@ -9778,16 +9724,17 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             font-size: 28px;
             font-weight: 800;
             color: #333;
-            text-transform: lowercase; /* Igual imagem */
+            text-transform: lowercase;
             margin: 0;
         }
         .calendar-month-title::first-letter {
             text-transform: uppercase;
         }
 
+        /* GRID FIX: Força o display grid */
         .calendar-grid-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important;
             text-align: right;
             padding-right: 10px;
             margin-bottom: 5px;
@@ -9797,12 +9744,11 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         }
 
         .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            /* border-top: 1px solid #ddd;
-            border-left: 1px solid #ddd; */
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important;
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0; /* Adicionei borda externa */
         }
 
         .calendar-day {
@@ -9840,13 +9786,15 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: pointer;
+            border-radius: 2px;
         }
 
-        /* Cores das barras (baseado no bootstrap/var css) */
-        .bg-success { background-color: #10b981; } /* Concluído */
-        .bg-warning { background-color: #f59e0b; } /* Pendente */
-        .bg-secondary { background-color: #94a3b8; } /* Planejado */
-        .bg-info { background-color: #0ea5e9; } /* Em andamento */
+        /* Cores das barras */
+        .bg-success { background-color: #10b981; }
+        .bg-warning { background-color: #f59e0b; }
+        .bg-secondary { background-color: #94a3b8; }
+        .bg-info { background-color: #0ea5e9; }
+        .bg-danger { background-color: #ef4444; }
 
         /* Legenda */
         .calendar-legend {
@@ -9870,12 +9818,9 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         .dot-green { background: #10b981; }
         .dot-red { background: #ef4444; }
     </style>
-{% endblock %}
 
-{% block extra_js %}
-    {{ block.super }}
     <script>
-    // --- CÓDIGO DA TABELA EXISTENTE ---
+    // --- LÓGICA DA TABELA (FILTROS) ---
     document.addEventListener('DOMContentLoaded', function() {
         const filters = document.querySelectorAll('.column-filter');
         const table = document.querySelector('#dataTable');
@@ -9919,7 +9864,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
     function openCalendarModal() {
         document.getElementById('calendarModal').style.display = 'flex';
-        // Recarrega para garantir dados atualizados ou corrigir renderização
         renderCalendar(); 
     }
 
@@ -9941,14 +9885,12 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         
-        // Atualiza Título
         const monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
         document.getElementById('calendarTitle').innerText = `${monthNames[month]} ${year}`;
 
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Carregando...</div>';
 
-        // Busca dados do backend
         fetch(`{% url 'auditorias:get_dados_calendario' %}?year=${year}&month=${month + 1}`)
             .then(response => response.json())
             .then(data => {
@@ -9956,7 +9898,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                     grid.innerHTML = `<div style="color:red; padding:20px;">Erro: ${data.erro}</div>`;
                     return;
                 }
-                
                 construirGrade(year, month, data.dados);
             })
             .catch(err => {
@@ -9969,25 +9910,21 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = '';
 
-        const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Domingo) a 6
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        // Dias do mês anterior para preencher
         const prevMonthDays = new Date(year, month, 0).getDate();
         
-        // 1. Dias do mês anterior (cinza)
+        // Dias do mês anterior
         for (let i = firstDayOfMonth; i > 0; i--) {
             const dayNum = prevMonthDays - i + 1;
             grid.innerHTML += `<div class="calendar-day other-month"><div class="day-number">${dayNum}</div></div>`;
         }
 
-        // 2. Dias do mês atual
+        // Dias do mês atual
         for (let i = 1; i <= daysInMonth; i++) {
             let barsHtml = '';
             
-            // Verifica se tem dados para este dia
             if (dadosAuditoria[i]) {
-                // dadosAuditoria[i] é um objeto: { "Concluído|success": 2, "Pendente|warning": 1 }
                 for (const [key, count] of Object.entries(dadosAuditoria[i])) {
                     const [label, color] = key.split('|');
                     barsHtml += `<div class="event-bar bg-${color}">${count} - ${label}</div>`;
@@ -10002,7 +9939,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             `;
         }
 
-        // 3. Dias do próximo mês (para completar a grade de 35 ou 42 células)
+        // Dias do próximo mês
         const totalCells = firstDayOfMonth + daysInMonth;
         const nextMonthDays = (totalCells > 35 ? 42 : 35) - totalCells;
         
@@ -10011,6 +9948,60 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         }
     }
     </script>
+{% endblock %}
+
+{# --- USANDO BLOCK CONTENT PARA O HTML DO MODAL --- #}
+{% block content %}
+    {{ block.super }}
+
+    <div id="calendarModal" class="modal" style="display: none; padding-top: 20px;">
+        <div class="modal-content" style="max-width: 1100px; width: 95%; border-radius: 8px; height: 90vh; display: flex; flex-direction: column;">
+            
+            <div class="modal-header" style="background: white; border-bottom: 1px solid #e2e8f0; padding: 15px 25px;">
+                <h2 style="font-size: 18px; color: #333; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-calendar-alt"></i> Calendário de Auditorias
+                </h2>
+                <span class="close-btn" onclick="closeCalendarModal()">&times;</span>
+            </div>
+
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
+                
+                <div class="calendar-controls">
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-danger" onclick="mudarMes(-1)">Anterior</button>
+                        <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Hoje</button>
+                        <button class="btn btn-sm btn-danger" onclick="mudarMes(1)">Próximo</button>
+                    </div>
+                    <h2 id="calendarTitle" class="calendar-month-title">Dezembro 2025</h2>
+                    <div style="width: 150px;"></div>
+                </div>
+
+                <div class="calendar-grid-header">
+                    <div>domingo</div>
+                    <div>segunda-feira</div>
+                    <div>terça-feira</div>
+                    <div>quarta-feira</div>
+                    <div>quinta-feira</div>
+                    <div>sexta-feira</div>
+                    <div>sábado</div>
+                </div>
+                
+                <div id="calendarGrid" class="calendar-grid">
+                    </div>
+
+                <div class="calendar-legend">
+                    <div class="legend-item"><span class="dot dot-gray"></span> Planejado</div>
+                    <div class="legend-item"><span class="dot dot-orange"></span> Pendente</div>
+                    <div class="legend-item"><span class="dot dot-red"></span> Não realizado</div>
+                    <div class="legend-item"><span class="dot dot-green"></span> Concluída</div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="padding: 10px 25px;">
+                <button type="button" class="btn btn-danger" onclick="closeCalendarModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 _____________________________________
 
