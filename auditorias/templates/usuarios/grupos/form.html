@@ -1,0 +1,103 @@
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="content-title">{{ title }}</h2>
+            <p class="content-subtitle">Defina o nome do perfil e marque o que ele pode fazer.</p>
+        </div>
+        <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="card mb-4 shadow-sm border-left-primary">
+        <div class="card-body">
+            <div class="form-group required">
+                <label for="name" class="font-weight-bold text-uppercase text-xs text-gray-600">Nome do Perfil de Acesso</label>
+                <input type="text" 
+                       name="name" 
+                       id="name" 
+                       class="form-control form-control-lg" 
+                       value="{{ grupo.name|default:'' }}" 
+                       placeholder="Ex: Auditor Externo, Gerente de Qualidade..." 
+                       required>
+                <small class="text-muted">Dê um nome claro para identificar a função deste grupo.</small>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3 text-gray-800"><i class="fas fa-lock"></i> Permissões do Sistema</h4>
+    
+    <div class="row">
+        {% for modulo, permissoes in perms_agrupadas.items %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ modulo }}</h6>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input toggle-all" id="toggle_{{ forloop.counter }}" onchange="toggleCard(this)">
+                        <label class="custom-control-label small" for="toggle_{{ forloop.counter }}">Tudo</label>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        {% for perm in permissoes %}
+                        <div class="col-12 mb-2">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" 
+                                       class="custom-control-input perm-check" 
+                                       id="perm_{{ perm.id }}" 
+                                       name="permissoes" 
+                                       value="{{ perm.id }}"
+                                       {% if perm.id in grupo_perms_ids %}checked{% endif %}>
+                                <label class="custom-control-label text-dark" for="perm_{{ perm.id }}">
+                                    {% if 'add_' in perm.codename %}<span class="badge badge-success badge-pill mr-1">Criar</span>
+                                    {% elif 'change_' in perm.codename %}<span class="badge badge-warning badge-pill mr-1 text-white">Editar</span>
+                                    {% elif 'delete_' in perm.codename %}<span class="badge badge-danger badge-pill mr-1">Excluir</span>
+                                    {% elif 'view_' in perm.codename %}<span class="badge badge-info badge-pill mr-1">Ver</span>
+                                    {% else %}{{ perm.name }}{% endif %}
+                                    
+                                    <span class="small text-muted ml-1">
+                                        {{ perm.name|cut:"Can add "|cut:"Can change "|cut:"Can delete "|cut:"Can view " }}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="fixed-bottom bg-white border-top py-3 px-4 shadow-lg d-flex justify-content-end" style="z-index: 1000;">
+        <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-light mr-2">Cancelar</a>
+        <button type="submit" class="btn btn-success btn-lg icon-split">
+            <span class="icon text-white-50"><i class="fas fa-save"></i></span>
+            <span class="text">Salvar Permissões</span>
+        </button>
+    </div>
+    <div style="height: 80px;"></div> </form>
+
+<script>
+    function toggleCard(toggleBtn) {
+        // Acha o card pai desse botão
+        let card = toggleBtn.closest('.card');
+        // Acha todos os checkboxes dentro desse card
+        let checkboxes = card.querySelectorAll('.perm-check');
+        // Marca ou desmarca todos baseado no switch "Tudo"
+        checkboxes.forEach(cb => cb.checked = toggleBtn.checked);
+    }
+</script>
+{% endblock %}

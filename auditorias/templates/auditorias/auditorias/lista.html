@@ -9,18 +9,15 @@
             <p class="content-subtitle">Administrar auditorias agendadas do sistema</p>
         </div>
         <div style="display: flex; gap: 10px;">
-            {# NOVO BOTÃO CALENDÁRIO #}
+            {# BOTÃO CALENDÁRIO #}
             <button type="button" onclick="openCalendarModal()" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
                 <i class="fas fa-calendar-alt" style="color: #0ea5e9;"></i> Calendário
             </button>
 
-            <a href="{% url 'auditorias:dashboard' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
-                <i class="fas fa-chart-pie" style="color: #7c3aed;"></i> Dashboard
-            </a>
-            
+            {# BOTÃO DE CRIAÇÃO (Texto alterado para "Criar Agendamento") #}
             <a href="{% url create_url %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
-                {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
+                Criar Agendamento
             </a>
         </div>
     </div>
@@ -94,8 +91,6 @@
     </td>
 {% endblock %}
 
-{# --- CORREÇÃO: CSS MOVIDO PARA DENTRO DE EXTRA_JS (OU CONTENT) PARA GARANTIR CARREGAMENTO --- #}
-{# Como o bloco extra_css não existe no base.html, colocamos o style aqui junto com os scripts #}
 {% block extra_js %}
     {{ block.super }}
     <style>
@@ -120,7 +115,6 @@
             text-transform: uppercase;
         }
 
-        /* GRID FIX: Força o display grid */
         .calendar-grid-header {
             display: grid !important;
             grid-template-columns: repeat(7, 1fr) !important;
@@ -137,7 +131,7 @@
             grid-template-columns: repeat(7, 1fr) !important;
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0; /* Adicionei borda externa */
+            border: 1px solid #e2e8f0;
         }
 
         .calendar-day {
@@ -146,7 +140,7 @@
             padding: 5px;
             background: white;
             position: relative;
-            margin: -1px 0 0 -1px; /* Bordas colapsadas */
+            margin: -1px 0 0 -1px;
         }
 
         .calendar-day.other-month {
@@ -163,7 +157,6 @@
         }
         .other-month .day-number { color: #ccc; }
 
-        /* Barras de Evento */
         .event-bar {
             display: block;
             padding: 2px 6px;
@@ -178,14 +171,12 @@
             border-radius: 2px;
         }
 
-        /* Cores das barras */
         .bg-success { background-color: #10b981; }
         .bg-warning { background-color: #f59e0b; }
         .bg-secondary { background-color: #94a3b8; }
         .bg-info { background-color: #0ea5e9; }
         .bg-danger { background-color: #ef4444; }
 
-        /* Legenda */
         .calendar-legend {
             display: flex;
             justify-content: center;
@@ -209,7 +200,6 @@
     </style>
 
     <script>
-    // --- LÓGICA DA TABELA (FILTROS) ---
     document.addEventListener('DOMContentLoaded', function() {
         const filters = document.querySelectorAll('.column-filter');
         const table = document.querySelector('#dataTable');
@@ -243,12 +233,9 @@
         if (filters.length > 0) {
             filters.forEach(filter => filter.addEventListener('input', applyTableFilters));
         }
-        
-        // Inicializa calendário
         renderCalendar();
     });
 
-    // --- LÓGICA DO CALENDÁRIO ---
     let currentDate = new Date();
 
     function openCalendarModal() {
@@ -303,13 +290,11 @@
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const prevMonthDays = new Date(year, month, 0).getDate();
         
-        // Dias do mês anterior
         for (let i = firstDayOfMonth; i > 0; i--) {
             const dayNum = prevMonthDays - i + 1;
             grid.innerHTML += `<div class="calendar-day other-month"><div class="day-number">${dayNum}</div></div>`;
         }
 
-        // Dias do mês atual
         for (let i = 1; i <= daysInMonth; i++) {
             let barsHtml = '';
             
@@ -328,7 +313,6 @@
             `;
         }
 
-        // Dias do próximo mês
         const totalCells = firstDayOfMonth + daysInMonth;
         const nextMonthDays = (totalCells > 35 ? 42 : 35) - totalCells;
         
@@ -339,7 +323,6 @@
     </script>
 {% endblock %}
 
-{# --- USANDO BLOCK CONTENT PARA O HTML DO MODAL --- #}
 {% block content %}
     {{ block.super }}
 
@@ -357,9 +340,9 @@
                 
                 <div class="calendar-controls">
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-danger" onclick="mudarMes(-1)">Anterior</button>
-                        <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Hoje</button>
-                        <button class="btn btn-sm btn-danger" onclick="mudarMes(1)">Próximo</button>
+                        <button class="btn btn-sm btn-primary" onclick="mudarMes(-1)">Anterior</button>
+                        <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Este Mês</button>
+                        <button class="btn btn-sm btn-primary" onclick="mudarMes(1)">Próximo</button>
                     </div>
                     <h2 id="calendarTitle" class="calendar-month-title">Dezembro 2025</h2>
                     <div style="width: 150px;"></div>
@@ -387,7 +370,7 @@
             </div>
             
             <div class="modal-footer" style="padding: 10px 25px;">
-                <button type="button" class="btn btn-danger" onclick="closeCalendarModal()">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="closeCalendarModal()">Fechar</button>
             </div>
         </div>
     </div>

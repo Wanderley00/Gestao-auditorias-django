@@ -166,4 +166,6 @@ urlpatterns = [
     path('ajax/calendario-dados/', views.get_dados_calendario,
          name='get_dados_calendario'),
 
+    path('quarentena/', views.lista_quarentena, name='lista_quarentena'),
+
 ]

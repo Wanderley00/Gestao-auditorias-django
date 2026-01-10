@@ -1,3 +1,29 @@
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\create_superuser.py
+
+import os
+import django
+from django.contrib.auth import get_user_model
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+django.setup()
+
+User = get_user_model()
+
+# Pega os dados das variáveis de ambiente que vamos definir no Render
+username = os.environ.get('DJANGO_SUPERUSER_USERNAME', '')
+email = os.environ.get('DJANGO_SUPERUSER_EMAIL', '')
+password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
+
+if not User.objects.filter(username=username).exists():
+    print(f"Criando superusuário: {username}...")
+    User.objects.create_superuser(
+        username=username, email=email, password=password)
+    print("Superusuário criado com sucesso!")
+else:
+    print(f"Superusuário {username} já existe.")
+
+_____________________________________
+
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\gerar.py
 
 import os
@@ -1971,6 +1997,12 @@ class CategoriaAuditoria(models.Model):
     data_atualizacao = models.DateTimeField(
         auto_now=True, verbose_name="Última Atualização")
 
+    dias_para_quarentena = models.PositiveIntegerField(
+        default=7,
+        verbose_name="Dias de Tolerância para Quarentena",
+        help_text="Quantos dias de atraso são permitidos antes de entrar em quarentena."
+    )
+
     class Meta:
         verbose_name = "Categoria de Auditoria"
         verbose_name_plural = "Categorias de Auditorias"
@@ -3335,6 +3367,8 @@ urlpatterns = [
     path('ajax/calendario-dados/', views.get_dados_calendario,
          name='get_dados_calendario'),
 
+    path('quarentena/', views.lista_quarentena, name='lista_quarentena'),
+
 ]
 
 _____________________________________
@@ -3688,13 +3722,19 @@ def criar_categoria_auditoria(request):
         descricao = request.POST.get('descricao')
         ativo = request.POST.get('ativo') == 'on'
 
+        # Pega o valor do formulário, se vazio usa 7 como padrão
+        dias_quarentena = request.POST.get('dias_para_quarentena')
+        if not dias_quarentena:
+            dias_quarentena = 7
+
         if pilar_id and descricao:
             try:
                 pilar = Pilar.objects.get(pk=pilar_id)
                 CategoriaAuditoria.objects.create(
                     pilar=pilar,
                     descricao=descricao,
-                    ativo=ativo
+                    ativo=ativo,
+                    dias_para_quarentena=dias_quarentena
                 )
                 messages.success(request, 'Categoria criada com sucesso!')
                 return redirect('auditorias:lista_categorias_auditoria')
@@ -3720,6 +3760,10 @@ def editar_categoria_auditoria(request, pk):
         pilar_id = request.POST.get('pilar')
         categoria.descricao = request.POST.get('descricao')
         categoria.ativo = request.POST.get('ativo') == 'on'
+
+        dias_quarentena = request.POST.get('dias_para_quarentena')
+        if dias_quarentena:
+            categoria.dias_para_quarentena = int(dias_quarentena)
 
         if pilar_id:
             categoria.pilar = Pilar.objects.get(pk=pilar_id)
@@ -5017,9 +5061,23 @@ def criar_auditoria(request):
                 subsetores_selecionados_ids = request.POST.getlist(
                     'subsetores_selecionados')
 
+                # --- NOVA LÓGICA: Descobrir a ferramenta baseada no Modelo selecionado ---
+                modelos_ids = request.POST.getlist('modelos')
+                ferramenta_id_automatico = None
+
+                if modelos_ids:
+                    # Pega o primeiro modelo da lista para definir a ferramenta da auditoria
+                    # Isso garante consistência com o checklist usado
+                    primeiro_modelo = ModeloAuditoria.objects.filter(
+                        pk=modelos_ids[0]).select_related('checklist__ferramenta').first()
+
+                    if primeiro_modelo and primeiro_modelo.checklist and primeiro_modelo.checklist.ferramenta:
+                        ferramenta_id_automatico = primeiro_modelo.checklist.ferramenta.id
+
                 auditoria = Auditoria(
                     criado_por=request.user,
-                    ferramenta_id=request.POST.get('ferramenta'),
+                    # <--- AQUI: Usamos o ID descoberto automaticamente
+                    ferramenta_id=ferramenta_id_automatico,
                     responsavel_id=request.POST.get('responsavel'),
                     nivel_organizacional=request.POST.get(
                         'nivel_organizacional'),
@@ -5046,7 +5104,7 @@ def criar_auditoria(request):
                 )
                 auditoria.save()
 
-                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.modelos.set(modelos_ids)  # Salva os modelos (M2M)
                 auditoria.ativos_auditados.set(
                     request.POST.getlist('ativos_auditados'))
                 auditoria.turnos.set(request.POST.getlist('turnos'))
@@ -5101,6 +5159,18 @@ def editar_auditoria(request, pk):
                 subsetores_selecionados_ids = request.POST.getlist(
                     'subsetores_selecionados')
 
+                modelos_ids = request.POST.getlist('modelos')
+
+                # Atualiza a ferramenta se houver mudança nos modelos
+                if modelos_ids:
+                    primeiro_modelo = ModeloAuditoria.objects.filter(
+                        pk=modelos_ids[0]).select_related('checklist__ferramenta').first()
+                    if primeiro_modelo and primeiro_modelo.checklist and primeiro_modelo.checklist.ferramenta:
+                        auditoria.ferramenta_id = primeiro_modelo.checklist.ferramenta.id
+
+                # auditoria.ferramenta_id = request.POST.get('ferramenta') <--- REMOVA ou COMENTE esta linha antiga que pegava do form
+                auditoria.responsavel_id = request.POST.get('responsavel')
+
                 auditoria.ferramenta_id = request.POST.get('ferramenta')
                 auditoria.responsavel_id = request.POST.get('responsavel')
                 auditoria.nivel_organizacional = request.POST.get(
@@ -5130,7 +5200,7 @@ def editar_auditoria(request, pk):
 
                 auditoria.save()
 
-                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.modelos.set(modelos_ids)
                 auditoria.ativos_auditados.set(
                     request.POST.getlist('ativos_auditados'))
                 auditoria.turnos.set(request.POST.getlist('turnos'))
@@ -6918,6 +6988,52 @@ def get_dados_calendario(request):
         })
     except Exception as e:
         return JsonResponse({'sucesso': False, 'erro': str(e)})
+
+
+@login_required
+def lista_quarentena(request):
+    """Lista apenas auditorias (instâncias) que estouraram o prazo de quarentena"""
+    hoje = date.today()
+    auditorias_em_quarentena = []
+
+    auditorias_pendentes = AuditoriaInstancia.objects.filter(
+        executada=False,
+        data_execucao__lt=hoje
+    ).select_related(
+        'auditoria_agendada',
+        'responsavel',                   # <--- ADICIONADO: Para pegar o Auditor sem nova query
+        # <--- ADICIONADO: Para pegar a Ferramenta sem nova query
+        'auditoria_agendada__ferramenta',
+        'local_execucao'                 # <--- RECOMENDADO: Para o local
+    ).prefetch_related(
+        'auditoria_agendada__modelos__categoria'
+    )
+
+    for instancia in auditorias_pendentes:
+        dias_atraso = (hoje - instancia.data_execucao).days
+        limite_quarentena = 7
+
+        try:
+            agendamento = instancia.auditoria_agendada
+            primeiro_modelo = agendamento.modelos.first()
+            if primeiro_modelo and primeiro_modelo.categoria:
+                limite_quarentena = primeiro_modelo.categoria.dias_para_quarentena
+        except Exception:
+            pass
+
+        if dias_atraso > limite_quarentena:
+            dias_na_quarentena = dias_atraso - limite_quarentena
+            # Atributos temporários
+            instancia.limite_configurado = limite_quarentena
+            instancia.dias_na_quarentena = dias_na_quarentena
+            auditorias_em_quarentena.append(instancia)
+
+    context = {
+        # <--- CUIDADO: O nome da chave deve bater com o HTML
+        'auditorias_quarentena': auditorias_em_quarentena,
+        'title': 'Auditorias em Quarentena'
+    }
+    return render(request, 'auditorias/lista_quarentena.html', context)
 
 _____________________________________
 
@@ -9116,6 +9232,98 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 {% endblock %}
 _____________________________________
 
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\lista_quarentena.html
+
+{% extends 'auditorias/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Auditorias em Quarentena</h2>
+        <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Auditorias
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID Execução</th>
+                            <th>ID Agendamento</th>
+                            <th>Data Programada</th>
+                            <th>Auditor</th>
+                            <th>Local</th>
+                            <th>Modelo/Categoria</th>
+                            <th>Ferramenta</th>
+                            <th>Limite (dias)</th>
+                            <th>Dias em Quarentena</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in auditorias_quarentena %} 
+                        <tr>
+
+                            <td><strong>#{{ item.auditoria_agendada.id }}</strong></td>
+
+                            <td>#{{ item.id }}</td>
+
+                            <td>{{ item.data_execucao|date:"d/m/Y" }}</td>
+
+                            <td>
+                                {% if item.responsavel %}
+                                    {{ item.responsavel.get_full_name|default:item.responsavel.username }}
+                                {% else %}
+                                    <span class="text-muted">Não atribuído</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ item.local_execucao.nome|default:"-" }}</td>
+                            <td>{{ item.auditoria_agendada.modelos.first.descricao|default:"-" }}</td>
+
+                            <td>
+                                <span class="badge badge-secondary">{{ item.auditoria_agendada.ferramenta.nome|default:"-" }}</span>
+                            </td>
+                            
+                            <td>{{ item.limite_configurado }}</td>
+                            <td class="text-danger font-weight-bold">+{{ item.dias_na_quarentena }}</td>
+
+                            <td class="text-center">
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        title="Excluir esta execução"
+                                        onclick="confirmDelete('{% url 'auditorias:deletar_execucao' item.pk %}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <h5 class="text-success"><i class="fas fa-check-circle"></i> Nenhuma auditoria em quarentena!</h5>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(url) {
+    if (confirm('Tem certeza que deseja excluir esta auditoria da quarentena?')) {
+        window.location.href = url;
+    }
+}
+</script>
+{% endblock %}
+_____________________________________
+
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\auditorias\form.html
 
 {% extends 'auditorias/form_generico.html' %}
@@ -9126,15 +9334,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     1. Informações Gerais
 </h4>
 <div class="form-row">
-    <div class="form-group required">
-        <label for="ferramenta" class="form-label">Ferramenta Digital</label>
-        <select id="ferramenta" name="ferramenta" class="form-control form-select" required>
-            <option value="">Selecione...</option>
-            {% for f in ferramentas %}
-            <option value="{{ f.pk }}" {% if auditoria.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
-            {% endfor %}
-        </select>
-    </div>
     <div class="form-group required">
         <label for="responsavel" class="form-label">Responsável</label>
         <select id="responsavel" name="responsavel" class="form-control form-select" required>
@@ -9163,8 +9362,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     <div class="form-group required">
         <label for="categoria_auditoria" class="form-label">Categoria</label>
         <select id="categoria_auditoria" name="categoria_auditoria" class="form-control form-select" required>
-            <option value="APP" {% if auditoria.categoria_auditoria == 'APP' %}selected{% endif %}>App</option>
-            <option value="WEB" {% if auditoria.categoria_auditoria == 'WEB' %}selected{% endif %}>Web</option>
+            <option value="APP" selected>App</option>
         </select>
     </div>
 </div>
@@ -9213,10 +9411,16 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 </div>
 
 <div class="form-row">
-    <div class="form-group">
-        <label for="modelos" class="form-label">Modelos de Auditoria</label>
-        <select id="modelos" name="modelos" multiple>
-            {% for m in modelos %}<option value="{{ m.pk }}" {% if m in auditoria.modelos.all %}selected{% endif %}>{{ m.descricao }}</option>{% endfor %}
+    <div class="form-group required">
+        <label for="modelos" class="form-label">Modelo de Auditoria</label>
+        <select id="modelos" name="modelos" required>
+            <option value="">Selecione um modelo...</option>
+            {% for m in modelos %}
+                <option value="{{ m.pk }}" 
+                    {% if auditoria and m in auditoria.modelos.all %}selected{% endif %}>
+                    {{ m.descricao }}
+                </option>
+            {% endfor %}
         </select>
     </div>
     <div class="form-group">
@@ -9316,12 +9520,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA NOVA: INICIALIZAÇÃO DO TOM SELECT
     // ===================================================================
     new TomSelect('#modelos',{
-        plugins: ['remove_button'],
-        placeholder: 'Selecione um ou mais modelos...',
+        placeholder: 'Selecione um modelo...',
+        maxItems: 1, // Garante apenas 1 item
         sortField: {
             field: "text",
             direction: "asc"
         }
+        // Removi o plugin 'remove_button' para ficar com cara de select padrão
     });
 
     new TomSelect('#ativos_auditados',{
@@ -9533,13 +9738,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('date-preview-container');
 
     function toggleScheduleFields() {
+        const frequenciaSelect = document.getElementById('frequencia');
+        const intervaloInput = document.getElementById('intervalo');
+        const repeticoesInput = document.getElementById('numero_repeticoes');
+
         if (porFrequenciaRadio.checked) {
+            // Mostra Frequência / Esconde Intervalo
             frequencyContainer.style.display = 'block';
             intervalContainer.style.display = 'none';
+
+            // TORNA OBRIGATÓRIO: Frequência
+            // REMOVE OBRIGATORIEDADE: Intervalo
+            frequenciaSelect.setAttribute('required', 'required');
+            intervaloInput.removeAttribute('required');
         } else {
+            // Mostra Intervalo / Esconde Frequência
             frequencyContainer.style.display = 'none';
             intervalContainer.style.display = 'block';
+
+            // TORNA OBRIGATÓRIO: Intervalo
+            // REMOVE OBRIGATORIEDADE: Frequência
+            intervaloInput.setAttribute('required', 'required');
+            frequenciaSelect.removeAttribute('required');
         }
+        
+        // Número de repetições é sempre obrigatório (padrão 1)
+        repeticoesInput.setAttribute('required', 'required');
     }
 
     function updateDatePreview() {
@@ -9604,6 +9828,45 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDatePreview();
 });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // CORREÇÃO: Removido o prefixo 'id_' para bater com o seu HTML
+        const dataInicioInput = document.getElementById('data_inicio');
+        const dataFimInput = document.getElementById('data_fim');
+
+        if (dataInicioInput && dataFimInput) {
+            
+            // 1. Define a data mínima do "Início" como Hoje
+            // Pega a data atual (YYYY-MM-DD)
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            // Se for cadastro novo (campo vazio), bloqueia datas passadas
+            if (!dataInicioInput.value) {
+                dataInicioInput.setAttribute('min', hoje);
+            }
+
+            // 2. Função para travar a data Fim baseada na data Início
+            function atualizarDataFim() {
+                const dataSelecionada = dataInicioInput.value;
+                if (dataSelecionada) {
+                    // O campo 'Até o dia' não pode ser menor que a data de início
+                    dataFimInput.setAttribute('min', dataSelecionada);
+                    
+                    // Se o usuário já tinha escolhido um fim menor que o novo início, limpa o campo
+                    if (dataFimInput.value && dataFimInput.value < dataSelecionada) {
+                        dataFimInput.value = '';
+                    }
+                }
+            }
+
+            // Adiciona o evento de mudança
+            dataInicioInput.addEventListener('change', atualizarDataFim);
+
+            // Roda uma vez ao carregar a página para aplicar as regras
+            atualizarDataFim();
+        }
+    });
+</script>
 {% endblock %}
 _____________________________________
 
@@ -9627,6 +9890,10 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
             <a href="{% url 'auditorias:dashboard' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
                 <i class="fas fa-chart-pie" style="color: #7c3aed;"></i> Dashboard
+            </a>
+
+            <a href="{% url 'auditorias:lista_quarentena' %}" class="btn btn-warning ml-2" style="color: white;">
+                <i class="fas fa-biohazard"></i> Auditorias em Quarentena
             </a>
             
             <a href="{% url create_url %}" class="btn btn-primary">
@@ -10039,6 +10306,21 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 </div>
 
 <div class="form-row single">
+    <div class="form-group required">
+        <label for="dias_para_quarentena" class="form-label">Dias para Quarentena</label>
+        <input type="number" 
+               id="dias_para_quarentena" 
+               name="dias_para_quarentena" 
+               class="form-control" 
+               value="{{ categoria.dias_para_quarentena|default:7 }}" 
+               min="0"
+               required>
+        <small style="color: var(--text-secondary); font-size: 0.85em; margin-top: 5px; display: block;">
+            <i class="fas fa-info-circle"></i> Quantidade de dias de atraso permitidos antes da auditoria entrar em quarentena.
+        </small>
+    </div>
+</div>
+<div class="form-row single">
     <div class="form-group">
         <label class="form-label">Status</label>
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -10072,16 +10354,22 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     <tr>
         <th>Descrição da Categoria</th>
         <th>Pilar</th>
-        <th>Status</th>
+        <th style="width: 150px;">Dias Quarentena</th> <th>Status</th>
         <th>Data Cadastro</th>
         <th style="width: 120px;">Ações</th>
     </tr>
     {# Linha 2: Campos de Filtro #}
     <tr class="filter-row">
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="4"></th>
+        
         <th></th> {# Coluna de Ações sem filtro #}
     </tr>
 {% endblock %}
@@ -10093,6 +10381,13 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         </div>
     </td>
     <td>{{ object.pilar.nome|default:"—" }}</td> 
+    
+    <td>
+        <span class="badge" style="background-color: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9;">
+            <i class="fas fa-clock"></i> {{ object.dias_para_quarentena }} dias
+        </span>
+    </td>
+
     <td>
         {% if object.ativo %}
             <span class="badge badge-success">
@@ -15360,6 +15655,143 @@ _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\partials\_sidebar.html
 
+<style>
+/* Estilo para o grupo de menu */
+.nav-group {
+    margin-bottom: 5px;
+}
+
+/* O botão que abre/fecha */
+.nav-group-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    color: #fff; /* Ajuste para a cor do seu texto */
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.nav-group-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* A setinha lateral */
+.nav-group-trigger .arrow {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Estado aberto: gira a seta */
+.nav-group.open .nav-group-trigger .arrow {
+    transform: rotate(90deg);
+}
+
+/* Os itens dentro do submenu */
+.nav-group-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: rgba(0, 0, 0, 0.1); /* Fundo levemente mais escuro */
+    border-radius: 0 0 5px 5px;
+}
+
+/* Links do submenu */
+.nav-subitem {
+    display: block;
+    padding: 8px 15px 8px 45px; /* Indentação maior */
+    color: #ccc;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.2s;
+}
+
+.nav-subitem:hover {
+    color: #fff;
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Estilo dos ícones dentro do submenu */
+.nav-subitem i {
+    width: 20px; /* Largura fixa para manter o texto alinhado verticalmente */
+    text-align: center;
+    margin-right: 8px;
+    font-size: 0.9rem; /* Um pouco menor que os ícones principais */
+    opacity: 0.8; /* Um pouco mais discretos */
+}
+
+.nav-subitem:hover i {
+    opacity: 1; /* Fica 100% visível no hover */
+    color: #fff;
+}
+
+/* Classe utilitária para quando o grupo estiver aberto via JS */
+.nav-group.open .nav-group-items {
+    max-height: 500px; /* Valor arbitrário alto suficiente */
+}
+
+/* --- ESTILOS PARA QUANDO O MENU ESTÁ FECHADO (.toggled) --- */
+
+/* 1. Esconde textos e setas, deixando só os ícones */
+#sidebar.toggled .nav-item-text,
+#sidebar.toggled .arrow {
+    display: none !important;
+}
+
+/* 2. Centraliza os ícones */
+#sidebar.toggled .nav-item,
+#sidebar.toggled .nav-group-trigger {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+}
+
+#sidebar.toggled .trigger-content {
+    gap: 0; /* Remove espaço entre ícone e texto invisível */
+}
+
+/* --- MÁGICA DO MENU FLUTUANTE (HOVER) --- */
+
+/* Necessário para posicionar o menu flutuante em relação ao ícone */
+#sidebar.toggled .nav-group {
+    position: relative;
+}
+
+/* Quando passar o mouse no ícone (apenas se o menu estiver fechado) */
+#sidebar.toggled .nav-group:hover .nav-group-items {
+    display: block;
+    position: absolute;
+    left: 100%; /* Joga o menu para a direita, fora da barra */
+    top: 0;
+    width: 220px; /* Largura confortável para ler os subitens */
+    background-color: #0d47a1; /* ATENÇÃO: Coloque aqui a cor de fundo do seu menu lateral (Azul da imagem) */
+    border-radius: 0 5px 5px 0;
+    box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+    max-height: 1000px; /* Remove a limitação de altura da animação */
+    overflow: visible;
+    z-index: 999;
+}
+
+/* Ajuste visual dos itens dentro do menu flutuante */
+#sidebar.toggled .nav-subitem {
+    padding-left: 20px; /* Tira aquele recuo exagerado */
+    text-align: left;
+}
+
+/* Mostra o texto dos subitens novamente no menu flutuante */
+#sidebar.toggled .nav-subitem .nav-item-text {
+    display: inline !important; 
+}
+</style>
+
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="sidebar-header-top">
@@ -15373,160 +15805,200 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         </div>
         <div class="sidebar-search-container">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="sidebarSearch" placeholder="Filtrar funcionalidades...">
+            <input type="text" id="sidebarSearch" placeholder="Filtrar...">
         </div>
     </div>
 
     <div class="sidebar-nav" id="sidebarNav">
 
-        <div class="nav-section">
-            <div class="nav-section-title">Gerenciamento de Auditorias</div>
-            <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
-                <i class="fas fa-calendar-alt"></i>
-                <span class="nav-item-text">Agendamentos</span>
-            </a>
+    <div class="nav-section">
+        <div class="nav-section-title">Gestão de Auditorias</div>
+        
+        <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i>
+            <span class="nav-item-text">Agendamentos</span>
+        </a>
+        <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
+            <i class="fas fa-tasks"></i>
+            <span class="nav-item-text">Auditorias</span>
+        </a>
+        <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
+            <i class="fas fa-history"></i>
+            <span class="nav-item-text">Histórico</span>
+        </a>
 
-            <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
-                <i class="fas fa-tasks"></i>
-                <span class="nav-item-text">Auditorias</span>
-            </a>
-
-            <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
-                <i class="fas fa-history"></i>
-                <span class="nav-item-text">Histórico</span>
-            </a>
-
-            <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
-                <i class="fas fa-flag-checkered"></i>
-                <span class="nav-item-text">Planos de Ação</span>
-            </a>
-            
-            <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-item {% if '/auditorias/modelos-auditoria/' in request.path %}active{% endif %}">
-                <i class="fas fa-file-alt"></i>
-                <span class="nav-item-text">Modelos de Auditoria</span>
-            </a>
-            <a href="{% url 'auditorias:lista_checklists' %}" class="nav-item {% if '/auditorias/checklists/' in request.path or '/auditorias/topicos/' in request.path %}active{% endif %}">
-                <i class="fas fa-list-check"></i>
-                <span class="nav-item-text">Checklists</span>
-            </a>
-            <a href="{% url 'auditorias:lista_pilares' %}" class="nav-item {% if '/auditorias/pilares/' in request.path %}active{% endif %}">
-                <i class="fas fa-columns"></i>
-                <span class="nav-item-text">Pilares</span>
-            </a>
-            <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-item {% if '/auditorias/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'auditorias:lista_normas' %}" class="nav-item {% if '/auditorias/normas/' in request.path %}active{% endif %}">
-                <i class="fas fa-book"></i>
-                <span class="nav-item-text">Normas</span>
-            </a>
-            <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-item {% if '/auditorias/ferramentas-digitais/' in request.path %}active{% endif %}">
-                <i class="fas fa-tools"></i>
-                <span class="nav-item-text">Ferramentas</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Organização</div>
-            <a href="{% url 'organizacao:lista_empresas' %}" class="nav-item {% if '/organizacao/empresas/' in request.path %}active{% endif %}">
-                <i class="fas fa-building"></i>
-                <span class="nav-item-text">Empresas</span>
-            </a>
-            <a href="{% url 'organizacao:lista_areas' %}" class="nav-item {% if '/organizacao/areas/' in request.path %}active{% endif %}">
-                <i class="fas fa-map"></i>
-                <span class="nav-item-text">Áreas</span>
-            </a>
-            <a href="{% url 'organizacao:lista_setores' %}" class="nav-item {% if '/organizacao/setores/' in request.path %}active{% endif %}">
-                <i class="fas fa-briefcase"></i>
-                <span class="nav-item-text">Setores</span>
-            </a>
-            <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-item {% if '/organizacao/subsetores/' in request.path %}active{% endif %}">
-                <i class="fas fa-sitemap"></i>
-                <span class="nav-item-text">Subsetores</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Ativos</div>
-            <a href="{% url 'ativos:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'ativos' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-chart-pie"></i>
-                <span class="nav-item-text">Dashboard</span>
-            </a>
-            <a href="{% url 'ativos:lista_ativos' %}" class="nav-item {% if '/ativos/ativos/' in request.path %}active{% endif %}">
-                <i class="fas fa-archive"></i>
-                <span class="nav-item-text">Ativos</span>
-            </a>
-            <a href="{% url 'ativos:lista_categorias' %}" class="nav-item {% if '/ativos/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'ativos:lista_marcas' %}" class="nav-item {% if '/ativos/marcas/' in request.path %}active{% endif %}">
-                <i class="fas fa-building"></i>
-                <span class="nav-item-text">Marcas</span>
-            </a>
-            <a href="{% url 'ativos:lista_modelos' %}" class="nav-item {% if '/ativos/modelos/' in request.path %}active{% endif %}">
-                <i class="fas fa-cogs"></i>
-                <span class="nav-item-text">Modelos</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Itens</div>
-            <a href="{% url 'itens:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-tachometer-alt"></i>
-                <span class="nav-item-text">Dashboard</span>
-            </a>
-            <a href="{% url 'itens:lista_itens' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name in 'lista_itens,criar_item,editar_item' %}active{% endif %}">
-                <i class="fas fa-box"></i>
-                <span class="nav-item-text">Itens</span>
-            </a>
-            <a href="{% url 'itens:lista_categorias' %}" class="nav-item {% if '/itens/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'itens:lista_subcategorias' %}" class="nav-item {% if '/itens/subcategorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-sitemap"></i>
-                <span class="nav-item-text">Subcategorias</span>
-            </a>
-            <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-item {% if '/itens/almoxarifados/' in request.path %}active{% endif %}">
-                <i class="fas fa-warehouse"></i>
-                <span class="nav-item-text">Almoxarifados</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Cadastros</div>
-            <a href="{% url 'clientes:lista_clientes' %}" class="nav-item {% if request.resolver_match.app_name == 'clientes' %}active{% endif %}">
-                <i class="fas fa-user-tie"></i>
-                <span class="nav-item-text">Clientes</span>
-            </a>
-            <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item {% if request.resolver_match.app_name == 'fornecedores' %}active{% endif %}">
-                <i class="fas fa-truck"></i>
-                <span class="nav-item-text">Fornecedores</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Sistema</div>
-            <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
-                <i class="fas fa-users"></i>
-                <span class="nav-item-text">Usuários</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span class="nav-item-text">Configurações</span>
-            </a>
-            <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
-                {% csrf_token %}
-                <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="nav-item-text">Sair</span>
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-cog"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem">
+                    <i class="fas fa-book"></i> Normas
                 </a>
-            </form>
+                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem">
+                    <i class="fas fa-columns"></i> Pilares
+                </a>
+                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem">
+                    <i class="fas fa-tags"></i> Categorias
+                </a>
+                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem">
+                    <i class="fas fa-list-ul"></i> Checklists
+                </a>
+                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem">
+                    <i class="fas fa-file-alt"></i> Modelos
+                </a>
+                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-subitem">
+                    <i class="fas fa-laptop-code"></i> Ferramentas
+                </a>
+            </div>
         </div>
     </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Plano de Ação</div>
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
+            <i class="fas fa-flag-checkered"></i>
+            <span class="nav-item-text">Gerenciamento de Planos</span>
+        </a>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Estrutura</div>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-sitemap"></i>
+                    <span class="nav-item-text">Organização</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem">
+                    <i class="fas fa-building"></i> Unid. de Negócio
+                </a>
+                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem">
+                    <i class="fas fa-map-marked-alt"></i> Áreas
+                </a>
+                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem">
+                    <i class="fas fa-layer-group"></i> Setores
+                </a>
+                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem">
+                    <i class="fas fa-th-large"></i> Subsetores
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Gestão de Ativos</div>
+        <a href="{% url 'ativos:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie"></i><span class="nav-item-text">Dashboard</span></a>
+        <a href="{% url 'ativos:lista_ativos' %}" class="nav-item"><i class="fas fa-archive"></i><span class="nav-item-text">Ativos</span></a>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-database"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem">
+                    <i class="fas fa-tag"></i> Categorias
+                </a>
+                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem">
+                    <i class="fas fa-certificate"></i> Marcas
+                </a>
+                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem">
+                    <i class="fas fa-cube"></i> Modelos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Estoque & Itens</div>
+        <a href="{% url 'itens:dashboard' %}" class="nav-item"><i class="fas fa-tachometer-alt"></i><span class="nav-item-text">Dashboard</span></a>
+        <a href="{% url 'itens:lista_itens' %}" class="nav-item"><i class="fas fa-box"></i><span class="nav-item-text">Itens</span></a>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem">
+                    <i class="fas fa-tags"></i> Categorias
+                </a>
+                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem">
+                    <i class="fas fa-tag"></i> Subcategorias
+                </a>
+                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem">
+                    <i class="fas fa-warehouse"></i> Almoxarifados
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Externos</div>
+        <a href="{% url 'clientes:lista_clientes' %}" class="nav-item"><i class="fas fa-user-tie"></i><span class="nav-item-text">Clientes</span></a>
+        <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item"><i class="fas fa-truck"></i><span class="nav-item-text">Fornecedores</span></a>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Gerenciamento de usuários</div>
+        <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item"><i class="fas fa-users"></i><span class="nav-item-text">Usuários</span></a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
+            {% csrf_token %}
+            <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="nav-item-text">Sair</span>
+            </a>
+        </form>
+    </div>
+
+</div>
 </nav>
+
+<script>
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('toggled'); // Adiciona/Remove a classe que ativa o CSS acima
+    
+    // Opcional: Se você ajusta a margem do conteúdo principal, faça aqui também
+    // const mainContent = document.getElementById('main-content');
+    // mainContent.classList.toggle('toggled');
+}
+
+function toggleGroup(element) {
+    const group = element.parentElement;
+    group.classList.toggle('open');
+}
+
+// Opcional: Manter o menu aberto se a página atual estiver dentro dele
+document.addEventListener("DOMContentLoaded", function() {
+    // Procura por links ativos dentro dos submenus
+    const activeLinks = document.querySelectorAll('.nav-subitem.active'); // Certifique-se de adicionar lógica 'active' no Django para subitems
+    
+    if(activeLinks.length > 0) {
+        activeLinks.forEach(link => {
+            // Abre o pai do link ativo
+            link.closest('.nav-group').classList.add('open');
+        });
+    }
+});
+</script>
+
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\pilares\form.html
@@ -22105,6 +22577,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\core\settings.py
 from django.contrib.messages import constants as messages
 import os
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22112,10 +22585,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', '100.000.000.000']
+# # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -22146,6 +22621,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -22183,23 +22659,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # O 'default' abaixo serve apenas para quando você roda no seu PC (SQLite)
+        # No Render, ele vai ignorar isso e usar a variável DATABASE_URL automaticamente
+        default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
+        conn_max_age=600
+    )
 }
-
-# Configuração para PostgreSQL (comentado)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'auditorias_db',
-#         'USER': 'postgres',
-#         'PASSWORD': 'password',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -22228,14 +22694,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'static'),
 ]
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -22349,18 +22816,6 @@ if not DEBUG:
         }
     }
 
-    # Configurações de banco para produção
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'auditorias_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
-    }
-
 # Configurações de mensagens
 MESSAGE_TAGS = {
     messages.DEBUG: 'debug',
@@ -22386,30 +22841,6 @@ USE_TZ = True
 # Configurações de arquivos estáticos para produção
 if not DEBUG:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
-# Configurações de CORS (se usando API)
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-# ]
-# CORS_ALLOW_CREDENTIALS = True
-
-# Configurações do Django REST Framework (se usando)
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework.authentication.SessionAuthentication',
-#         'rest_framework.authentication.TokenAuthentication',
-#     ],
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.IsAuthenticated',
-#     ],
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 20,
-# }
-
-# teste wanderley add informações
-# teste add informações 2
-# teste de arquivo adicionado algos
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

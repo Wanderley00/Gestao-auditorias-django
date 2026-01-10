@@ -34,6 +34,7 @@
             <div class="field-help">Email único para comunicações</div>
         </div>
     </div>
+
     
     <div class="form-row">
         <div class="form-group">
@@ -322,18 +323,6 @@
             strengthIndicator.className = 'password-strength';
             passwordField.parentNode.appendChild(strengthIndicator);
             
-            // Adicionar lista de requisitos
-            const requirements = document.createElement('ul');
-            requirements.className = 'password-requirements';
-            requirements.innerHTML = `
-                <li id="req-length">Pelo menos 8 caracteres</li>
-                <li id="req-uppercase">Pelo menos 1 letra maiúscula</li>
-                <li id="req-lowercase">Pelo menos 1 letra minúscula</li>
-                <li id="req-number">Pelo menos 1 número</li>
-                <li id="req-special">Pelo menos 1 caractere especial</li>
-            `;
-            passwordField.parentNode.appendChild(requirements);
-        }
         
         // Confirmação de senha
         if (passwordConfirmField) {

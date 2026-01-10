@@ -11,16 +11,22 @@
     <tr>
         <th>Descrição da Categoria</th>
         <th>Pilar</th>
-        <th>Status</th>
+        <th style="width: 150px;">Dias Quarentena</th> <th>Status</th>
         <th>Data Cadastro</th>
         <th style="width: 120px;">Ações</th>
     </tr>
     {# Linha 2: Campos de Filtro #}
     <tr class="filter-row">
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="0"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="1"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="2"></th>
+        
         <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="3"></th>
+        
+        <th><input type="text" class="form-control column-filter" placeholder="Filtrar..." data-column-index="4"></th>
+        
         <th></th> {# Coluna de Ações sem filtro #}
     </tr>
 {% endblock %}
@@ -32,6 +38,13 @@
         </div>
     </td>
     <td>{{ object.pilar.nome|default:"—" }}</td> 
+    
+    <td>
+        <span class="badge" style="background-color: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9;">
+            <i class="fas fa-clock"></i> {{ object.dias_para_quarentena }} dias
+        </span>
+    </td>
+
     <td>
         {% if object.ativo %}
             <span class="badge badge-success">

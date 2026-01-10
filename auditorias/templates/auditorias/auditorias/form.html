@@ -7,15 +7,6 @@
 </h4>
 <div class="form-row">
     <div class="form-group required">
-        <label for="ferramenta" class="form-label">Ferramenta Digital</label>
-        <select id="ferramenta" name="ferramenta" class="form-control form-select" required>
-            <option value="">Selecione...</option>
-            {% for f in ferramentas %}
-            <option value="{{ f.pk }}" {% if auditoria.ferramenta.pk == f.pk %}selected{% endif %}>{{ f.nome }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="form-group required">
         <label for="responsavel" class="form-label">Responsável</label>
         <select id="responsavel" name="responsavel" class="form-control form-select" required>
             <option value="">Selecione...</option>
@@ -43,8 +34,7 @@
     <div class="form-group required">
         <label for="categoria_auditoria" class="form-label">Categoria</label>
         <select id="categoria_auditoria" name="categoria_auditoria" class="form-control form-select" required>
-            <option value="APP" {% if auditoria.categoria_auditoria == 'APP' %}selected{% endif %}>App</option>
-            <option value="WEB" {% if auditoria.categoria_auditoria == 'WEB' %}selected{% endif %}>Web</option>
+            <option value="APP" selected>App</option>
         </select>
     </div>
 </div>
@@ -93,10 +83,16 @@
 </div>
 
 <div class="form-row">
-    <div class="form-group">
-        <label for="modelos" class="form-label">Modelos de Auditoria</label>
-        <select id="modelos" name="modelos" multiple>
-            {% for m in modelos %}<option value="{{ m.pk }}" {% if m in auditoria.modelos.all %}selected{% endif %}>{{ m.descricao }}</option>{% endfor %}
+    <div class="form-group required">
+        <label for="modelos" class="form-label">Modelo de Auditoria</label>
+        <select id="modelos" name="modelos" required>
+            <option value="">Selecione um modelo...</option>
+            {% for m in modelos %}
+                <option value="{{ m.pk }}" 
+                    {% if auditoria and m in auditoria.modelos.all %}selected{% endif %}>
+                    {{ m.descricao }}
+                </option>
+            {% endfor %}
         </select>
     </div>
     <div class="form-group">
@@ -196,12 +192,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA NOVA: INICIALIZAÇÃO DO TOM SELECT
     // ===================================================================
     new TomSelect('#modelos',{
-        plugins: ['remove_button'],
-        placeholder: 'Selecione um ou mais modelos...',
+        placeholder: 'Selecione um modelo...',
+        maxItems: 1, // Garante apenas 1 item
         sortField: {
             field: "text",
             direction: "asc"
         }
+        // Removi o plugin 'remove_button' para ficar com cara de select padrão
     });
 
     new TomSelect('#ativos_auditados',{
@@ -413,13 +410,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('date-preview-container');
 
     function toggleScheduleFields() {
+        const frequenciaSelect = document.getElementById('frequencia');
+        const intervaloInput = document.getElementById('intervalo');
+        const repeticoesInput = document.getElementById('numero_repeticoes');
+
         if (porFrequenciaRadio.checked) {
+            // Mostra Frequência / Esconde Intervalo
             frequencyContainer.style.display = 'block';
             intervalContainer.style.display = 'none';
+
+            // TORNA OBRIGATÓRIO: Frequência
+            // REMOVE OBRIGATORIEDADE: Intervalo
+            frequenciaSelect.setAttribute('required', 'required');
+            intervaloInput.removeAttribute('required');
         } else {
+            // Mostra Intervalo / Esconde Frequência
             frequencyContainer.style.display = 'none';
             intervalContainer.style.display = 'block';
+
+            // TORNA OBRIGATÓRIO: Intervalo
+            // REMOVE OBRIGATORIEDADE: Frequência
+            intervaloInput.setAttribute('required', 'required');
+            frequenciaSelect.removeAttribute('required');
         }
+        
+        // Número de repetições é sempre obrigatório (padrão 1)
+        repeticoesInput.setAttribute('required', 'required');
     }
 
     function updateDatePreview() {
@@ -483,5 +499,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateDatePreview();
 });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // CORREÇÃO: Removido o prefixo 'id_' para bater com o seu HTML
+        const dataInicioInput = document.getElementById('data_inicio');
+        const dataFimInput = document.getElementById('data_fim');
+
+        if (dataInicioInput && dataFimInput) {
+            
+            // 1. Define a data mínima do "Início" como Hoje
+            // Pega a data atual (YYYY-MM-DD)
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            // Se for cadastro novo (campo vazio), bloqueia datas passadas
+            if (!dataInicioInput.value) {
+                dataInicioInput.setAttribute('min', hoje);
+            }
+
+            // 2. Função para travar a data Fim baseada na data Início
+            function atualizarDataFim() {
+                const dataSelecionada = dataInicioInput.value;
+                if (dataSelecionada) {
+                    // O campo 'Até o dia' não pode ser menor que a data de início
+                    dataFimInput.setAttribute('min', dataSelecionada);
+                    
+                    // Se o usuário já tinha escolhido um fim menor que o novo início, limpa o campo
+                    if (dataFimInput.value && dataFimInput.value < dataSelecionada) {
+                        dataFimInput.value = '';
+                    }
+                }
+            }
+
+            // Adiciona o evento de mudança
+            dataInicioInput.addEventListener('change', atualizarDataFim);
+
+            // Roda uma vez ao carregar a página para aplicar as regras
+            atualizarDataFim();
+        }
+    });
 </script>
 {% endblock %}

@@ -1,3 +1,140 @@
+<style>
+/* Estilo para o grupo de menu */
+.nav-group {
+    margin-bottom: 5px;
+}
+
+/* O botão que abre/fecha */
+.nav-group-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    color: #fff; /* Ajuste para a cor do seu texto */
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.nav-group-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* A setinha lateral */
+.nav-group-trigger .arrow {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Estado aberto: gira a seta */
+.nav-group.open .nav-group-trigger .arrow {
+    transform: rotate(90deg);
+}
+
+/* Os itens dentro do submenu */
+.nav-group-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: rgba(0, 0, 0, 0.1); /* Fundo levemente mais escuro */
+    border-radius: 0 0 5px 5px;
+}
+
+/* Links do submenu */
+.nav-subitem {
+    display: block;
+    padding: 8px 15px 8px 45px; /* Indentação maior */
+    color: #ccc;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.2s;
+}
+
+.nav-subitem:hover {
+    color: #fff;
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Estilo dos ícones dentro do submenu */
+.nav-subitem i {
+    width: 20px; /* Largura fixa para manter o texto alinhado verticalmente */
+    text-align: center;
+    margin-right: 8px;
+    font-size: 0.9rem; /* Um pouco menor que os ícones principais */
+    opacity: 0.8; /* Um pouco mais discretos */
+}
+
+.nav-subitem:hover i {
+    opacity: 1; /* Fica 100% visível no hover */
+    color: #fff;
+}
+
+/* Classe utilitária para quando o grupo estiver aberto via JS */
+.nav-group.open .nav-group-items {
+    max-height: 500px; /* Valor arbitrário alto suficiente */
+}
+
+/* --- ESTILOS PARA QUANDO O MENU ESTÁ FECHADO (.toggled) --- */
+
+/* 1. Esconde textos e setas, deixando só os ícones */
+#sidebar.toggled .nav-item-text,
+#sidebar.toggled .arrow {
+    display: none !important;
+}
+
+/* 2. Centraliza os ícones */
+#sidebar.toggled .nav-item,
+#sidebar.toggled .nav-group-trigger {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+}
+
+#sidebar.toggled .trigger-content {
+    gap: 0; /* Remove espaço entre ícone e texto invisível */
+}
+
+/* --- MÁGICA DO MENU FLUTUANTE (HOVER) --- */
+
+/* Necessário para posicionar o menu flutuante em relação ao ícone */
+#sidebar.toggled .nav-group {
+    position: relative;
+}
+
+/* Quando passar o mouse no ícone (apenas se o menu estiver fechado) */
+#sidebar.toggled .nav-group:hover .nav-group-items {
+    display: block;
+    position: absolute;
+    left: 100%; /* Joga o menu para a direita, fora da barra */
+    top: 0;
+    width: 220px; /* Largura confortável para ler os subitens */
+    background-color: #0d47a1; /* ATENÇÃO: Coloque aqui a cor de fundo do seu menu lateral (Azul da imagem) */
+    border-radius: 0 5px 5px 0;
+    box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+    max-height: 1000px; /* Remove a limitação de altura da animação */
+    overflow: visible;
+    z-index: 999;
+}
+
+/* Ajuste visual dos itens dentro do menu flutuante */
+#sidebar.toggled .nav-subitem {
+    padding-left: 20px; /* Tira aquele recuo exagerado */
+    text-align: left;
+}
+
+/* Mostra o texto dos subitens novamente no menu flutuante */
+#sidebar.toggled .nav-subitem .nav-item-text {
+    display: inline !important; 
+}
+</style>
+
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="sidebar-header-top">
@@ -11,157 +148,196 @@
         </div>
         <div class="sidebar-search-container">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="sidebarSearch" placeholder="Filtrar funcionalidades...">
+            <input type="text" id="sidebarSearch" placeholder="Filtrar...">
         </div>
     </div>
 
     <div class="sidebar-nav" id="sidebarNav">
 
-        <div class="nav-section">
-            <div class="nav-section-title">Gerenciamento de Auditorias</div>
-            <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
-                <i class="fas fa-calendar-alt"></i>
-                <span class="nav-item-text">Agendamentos</span>
-            </a>
+    <div class="nav-section">
+        <div class="nav-section-title">Gestão de Auditorias</div>
+        
+        <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i>
+            <span class="nav-item-text">Agendamentos</span>
+        </a>
+        <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
+            <i class="fas fa-tasks"></i>
+            <span class="nav-item-text">Auditorias</span>
+        </a>
+        <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
+            <i class="fas fa-history"></i>
+            <span class="nav-item-text">Histórico</span>
+        </a>
 
-            <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
-                <i class="fas fa-tasks"></i>
-                <span class="nav-item-text">Auditorias</span>
-            </a>
-
-            <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
-                <i class="fas fa-history"></i>
-                <span class="nav-item-text">Histórico</span>
-            </a>
-
-            <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
-                <i class="fas fa-flag-checkered"></i>
-                <span class="nav-item-text">Planos de Ação</span>
-            </a>
-            
-            <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-item {% if '/auditorias/modelos-auditoria/' in request.path %}active{% endif %}">
-                <i class="fas fa-file-alt"></i>
-                <span class="nav-item-text">Modelos de Auditoria</span>
-            </a>
-            <a href="{% url 'auditorias:lista_checklists' %}" class="nav-item {% if '/auditorias/checklists/' in request.path or '/auditorias/topicos/' in request.path %}active{% endif %}">
-                <i class="fas fa-list-check"></i>
-                <span class="nav-item-text">Checklists</span>
-            </a>
-            <a href="{% url 'auditorias:lista_pilares' %}" class="nav-item {% if '/auditorias/pilares/' in request.path %}active{% endif %}">
-                <i class="fas fa-columns"></i>
-                <span class="nav-item-text">Pilares</span>
-            </a>
-            <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-item {% if '/auditorias/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'auditorias:lista_normas' %}" class="nav-item {% if '/auditorias/normas/' in request.path %}active{% endif %}">
-                <i class="fas fa-book"></i>
-                <span class="nav-item-text">Normas</span>
-            </a>
-            <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-item {% if '/auditorias/ferramentas-digitais/' in request.path %}active{% endif %}">
-                <i class="fas fa-tools"></i>
-                <span class="nav-item-text">Ferramentas</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Organização</div>
-            <a href="{% url 'organizacao:lista_empresas' %}" class="nav-item {% if '/organizacao/empresas/' in request.path %}active{% endif %}">
-                <i class="fas fa-building"></i>
-                <span class="nav-item-text">Empresas</span>
-            </a>
-            <a href="{% url 'organizacao:lista_areas' %}" class="nav-item {% if '/organizacao/areas/' in request.path %}active{% endif %}">
-                <i class="fas fa-map"></i>
-                <span class="nav-item-text">Áreas</span>
-            </a>
-            <a href="{% url 'organizacao:lista_setores' %}" class="nav-item {% if '/organizacao/setores/' in request.path %}active{% endif %}">
-                <i class="fas fa-briefcase"></i>
-                <span class="nav-item-text">Setores</span>
-            </a>
-            <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-item {% if '/organizacao/subsetores/' in request.path %}active{% endif %}">
-                <i class="fas fa-sitemap"></i>
-                <span class="nav-item-text">Subsetores</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Ativos</div>
-            <a href="{% url 'ativos:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'ativos' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-chart-pie"></i>
-                <span class="nav-item-text">Dashboard</span>
-            </a>
-            <a href="{% url 'ativos:lista_ativos' %}" class="nav-item {% if '/ativos/ativos/' in request.path %}active{% endif %}">
-                <i class="fas fa-archive"></i>
-                <span class="nav-item-text">Ativos</span>
-            </a>
-            <a href="{% url 'ativos:lista_categorias' %}" class="nav-item {% if '/ativos/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'ativos:lista_marcas' %}" class="nav-item {% if '/ativos/marcas/' in request.path %}active{% endif %}">
-                <i class="fas fa-building"></i>
-                <span class="nav-item-text">Marcas</span>
-            </a>
-            <a href="{% url 'ativos:lista_modelos' %}" class="nav-item {% if '/ativos/modelos/' in request.path %}active{% endif %}">
-                <i class="fas fa-cogs"></i>
-                <span class="nav-item-text">Modelos</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Itens</div>
-            <a href="{% url 'itens:dashboard' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <i class="fas fa-tachometer-alt"></i>
-                <span class="nav-item-text">Dashboard</span>
-            </a>
-            <a href="{% url 'itens:lista_itens' %}" class="nav-item {% if request.resolver_match.app_name == 'itens' and request.resolver_match.url_name in 'lista_itens,criar_item,editar_item' %}active{% endif %}">
-                <i class="fas fa-box"></i>
-                <span class="nav-item-text">Itens</span>
-            </a>
-            <a href="{% url 'itens:lista_categorias' %}" class="nav-item {% if '/itens/categorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-tags"></i>
-                <span class="nav-item-text">Categorias</span>
-            </a>
-            <a href="{% url 'itens:lista_subcategorias' %}" class="nav-item {% if '/itens/subcategorias/' in request.path %}active{% endif %}">
-                <i class="fas fa-sitemap"></i>
-                <span class="nav-item-text">Subcategorias</span>
-            </a>
-            <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-item {% if '/itens/almoxarifados/' in request.path %}active{% endif %}">
-                <i class="fas fa-warehouse"></i>
-                <span class="nav-item-text">Almoxarifados</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Cadastros</div>
-            <a href="{% url 'clientes:lista_clientes' %}" class="nav-item {% if request.resolver_match.app_name == 'clientes' %}active{% endif %}">
-                <i class="fas fa-user-tie"></i>
-                <span class="nav-item-text">Clientes</span>
-            </a>
-            <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item {% if request.resolver_match.app_name == 'fornecedores' %}active{% endif %}">
-                <i class="fas fa-truck"></i>
-                <span class="nav-item-text">Fornecedores</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">Sistema</div>
-            <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
-                <i class="fas fa-users"></i>
-                <span class="nav-item-text">Usuários</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span class="nav-item-text">Configurações</span>
-            </a>
-            <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
-                {% csrf_token %}
-                <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="nav-item-text">Sair</span>
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-cog"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem">
+                    <i class="fas fa-book"></i> Normas
                 </a>
-            </form>
+                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem">
+                    <i class="fas fa-columns"></i> Pilares
+                </a>
+                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem">
+                    <i class="fas fa-tags"></i> Categorias
+                </a>
+                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem">
+                    <i class="fas fa-list-ul"></i> Checklists
+                </a>
+                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem">
+                    <i class="fas fa-file-alt"></i> Modelos
+                </a>
+                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-subitem">
+                    <i class="fas fa-laptop-code"></i> Ferramentas
+                </a>
+            </div>
         </div>
     </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Plano de Ação</div>
+        <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
+            <i class="fas fa-flag-checkered"></i>
+            <span class="nav-item-text">Gerenciamento de Planos</span>
+        </a>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Estrutura</div>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-sitemap"></i>
+                    <span class="nav-item-text">Organização</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem">
+                    <i class="fas fa-building"></i> Unid. de Negócio
+                </a>
+                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem">
+                    <i class="fas fa-map-marked-alt"></i> Áreas
+                </a>
+                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem">
+                    <i class="fas fa-layer-group"></i> Setores
+                </a>
+                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem">
+                    <i class="fas fa-th-large"></i> Subsetores
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Gestão de Ativos</div>
+        <a href="{% url 'ativos:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie"></i><span class="nav-item-text">Dashboard</span></a>
+        <a href="{% url 'ativos:lista_ativos' %}" class="nav-item"><i class="fas fa-archive"></i><span class="nav-item-text">Ativos</span></a>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-database"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem">
+                    <i class="fas fa-tag"></i> Categorias
+                </a>
+                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem">
+                    <i class="fas fa-certificate"></i> Marcas
+                </a>
+                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem">
+                    <i class="fas fa-cube"></i> Modelos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Estoque & Itens</div>
+        <a href="{% url 'itens:dashboard' %}" class="nav-item"><i class="fas fa-tachometer-alt"></i><span class="nav-item-text">Dashboard</span></a>
+        <a href="{% url 'itens:lista_itens' %}" class="nav-item"><i class="fas fa-box"></i><span class="nav-item-text">Itens</span></a>
+        
+        <div class="nav-group">
+            <div class="nav-group-trigger" onclick="toggleGroup(this)">
+                <div class="trigger-content">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="nav-item-text">Cadastros</span>
+                </div>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem">
+                    <i class="fas fa-tags"></i> Categorias
+                </a>
+                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem">
+                    <i class="fas fa-tag"></i> Subcategorias
+                </a>
+                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem">
+                    <i class="fas fa-warehouse"></i> Almoxarifados
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Externos</div>
+        <a href="{% url 'clientes:lista_clientes' %}" class="nav-item"><i class="fas fa-user-tie"></i><span class="nav-item-text">Clientes</span></a>
+        <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item"><i class="fas fa-truck"></i><span class="nav-item-text">Fornecedores</span></a>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Gerenciamento de usuários</div>
+        <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item"><i class="fas fa-users"></i><span class="nav-item-text">Usuários</span></a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
+            {% csrf_token %}
+            <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="nav-item-text">Sair</span>
+            </a>
+        </form>
+    </div>
+
+</div>
 </nav>
+
+<script>
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('toggled'); // Adiciona/Remove a classe que ativa o CSS acima
+    
+    // Opcional: Se você ajusta a margem do conteúdo principal, faça aqui também
+    // const mainContent = document.getElementById('main-content');
+    // mainContent.classList.toggle('toggled');
+}
+
+function toggleGroup(element) {
+    const group = element.parentElement;
+    group.classList.toggle('open');
+}
+
+// Opcional: Manter o menu aberto se a página atual estiver dentro dele
+document.addEventListener("DOMContentLoaded", function() {
+    // Procura por links ativos dentro dos submenus
+    const activeLinks = document.querySelectorAll('.nav-subitem.active'); // Certifique-se de adicionar lógica 'active' no Django para subitems
+    
+    if(activeLinks.length > 0) {
+        activeLinks.forEach(link => {
+            // Abre o pai do link ativo
+            link.closest('.nav-group').classList.add('open');
+        });
+    }
+});
+</script>

@@ -1,9 +1,32 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{% block header_content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        
+        <div>
+            <h2 class="content-title">Gerenciamento de Usuários</h2>
+            <p class="content-subtitle">Gerencie usuários, permissões e grupos do sistema</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            
+            <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-users-cog" style="color: #4e73df;"></i>
+                Gerenciar Grupos
+            </a>
+
+            <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i>
+                Novo Usuário
+            </a>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block table_headers %}
-    <th style="width: 40px;">
-        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-    </th>
     <th>Usuário</th>
     <th>Email</th>
     <th>Grupos</th>
@@ -13,9 +36,6 @@
 {% endblock %}
 
 {% block table_row %}
-    <td>
-        <input type="checkbox" name="selected_users" value="{{ object.pk }}" class="user-checkbox">
-    </td>
     <td>
         <div style="display: flex; align-items: center; gap: 12px;">
             <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px;">

@@ -1,5 +1,40 @@
 {% extends 'auditorias/lista_generica.html' %}
 
+{# --- 1. CABEÇALHO PERSONALIZADO (NOVO) --- #}
+{% block header_content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        
+        <div>
+            <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #333;">Execução de Auditorias</h2>
+            <p class="content-subtitle text-muted mb-0">Acompanhe o status e os resultados das auditorias em andamento.</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            
+            <a href="{% url 'auditorias:dashboard' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-chart-pie mr-2" style="color: #7c3aed;"></i> 
+                Dashboard
+            </a>
+
+            <a href="{% url 'auditorias:lista_quarentena' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-biohazard mr-2" style="color: #e74a3b;"></i> 
+                Quarentena
+            </a>
+
+            <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus mr-2"></i>
+                Novo Agendamento
+            </a>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{# --- 2. RESTANTE DO CÓDIGO (MANTIDO IGUAL AO SEU) --- #}
+
 {# Remove o formulário de busca genérico herdado do template pai #}
 {% block search_form %}{% endblock %}
 
@@ -107,7 +142,7 @@
             return;
         }
 
-     const tableBody = table.querySelector('tbody');
+      const tableBody = table.querySelector('tbody');
         // LOG 4: Verifica se o corpo da tabela (tbody) foi encontrado.
         if (!tableBody) {
             return;

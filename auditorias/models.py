@@ -49,6 +49,12 @@ class CategoriaAuditoria(models.Model):
     data_atualizacao = models.DateTimeField(
         auto_now=True, verbose_name="Última Atualização")
 
+    dias_para_quarentena = models.PositiveIntegerField(
+        default=7,
+        verbose_name="Dias de Tolerância para Quarentena",
+        help_text="Quantos dias de atraso são permitidos antes de entrar em quarentena."
+    )
+
     class Meta:
         verbose_name = "Categoria de Auditoria"
         verbose_name_plural = "Categorias de Auditorias"

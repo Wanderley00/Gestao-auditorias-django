@@ -345,13 +345,19 @@ def criar_categoria_auditoria(request):
         descricao = request.POST.get('descricao')
         ativo = request.POST.get('ativo') == 'on'
 
+        # Pega o valor do formulário, se vazio usa 7 como padrão
+        dias_quarentena = request.POST.get('dias_para_quarentena')
+        if not dias_quarentena:
+            dias_quarentena = 7
+
         if pilar_id and descricao:
             try:
                 pilar = Pilar.objects.get(pk=pilar_id)
                 CategoriaAuditoria.objects.create(
                     pilar=pilar,
                     descricao=descricao,
-                    ativo=ativo
+                    ativo=ativo,
+                    dias_para_quarentena=dias_quarentena
                 )
                 messages.success(request, 'Categoria criada com sucesso!')
                 return redirect('auditorias:lista_categorias_auditoria')
@@ -377,6 +383,10 @@ def editar_categoria_auditoria(request, pk):
         pilar_id = request.POST.get('pilar')
         categoria.descricao = request.POST.get('descricao')
         categoria.ativo = request.POST.get('ativo') == 'on'
+
+        dias_quarentena = request.POST.get('dias_para_quarentena')
+        if dias_quarentena:
+            categoria.dias_para_quarentena = int(dias_quarentena)
 
         if pilar_id:
             categoria.pilar = Pilar.objects.get(pk=pilar_id)
@@ -1674,9 +1684,23 @@ def criar_auditoria(request):
                 subsetores_selecionados_ids = request.POST.getlist(
                     'subsetores_selecionados')
 
+                # --- NOVA LÓGICA: Descobrir a ferramenta baseada no Modelo selecionado ---
+                modelos_ids = request.POST.getlist('modelos')
+                ferramenta_id_automatico = None
+
+                if modelos_ids:
+                    # Pega o primeiro modelo da lista para definir a ferramenta da auditoria
+                    # Isso garante consistência com o checklist usado
+                    primeiro_modelo = ModeloAuditoria.objects.filter(
+                        pk=modelos_ids[0]).select_related('checklist__ferramenta').first()
+
+                    if primeiro_modelo and primeiro_modelo.checklist and primeiro_modelo.checklist.ferramenta:
+                        ferramenta_id_automatico = primeiro_modelo.checklist.ferramenta.id
+
                 auditoria = Auditoria(
                     criado_por=request.user,
-                    ferramenta_id=request.POST.get('ferramenta'),
+                    # <--- AQUI: Usamos o ID descoberto automaticamente
+                    ferramenta_id=ferramenta_id_automatico,
                     responsavel_id=request.POST.get('responsavel'),
                     nivel_organizacional=request.POST.get(
                         'nivel_organizacional'),
@@ -1703,7 +1727,7 @@ def criar_auditoria(request):
                 )
                 auditoria.save()
 
-                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.modelos.set(modelos_ids)  # Salva os modelos (M2M)
                 auditoria.ativos_auditados.set(
                     request.POST.getlist('ativos_auditados'))
                 auditoria.turnos.set(request.POST.getlist('turnos'))
@@ -1758,6 +1782,18 @@ def editar_auditoria(request, pk):
                 subsetores_selecionados_ids = request.POST.getlist(
                     'subsetores_selecionados')
 
+                modelos_ids = request.POST.getlist('modelos')
+
+                # Atualiza a ferramenta se houver mudança nos modelos
+                if modelos_ids:
+                    primeiro_modelo = ModeloAuditoria.objects.filter(
+                        pk=modelos_ids[0]).select_related('checklist__ferramenta').first()
+                    if primeiro_modelo and primeiro_modelo.checklist and primeiro_modelo.checklist.ferramenta:
+                        auditoria.ferramenta_id = primeiro_modelo.checklist.ferramenta.id
+
+                # auditoria.ferramenta_id = request.POST.get('ferramenta') <--- REMOVA ou COMENTE esta linha antiga que pegava do form
+                auditoria.responsavel_id = request.POST.get('responsavel')
+
                 auditoria.ferramenta_id = request.POST.get('ferramenta')
                 auditoria.responsavel_id = request.POST.get('responsavel')
                 auditoria.nivel_organizacional = request.POST.get(
@@ -1787,7 +1823,7 @@ def editar_auditoria(request, pk):
 
                 auditoria.save()
 
-                auditoria.modelos.set(request.POST.getlist('modelos'))
+                auditoria.modelos.set(modelos_ids)
                 auditoria.ativos_auditados.set(
                     request.POST.getlist('ativos_auditados'))
                 auditoria.turnos.set(request.POST.getlist('turnos'))
@@ -3575,3 +3611,49 @@ def get_dados_calendario(request):
         })
     except Exception as e:
         return JsonResponse({'sucesso': False, 'erro': str(e)})
+
+
+@login_required
+def lista_quarentena(request):
+    """Lista apenas auditorias (instâncias) que estouraram o prazo de quarentena"""
+    hoje = date.today()
+    auditorias_em_quarentena = []
+
+    auditorias_pendentes = AuditoriaInstancia.objects.filter(
+        executada=False,
+        data_execucao__lt=hoje
+    ).select_related(
+        'auditoria_agendada',
+        'responsavel',                   # <--- ADICIONADO: Para pegar o Auditor sem nova query
+        # <--- ADICIONADO: Para pegar a Ferramenta sem nova query
+        'auditoria_agendada__ferramenta',
+        'local_execucao'                 # <--- RECOMENDADO: Para o local
+    ).prefetch_related(
+        'auditoria_agendada__modelos__categoria'
+    )
+
+    for instancia in auditorias_pendentes:
+        dias_atraso = (hoje - instancia.data_execucao).days
+        limite_quarentena = 7
+
+        try:
+            agendamento = instancia.auditoria_agendada
+            primeiro_modelo = agendamento.modelos.first()
+            if primeiro_modelo and primeiro_modelo.categoria:
+                limite_quarentena = primeiro_modelo.categoria.dias_para_quarentena
+        except Exception:
+            pass
+
+        if dias_atraso > limite_quarentena:
+            dias_na_quarentena = dias_atraso - limite_quarentena
+            # Atributos temporários
+            instancia.limite_configurado = limite_quarentena
+            instancia.dias_na_quarentena = dias_na_quarentena
+            auditorias_em_quarentena.append(instancia)
+
+    context = {
+        # <--- CUIDADO: O nome da chave deve bater com o HTML
+        'auditorias_quarentena': auditorias_em_quarentena,
+        'title': 'Auditorias em Quarentena'
+    }
+    return render(request, 'auditorias/lista_quarentena.html', context)

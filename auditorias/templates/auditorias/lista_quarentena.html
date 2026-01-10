@@ -1,0 +1,99 @@
+{% extends 'auditorias/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="content-header mb-4 mt-4">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            
+            <div>
+                <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #0F172A;">Auditorias em Quarentena</h2>
+                <p class="content-subtitle text-muted mb-0">Analise e gerencie as auditorias que excederam o tempo limite de execução.</p>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'auditorias:lista_execucoes' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                    <i class="fas fa-arrow-left mr-2" style="color: #666;"></i> 
+                    Voltar para Auditorias
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID Execução</th>
+                            <th>ID Agendamento</th>
+                            <th>Data Programada</th>
+                            <th>Auditor</th>
+                            <th>Local</th>
+                            <th>Modelo/Categoria</th>
+                            <th>Ferramenta</th>
+                            <th>Limite (dias)</th>
+                            <th>Dias em Quarentena</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in auditorias_quarentena %} 
+                        <tr>
+
+                            <td><strong>#{{ item.auditoria_agendada.id }}</strong></td>
+
+                            <td>#{{ item.id }}</td>
+
+                            <td>{{ item.data_execucao|date:"d/m/Y" }}</td>
+
+                            <td>
+                                {% if item.responsavel %}
+                                    {{ item.responsavel.get_full_name|default:item.responsavel.username }}
+                                {% else %}
+                                    <span class="text-muted">Não atribuído</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ item.local_execucao.nome|default:"-" }}</td>
+                            <td>{{ item.auditoria_agendada.modelos.first.descricao|default:"-" }}</td>
+
+                            <td>
+                                <span class="badge badge-secondary">{{ item.auditoria_agendada.ferramenta.nome|default:"-" }}</span>
+                            </td>
+                            
+                            <td>{{ item.limite_configurado }}</td>
+                            <td class="text-danger font-weight-bold">+{{ item.dias_na_quarentena }}</td>
+
+                            <td class="text-center">
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        title="Excluir esta execução"
+                                        onclick="confirmDelete('{% url 'auditorias:deletar_execucao' item.pk %}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <h5 class="text-success"><i class="fas fa-check-circle"></i> Nenhuma auditoria em quarentena!</h5>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(url) {
+    if (confirm('Tem certeza que deseja excluir esta auditoria da quarentena?')) {
+        window.location.href = url;
+    }
+}
+</script>
+{% endblock %}

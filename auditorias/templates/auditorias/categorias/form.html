@@ -30,6 +30,21 @@
 </div>
 
 <div class="form-row single">
+    <div class="form-group required">
+        <label for="dias_para_quarentena" class="form-label">Dias para Quarentena</label>
+        <input type="number" 
+               id="dias_para_quarentena" 
+               name="dias_para_quarentena" 
+               class="form-control" 
+               value="{{ categoria.dias_para_quarentena|default:7 }}" 
+               min="0"
+               required>
+        <small style="color: var(--text-secondary); font-size: 0.85em; margin-top: 5px; display: block;">
+            <i class="fas fa-info-circle"></i> Quantidade de dias de atraso permitidos antes da auditoria entrar em quarentena.
+        </small>
+    </div>
+</div>
+<div class="form-row single">
     <div class="form-group">
         <label class="form-label">Status</label>
         <div style="display: flex; align-items: center; gap: 12px;">

@@ -15,6 +15,8 @@ import csv
 from django.http import HttpResponse
 import json
 
+from collections import defaultdict
+
 from .serializers import UsuarioSerializer
 
 from .models import Usuario
@@ -150,7 +152,8 @@ def criar_usuario(request):
         is_active = request.POST.get('is_active') == 'on'
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
-        grupos_ids = request.POST.getlist('grupos')
+        # MUDANÇA 1: Pegamos apenas 'grupo' (singular)
+        grupo_id = request.POST.get('grupo')
 
         # Validações
         if not username or not email or not password:
@@ -164,31 +167,35 @@ def criar_usuario(request):
             messages.error(request, 'Este email já está em uso!')
         else:
             try:
+                # Criação do usuário (código igual ao seu)
                 usuario = Usuario.objects.create_user(
                     username=username,
                     email=email,
                     password=password,
                     first_name=first_name,
                     last_name=last_name,
-                    is_active=is_active,
-                    is_staff=is_staff,
-                    is_superuser=is_superuser
+                    is_active=request.POST.get('is_active') == 'on',
+                    is_staff=request.POST.get('is_staff') == 'on',
+                    is_superuser=request.POST.get('is_superuser') == 'on'
                 )
 
-                # Adicionar aos grupos
-                if grupos_ids:
-                    usuario.groups.set(grupos_ids)
+                # MUDANÇA 2: Lógica de atribuição de grupo único
+                if grupo_id:
+                    grupo = Group.objects.get(id=grupo_id)
+                    usuario.groups.add(grupo)
 
                 messages.success(request, 'Usuário criado com sucesso!')
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao criar usuário: {str(e)}')
 
+    # GET: Mandamos os grupos para preencher o <select>
     context = {
-        'grupos': Group.objects.all(),
+        'grupos': Group.objects.all().order_by('name'),
         'title': 'Criar Usuário'
     }
-    return render(request, 'usuarios/form.html', context)
+    # Ajuste o nome do template se necessário
+    return render(request, 'usuarios/form_usuario.html', context)
 
 
 @login_required
@@ -205,7 +212,7 @@ def editar_usuario(request, pk):
         usuario.is_active = request.POST.get('is_active') == 'on'
         usuario.is_staff = request.POST.get('is_staff') == 'on'
         usuario.is_superuser = request.POST.get('is_superuser') == 'on'
-        grupos_ids = request.POST.getlist('grupos')
+        grupo_id = request.POST.get('grupo')  # MUDANÇA 1
 
         # Validar username único (exceto o próprio usuário)
         if Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
@@ -215,19 +222,33 @@ def editar_usuario(request, pk):
             messages.error(request, 'Este email já está em uso!')
         else:
             try:
+                usuario.username = request.POST.get('username')
                 usuario.save()
-                usuario.groups.set(grupos_ids)
+
+                # MUDANÇA 2: Atualizar o grupo
+                if grupo_id:
+                    novo_grupo = Group.objects.get(id=grupo_id)
+                    usuario.groups.clear()  # Limpa grupos antigos
+                    usuario.groups.add(novo_grupo)  # Adiciona o novo
+                else:
+                    usuario.groups.clear()  # Se não selecionou nada, remove permissões
+
                 messages.success(request, 'Usuário atualizado com sucesso!')
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar usuário: {str(e)}')
 
+    # MUDANÇA 3: Descobrir qual o grupo atual para marcar no HTML
+    grupo_atual = usuario.groups.first()  # Pega o primeiro grupo encontrado
+
     context = {
         'usuario': usuario,
-        'grupos': Group.objects.all(),
+        'grupos': Group.objects.all().order_by('name'),
+        # Envia o ID para o template
+        'grupo_atual_id': grupo_atual.id if grupo_atual else None,
         'title': 'Editar Usuário'
     }
-    return render(request, 'usuarios/form.html', context)
+    return render(request, 'usuarios/form_usuario.html', context)
 
 
 @login_required
@@ -318,37 +339,45 @@ def lista_grupos(request):
 @login_required
 @user_passes_test(admin_required)
 def criar_grupo(request):
-    """Cria um novo grupo"""
     if request.method == 'POST':
-        name = request.POST.get('name')
-        permissoes_ids = request.POST.getlist('permissions')
+        nome = request.POST.get('name')
+        permissoes_ids = request.POST.getlist('permissoes')
 
-        if not name:
-            messages.error(request, 'Nome do grupo é obrigatório!')
-        elif Group.objects.filter(name=name).exists():
-            messages.error(request, 'Este nome de grupo já existe!')
+        if not nome:
+            messages.error(request, 'O nome do grupo é obrigatório.')
+        # --- VERIFICAÇÃO DE DUPLICIDADE (A Correção) ---
+        elif Group.objects.filter(name=nome).exists():
+            messages.error(
+                request, f'Já existe um perfil com o nome "{nome}". Por favor, escolha outro.')
+        # -----------------------------------------------
         else:
-            try:
-                grupo = Group.objects.create(name=name)
-                if permissoes_ids:
-                    grupo.permissions.set(permissoes_ids)
+            grupo = Group.objects.create(name=nome)
+            if permissoes_ids:
+                grupo.permissions.set(permissoes_ids)
 
-                messages.success(request, 'Grupo criado com sucesso!')
-                return redirect('usuarios:lista_grupos')
-            except Exception as e:
-                messages.error(request, f'Erro ao criar grupo: {str(e)}')
+            messages.success(request, f'Perfil "{nome}" criado com sucesso!')
+            return redirect('usuarios:lista_grupos')
 
-    # Organizar permissões por app
-    permissoes_por_app = {}
-    for permission in Permission.objects.select_related('content_type').all():
-        app_label = permission.content_type.app_label
-        if app_label not in permissoes_por_app:
-            permissoes_por_app[app_label] = []
-        permissoes_por_app[app_label].append(permission)
+    # --- Lógica de Agrupamento para o HTML ---
+    # 1. Pega todas as permissões, excluindo as técnicas do Django (sessão, admin, contenttypes)
+    perms = Permission.objects.exclude(
+        content_type__app_label__in=[
+            'admin', 'contenttypes', 'sessions', 'authtoken']
+    ).select_related('content_type')
+
+    perms_agrupadas = defaultdict(list)
+    for perm in perms:
+        nome_modelo = perm.content_type.model_class()._meta.verbose_name_plural.title(
+        ) if perm.content_type.model_class() else perm.content_type.model
+        perms_agrupadas[nome_modelo].append(perm)
+
+    perms_agrupadas = dict(sorted(perms_agrupadas.items()))
 
     context = {
-        'permissoes_por_app': permissoes_por_app,
-        'title': 'Criar Grupo'
+        'perms_agrupadas': perms_agrupadas,
+        'grupo': None,
+        'grupo_perms_ids': [],
+        'title': 'Novo Perfil de Acesso'
     }
     return render(request, 'usuarios/grupos/form.html', context)
 
