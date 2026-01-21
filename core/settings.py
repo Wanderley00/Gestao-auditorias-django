@@ -14,7 +14,7 @@ DEBUG = False
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['https://gestao-auditoria.onrender.com']
+ALLOWED_HOSTS = ['gestao-auditoria.onrender.com']
 
 # Application definition
 INSTALLED_APPS = [

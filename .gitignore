@@ -10,3 +10,7 @@ db.sqlite3
 # IDE-related files
 .vscode/
 salvar_arquivos.py
+
+*.pyc
+*__pycache__*
+media/
