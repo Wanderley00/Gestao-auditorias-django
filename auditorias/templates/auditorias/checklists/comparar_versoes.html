@@ -219,14 +219,20 @@
                     {% for topico in comparacao_data.topicos_comparados %}
                     <tr class="topico-row" data-topico="{{ topico.nome }}">
                         <td class="element-name">
-                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome }}')">
+                            
+                            <!-- ===== BOTÃO REINSERIDO AQUI ===== -->
+                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome|escapejs }}')">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
+                            <!-- =================================== -->
+
                             <strong>{{ topico.nome }}</strong>
                         </td>
                         {% for versao in versoes_comparadas %}
                         <td class="topico-info">
-                            <span class="badge badge-info">{{ topico.perguntas_agrupadas|length }} perguntas</span>
+                            {% with perguntas_da_versao=comparacao_data.versoes_data|get_item:versao.pk|get_item:topico.nome %}
+                                <span class="badge badge-info">{{ perguntas_da_versao|length|default:0 }} PERGUNTAS</span>
+                            {% endwith %}
                         </td>
                         {% endfor %}
                     </tr>

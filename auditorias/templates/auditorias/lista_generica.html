@@ -12,10 +12,15 @@
             <h2 class="content-title">{{ title }}</h2>
             <p class="content-subtitle">Administrar {{ title|lower }} do sistema</p>
         </div>
+        
+        {# AQUI ESTÁ A TRAVA DE SEGURANÇA #}
+        {# O botão só aparece se a variável 'tem_permissao_criar' for True #}
+        {% if tem_permissao_criar %}
         <a href="{% url create_url %}" class="btn btn-primary">
             <i class="fas fa-plus"></i>
             {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
         </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -148,12 +153,14 @@
                         {% if empty_subtitle %}{{ empty_subtitle }}{% else %}Comece criando {{ artigo|default:'o' }} primeiro {{ singular|default:title|slice:":-1"|lower }}.{% endif %}
                     {% endif %}
                 </p>
+                {% if tem_permissao_criar %}
                 {% if not request.GET %}
                 <a href="{% url create_url %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
                     {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
                 </a>
                 {% else %}
+                {% endif %}
                 <a href="?" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     Limpar Busca

@@ -39,13 +39,18 @@
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_norma%}
             <a href="{% url 'auditorias:editar_norma' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Norma">
                 <i class="fas fa-edit"></i> 
             </a>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_norma%}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Norma"
                     onclick="confirmDelete('{% url 'auditorias:deletar_norma' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td> 
 {% endblock %}

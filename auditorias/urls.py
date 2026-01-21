@@ -35,14 +35,6 @@ urlpatterns = [
 
     path('ferramentas-digitais/', views.lista_ferramentas_digitais,
          name='lista_ferramentas_digitais'),
-    path('ferramentas-digitais/criar/', views.criar_ferramenta_digital,
-         name='criar_ferramenta_digital'),
-    path('ferramentas-digitais/<int:pk>/editar/',
-         views.editar_ferramenta_digital, name='editar_ferramenta_digital'),
-    path('ferramentas-digitais/<int:pk>/deletar/',
-         views.deletar_ferramenta_digital, name='deletar_ferramenta_digital'),
-    path('ferramentas-digitais/exportar-csv/', views.exportar_ferramentas_digitais_csv,
-         name='exportar_ferramentas_digitais_csv'),  # NOVO
 
     path('checklists/', views.lista_checklists, name='lista_checklists'),
     path('checklists/criar/', views.criar_checklist, name='criar_checklist'),

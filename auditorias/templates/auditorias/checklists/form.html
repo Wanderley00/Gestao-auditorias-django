@@ -845,6 +845,23 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-row single">
+                            <div class="form-group">
+                                <label for="normas_relacionadas" class="form-label">Normas Relacionadas</label>
+                                
+                                <!-- Verifique se o 'id' e 'multiple' estão presentes -->
+                                <select id="normas_relacionadas" name="normas_relacionadas" multiple placeholder="Selecione as normas...">
+                                    {% for norma in todas_as_normas %}
+                                        <option value="{{ norma.pk }}" 
+                                            {% if checklist and norma in checklist.normas_relacionadas.all %}selected{% endif %}>
+                                            {{ norma }} <!-- Usar o __str__ do modelo é uma boa prática -->
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                <div class="field-help">Selecione as normas que este checklist ajuda a verificar.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1110,6 +1127,7 @@
 </template>
 
 <script>
+
 // Função para trocar de aba
 function switchTab(event, tabId) {
     if (event) event.preventDefault();
@@ -1122,21 +1140,25 @@ function switchTab(event, tabId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Script iniciado');
     
+    // Inicializa o TomSelect para o campo de Normas (movido para cá)
+    new TomSelect('#normas_relacionadas',{
+        plugins: ['remove_button'],
+        placeholder: 'Selecione uma ou mais normas...',
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+
     const topicsContainer = document.getElementById('topics-container');
     const statusOpcoesElement = document.getElementById('status-opcoes-data');
     let statusOpcoes = [];
     
-    if (statusOpcoesElement) {
-        try {
-            statusOpcoes = JSON.parse(statusOpcoesElement.textContent);
-        } catch (e) {
-            console.error('Erro ao parsear status opções:', e);
-            statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'], ['NA', 'N/A']];
-        }
-    } else {
-        statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'], ['NA', 'N/A']];
+    try {
+        statusOpcoes = JSON.parse(statusOpcoesElement.textContent);
+    } catch (e) {
+        statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['NA', 'N/A']];
     }
 
     let newTopicCounter = 0;
@@ -1307,8 +1329,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalTopic = target.closest('.topic-wrapper');
         const clone = originalTopic.cloneNode(true);
         const newTopicId = getNewId('topic');
-        clone.dataset.topicId = newTopicId;
         
+        clone.dataset.topicId = newTopicId;
+
+        // Renomeia os inputs do próprio tópico
         const descInput = clone.querySelector('input[name*="topico-descricao"]');
         descInput.value = `${descInput.value} (cópia)`;
         descInput.name = `topico-descricao[${newTopicId}]`;
@@ -1316,16 +1340,45 @@ document.addEventListener('DOMContentLoaded', function() {
         const orderInput = clone.querySelector('.js-topic-order');
         orderInput.name = `topico-ordem[${newTopicId}]`;
 
+        // Itera sobre cada pergunta clonada para atualizar seus IDs e nomes
         clone.querySelectorAll('.question-card').forEach(question => {
+            const originalQuestionId = question.dataset.questionId;
             const newQuestionId = getNewId('question');
             question.dataset.questionId = newQuestionId;
-            const newNamePrefix = `${newTopicId}-${newQuestionId}`;
             
-            question.querySelectorAll('[name*="pergunta-"]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-.*?\]/, `[${newNamePrefix}]`));
+            const oldQuestionPrefix = `[${originalTopic.dataset.topicId}-${originalQuestionId}]`;
+            const newQuestionPrefix = `[${newTopicId}-${newQuestionId}]`;
+            
+            // Atualiza todos os 'name' e 'id' da pergunta
+            question.querySelectorAll(`[name*="${oldQuestionPrefix}"], [id*="${originalQuestionId}"]`).forEach(el => {
+                const oldName = el.name;
+                const oldId = el.id;
 
+                if (oldName) {
+                    el.name = oldName.replace(`[${originalTopic.dataset.topicId}-${originalQuestionId}]`, newQuestionPrefix);
+                }
+                if (oldId) {
+                    el.id = oldId.replace(`_${originalQuestionId}`, `_${newQuestionId}`);
+                    const label = question.querySelector(`label[for="${oldId}"]`);
+                    if (label) {
+                        label.setAttribute('for', el.id);
+                    }
+                }
+            });
+
+            // Itera sobre as opções para garantir que seus IDs também sejam novos
             question.querySelectorAll('.option-item').forEach(option => {
+                const originalOptionId = option.querySelector('input, select')?.name.match(/(\d+|new-\d+)$/)?.[0] || getNewId('option');
                 const newOptionId = getNewId('option');
-                option.querySelectorAll('[name]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-(new-|\d+)-.*?\]/, `[${newNamePrefix}-${newOptionId}]`));
+
+                option.querySelectorAll('[name]').forEach(el => {
+                    // Reconstrói o name do zero para garantir
+                    const match = el.name.match(/^(opcao-\w+-\w+)\[(.*)\]$/);
+                    if (match) {
+                        const baseName = match[1];
+                        el.name = `${baseName}[${newTopicId}-${newQuestionId}-${newOptionId}]`;
+                    }
+                });
             });
         });
 
@@ -1377,15 +1430,46 @@ document.addEventListener('DOMContentLoaded', function() {
         const newQuestionId = getNewId('question');
         clone.dataset.questionId = newQuestionId;
         
+        // Limpa o valor da descrição clonada e adiciona "(cópia)"
         const descTextarea = clone.querySelector('textarea[name*="pergunta-descricao"]');
         descTextarea.value = `${descTextarea.value} (cópia)`;
-        
-        const newNamePrefix = `${topicId}-${newQuestionId}`;
 
-        clone.querySelectorAll('[name*="pergunta-"]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-.*?\]/, `[${newNamePrefix}]`));
+        const oldQuestionId = originalQuestion.dataset.questionId;
+        
+        // Atualiza todos os 'name', 'id' e 'for' da pergunta clonada
+        clone.querySelectorAll(`[name*="${oldQuestionId}"], [id*="${oldQuestionId}"]`).forEach(el => {
+            const oldName = el.name;
+            const oldId = el.id;
+
+            if (oldName) {
+                // Reconstrói o name usando o novo ID da pergunta
+                el.name = oldName.replace(`[${topicId}-${oldQuestionId}]`, `[${topicId}-${newQuestionId}]`);
+            }
+            if (oldId) {
+                // Atualiza o ID do elemento
+                const newId = oldId.replace(`_${oldQuestionId}`, `_${newQuestionId}`);
+                el.id = newId;
+                
+                // Busca e atualiza o 'for' do label correspondente
+                const label = clone.querySelector(`label[for="${oldId}"]`);
+                if (label) {
+                    label.setAttribute('for', newId);
+                }
+            }
+        });
+
+        // Itera sobre as opções clonadas para garantir que recebam novos IDs
         clone.querySelectorAll('.option-item').forEach(option => {
             const newOptionId = getNewId('option');
-            option.querySelectorAll('[name]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-(new-|\d+)-.*?\]/, `[${newNamePrefix}-${newOptionId}]`));
+            
+            option.querySelectorAll('[name]').forEach(el => {
+                // Reconstrói o name da opção do zero para máxima segurança
+                const match = el.name.match(/^(opcao-\w+-\w+)\[(.*)\]$/);
+                if (match) {
+                    const baseName = match[1];
+                    el.name = `${baseName}[${topicId}-${newQuestionId}-${newOptionId}]`;
+                }
+            });
         });
 
         originalQuestion.parentNode.insertBefore(clone, originalQuestion.nextSibling);
@@ -1438,7 +1522,43 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
-    document.body.addEventListener('change', (e) => {
+    /**
+     * Garante que apenas "Criar uma Opção" ou "Porcentagem" possam ser marcados.
+     * @param {HTMLInputElement} checkbox - O checkbox que foi alterado.
+     */
+    function handleCheckboxExclusivity(checkbox) {
+        // Só faz algo se o checkbox foi MARCADO
+        if (!checkbox.checked) return;
+
+        const questionCard = checkbox.closest('.question-card');
+        if (!questionCard) return;
+        
+        let siblingCheckbox;
+
+        // Se o checkbox de 'Opção' foi marcado, desmarca o de 'Porcentagem'
+        if (checkbox.name.includes('pergunta-criar_opcao')) {
+            siblingCheckbox = questionCard.querySelector('[name*="pergunta-porcentagem"]');
+        } 
+        // Se o checkbox de 'Porcentagem' foi marcado, desmarca o de 'Opção'
+        else if (checkbox.name.includes('pergunta-porcentagem')) {
+            siblingCheckbox = questionCard.querySelector('[name*="pergunta-criar_opcao"]');
+        }
+
+        // Se encontramos o "irmão" e ele está marcado, desmarcamos
+        if (siblingCheckbox && siblingCheckbox.checked) {
+            siblingCheckbox.checked = false;
+            // Dispara o evento de 'change' para que a UI se atualize (esconda a seção de opções)
+            siblingCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    document.body.addEventListener('change', function(e) {
+        // Lógica de exclusividade dos checkboxes
+        if (e.target.classList.contains('js-response-type')) {
+            handleCheckboxExclusivity(e.target);
+        }
+
+        // Lógica para mostrar/esconder seções de opções
         if (e.target.classList.contains('js-response-type') && e.target.dataset.controls) {
             const section = e.target.closest('.question-card').querySelector(`.${e.target.dataset.controls}`);
             if (section) section.style.display = e.target.checked ? 'block' : 'none';
@@ -1497,6 +1617,8 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
         });
     }
+
+
 
     updateOrders();
     console.log('Script carregado completamente');

@@ -1,5 +1,6 @@
 # usuarios/views.py
 
+from django.contrib.auth.models import Permission
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
@@ -15,6 +16,10 @@ import csv
 from django.http import HttpResponse
 import json
 
+from django.contrib.auth.decorators import login_required, permission_required
+
+from .models import Usuario, DetalheGrupo
+
 from collections import defaultdict
 
 from .serializers import UsuarioSerializer
@@ -22,6 +27,8 @@ from .serializers import UsuarioSerializer
 from .models import Usuario
 
 from .serializers import AlterarSenhaSerializer
+
+from django.db.models import Count
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -42,7 +49,7 @@ def admin_required(user):
 # ============================================================================
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.view_usuario', raise_exception=True)
 def dashboard_usuarios(request):
     """Dashboard principal do módulo de usuários."""
     context = {
@@ -57,9 +64,10 @@ def dashboard_usuarios(request):
 
 
 @login_required
-@user_passes_test(admin_required)
+# <--- TRAVA FORTE: SÓ SUPERUSUÁRIO
+@user_passes_test(lambda u: u.is_superuser)
 def alterar_senha_usuario(request, pk):
-    """Altera a senha de um usuário específico"""
+    """Altera a senha de um usuário específico (Apenas Superusuário)"""
     usuario = get_object_or_404(Usuario, pk=pk)
 
     if request.method == 'POST':
@@ -90,7 +98,7 @@ def alterar_senha_usuario(request, pk):
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.view_usuario', raise_exception=True)
 def lista_usuarios(request):
     """Lista todos os usuários com busca e paginação"""
     search = request.GET.get('search', '')
@@ -133,13 +141,13 @@ def lista_usuarios(request):
         'singular': 'Usuário',
         'button_text': 'Novo Usuário',
         'create_url': 'usuarios:criar_usuario',
-        'artigo': 'o'
+        'artigo': 'o',
     }
     return render(request, 'usuarios/lista.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.add_usuario', raise_exception=True)
 def criar_usuario(request):
     """Cria um novo usuário"""
     if request.method == 'POST':
@@ -159,6 +167,9 @@ def criar_usuario(request):
         if not username or not email or not password:
             messages.error(
                 request, 'Username, email e senha são obrigatórios!')
+        elif not grupo_id:  # <--- NOVA VALIDAÇÃO AQUI
+            messages.error(
+                request, 'É obrigatório selecionar um Perfil de Acesso (Grupo)!')
         elif password != password_confirm:
             messages.error(request, 'As senhas não coincidem!')
         elif Usuario.objects.filter(username=username).exists():
@@ -199,7 +210,7 @@ def criar_usuario(request):
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.change_usuario', raise_exception=True)
 def editar_usuario(request, pk):
     """Edita um usuário existente"""
     usuario = get_object_or_404(Usuario, pk=pk)
@@ -214,8 +225,11 @@ def editar_usuario(request, pk):
         usuario.is_superuser = request.POST.get('is_superuser') == 'on'
         grupo_id = request.POST.get('grupo')  # MUDANÇA 1
 
+        if not grupo_id:  # <--- NOVA VALIDAÇÃO AQUI
+            messages.error(
+                request, 'É obrigatório selecionar um Perfil de Acesso (Grupo)!')
         # Validar username único (exceto o próprio usuário)
-        if Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
+        elif Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
             messages.error(request, 'Este username já está em uso!')
         # Validar email único (exceto o próprio usuário)
         elif Usuario.objects.filter(email=usuario.email).exclude(pk=pk).exists():
@@ -228,8 +242,8 @@ def editar_usuario(request, pk):
                 # MUDANÇA 2: Atualizar o grupo
                 if grupo_id:
                     novo_grupo = Group.objects.get(id=grupo_id)
-                    usuario.groups.clear()  # Limpa grupos antigos
-                    usuario.groups.add(novo_grupo)  # Adiciona o novo
+                    usuario.groups.clear()
+                    usuario.groups.add(novo_grupo)
                 else:
                     usuario.groups.clear()  # Se não selecionou nada, remove permissões
 
@@ -277,49 +291,76 @@ def deletar_usuario(request, pk):
     return render(request, 'usuarios/deletar.html', context)
 
 
-@login_required
-@user_passes_test(admin_required)
-def alterar_senha_usuario(request, pk):
-    """Altera a senha de um usuário"""
-    usuario = get_object_or_404(Usuario, pk=pk)
-
-    if request.method == 'POST':
-        nova_senha = request.POST.get('nova_senha')
-        confirmar_senha = request.POST.get('confirmar_senha')
-
-        if not nova_senha:
-            messages.error(request, 'Nova senha é obrigatória!')
-        elif nova_senha != confirmar_senha:
-            messages.error(request, 'As senhas não coincidem!')
-        elif len(nova_senha) < 8:
-            messages.error(
-                request, 'A senha deve ter pelo menos 8 caracteres!')
-        else:
-            try:
-                usuario.set_password(nova_senha)
-                usuario.save()
-                messages.success(request, 'Senha alterada com sucesso!')
-                return redirect('usuarios:lista_usuarios')
-            except Exception as e:
-                messages.error(request, f'Erro ao alterar senha: {str(e)}')
-
-    context = {
-        'usuario': usuario,
-        'title': 'Alterar Senha'
-    }
-    return render(request, 'usuarios/alterar_senha.html', context)
-
-
 # ============================================================================
 # VIEWS PARA GRUPOS E PERMISSÕES
 # ============================================================================
+# Função auxiliar para organizar as permissões (Evita repetir código)
+# Em usuarios/views.py
+
+def get_permissions_dict():
+    """
+    Organiza as permissões em uma estrutura de matriz:
+    Módulo -> Model -> {add, change, delete, view}
+    """
+    ignorar_models = ['session', 'content type',
+                      'log entry', 'permission', 'group']
+
+    # Busca todas as permissões relevantes
+    perms = Permission.objects.exclude(content_type__model__in=ignorar_models)\
+        .select_related('content_type')\
+        .order_by('content_type__app_label', 'content_type__model')
+
+    estrutura = {}
+
+    for p in perms:
+        # Nome do App (Ex: Auditorias, Usuários)
+        app_label = p.content_type.app_label
+        # Nome do Model (Ex: Auditoria, Agendamento)
+        model_name = p.content_type.model
+        # Nome Bonito para exibir (Ex: "Agendamento de Auditoria")
+        nome_exibicao = p.content_type.name.title()
+
+        # Cria a chave do App se não existir
+        # Mapeamento para nomes mais bonitos se quiser
+        app_nome = app_label.title()
+        if app_label == 'auth':
+            app_nome = 'Administração'
+        if app_label == 'usuarios':
+            app_nome = 'Gestão de Acesso'
+
+        if app_nome not in estrutura:
+            estrutura[app_nome] = {}
+
+        # Cria a chave do Model dentro do App
+        if model_name not in estrutura[app_nome]:
+            estrutura[app_nome][model_name] = {
+                'nome': nome_exibicao,
+                'acoes': {}
+            }
+
+        # Identifica a ação baseada no codename (add_user, change_user...)
+        codename = p.codename
+        if codename.startswith('add_'):
+            estrutura[app_nome][model_name]['acoes']['add'] = p
+        elif codename.startswith('change_'):
+            estrutura[app_nome][model_name]['acoes']['change'] = p
+        elif codename.startswith('delete_'):
+            estrutura[app_nome][model_name]['acoes']['delete'] = p
+        elif codename.startswith('view_'):
+            estrutura[app_nome][model_name]['acoes']['view'] = p
+
+    return estrutura
+
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.view_group', raise_exception=True)
 def lista_grupos(request):
-    """Lista todos os grupos"""
     search = request.GET.get('search', '')
-    grupos = Group.objects.all()
+
+    # Adicionamos .select_related('detalhe') para carregar a descrição junto e ficar rápido
+    grupos = Group.objects.all().annotate(
+        total_usuarios=Count('user')
+    ).select_related('detalhe').order_by('name')
 
     if search:
         grupos = grupos.filter(name__icontains=search)
@@ -331,94 +372,220 @@ def lista_grupos(request):
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Grupos'
+        'title': 'Perfis de Acesso'
     }
     return render(request, 'usuarios/grupos/lista.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.add_group', raise_exception=True)
 def criar_grupo(request):
     if request.method == 'POST':
-        nome = request.POST.get('name')
+        name = request.POST.get('name')
+        descricao = request.POST.get('descricao')  # Pegamos a descrição
         permissoes_ids = request.POST.getlist('permissoes')
 
-        if not nome:
-            messages.error(request, 'O nome do grupo é obrigatório.')
-        # --- VERIFICAÇÃO DE DUPLICIDADE (A Correção) ---
-        elif Group.objects.filter(name=nome).exists():
-            messages.error(
-                request, f'Já existe um perfil com o nome "{nome}". Por favor, escolha outro.')
-        # -----------------------------------------------
+        if not name:
+            messages.error(request, 'O nome do perfil é obrigatório.')
         else:
-            grupo = Group.objects.create(name=nome)
-            if permissoes_ids:
-                grupo.permissions.set(permissoes_ids)
+            try:
+                grupo = Group.objects.create(name=name)
 
-            messages.success(request, f'Perfil "{nome}" criado com sucesso!')
-            return redirect('usuarios:lista_grupos')
+                # SALVAR DESCRIÇÃO: Criamos o detalhe vinculado ao grupo
+                if descricao:
+                    DetalheGrupo.objects.create(
+                        group=grupo, descricao=descricao)
 
-    # --- Lógica de Agrupamento para o HTML ---
-    # 1. Pega todas as permissões, excluindo as técnicas do Django (sessão, admin, contenttypes)
-    perms = Permission.objects.exclude(
-        content_type__app_label__in=[
-            'admin', 'contenttypes', 'sessions', 'authtoken']
-    ).select_related('content_type')
+                if permissoes_ids:
+                    perms = Permission.objects.filter(id__in=permissoes_ids)
+                    grupo.permissions.set(perms)
 
-    perms_agrupadas = defaultdict(list)
-    for perm in perms:
-        nome_modelo = perm.content_type.model_class()._meta.verbose_name_plural.title(
-        ) if perm.content_type.model_class() else perm.content_type.model
-        perms_agrupadas[nome_modelo].append(perm)
-
-    perms_agrupadas = dict(sorted(perms_agrupadas.items()))
+                messages.success(request, 'Perfil criado com sucesso!')
+                return redirect('usuarios:lista_grupos')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar perfil: {e}')
 
     context = {
-        'perms_agrupadas': perms_agrupadas,
-        'grupo': None,
-        'grupo_perms_ids': [],
+        'perms_agrupadas': agrupar_permissoes_para_template(),
         'title': 'Novo Perfil de Acesso'
     }
     return render(request, 'usuarios/grupos/form.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.change_group', raise_exception=True)
 def editar_grupo(request, pk):
-    """Edita um grupo existente"""
     grupo = get_object_or_404(Group, pk=pk)
 
     if request.method == 'POST':
-        grupo.name = request.POST.get('name')
-        permissoes_ids = request.POST.getlist('permissions')
+        name = request.POST.get('name')
+        descricao = request.POST.get('descricao')  # Pegamos a descrição
+        permissoes_ids = request.POST.getlist('permissoes')
 
-        if not grupo.name:
-            messages.error(request, 'Nome do grupo é obrigatório!')
-        elif Group.objects.filter(name=grupo.name).exclude(pk=pk).exists():
-            messages.error(request, 'Este nome de grupo já existe!')
+        if not name:
+            messages.error(request, 'O nome do perfil é obrigatório.')
         else:
             try:
+                grupo.name = name
                 grupo.save()
-                grupo.permissions.set(permissoes_ids)
-                messages.success(request, 'Grupo atualizado com sucesso!')
+
+                # SALVAR DESCRIÇÃO: Usamos update_or_create para criar se não existir ou atualizar se existir
+                DetalheGrupo.objects.update_or_create(
+                    group=grupo,
+                    defaults={'descricao': descricao}
+                )
+
+                if permissoes_ids:
+                    perms = Permission.objects.filter(id__in=permissoes_ids)
+                    grupo.permissions.set(perms)
+                else:
+                    grupo.permissions.clear()
+
+                messages.success(request, 'Perfil atualizado com sucesso!')
                 return redirect('usuarios:lista_grupos')
             except Exception as e:
-                messages.error(request, f'Erro ao atualizar grupo: {str(e)}')
+                messages.error(request, f'Erro ao atualizar perfil: {e}')
 
-    # Organizar permissões por app
-    permissoes_por_app = {}
-    for permission in Permission.objects.select_related('content_type').all():
-        app_label = permission.content_type.app_label
-        if app_label not in permissoes_por_app:
-            permissoes_por_app[app_label] = []
-        permissoes_por_app[app_label].append(permission)
+    grupo_perms_ids = list(grupo.permissions.values_list('id', flat=True))
 
     context = {
         'grupo': grupo,
-        'permissoes_por_app': permissoes_por_app,
-        'title': 'Editar Grupo'
+        'perms_agrupadas': agrupar_permissoes_para_template(),
+        'grupo_perms_ids': grupo_perms_ids,
+        'title': 'Editar Perfil de Acesso'
     }
     return render(request, 'usuarios/grupos/form.html', context)
+
+
+def agrupar_permissoes_para_template():
+    """
+    Cria uma estrutura de dados aninhada e organizada para exibir as
+    permissões no template, com overrides manuais para organização visual.
+    """
+
+    # 1. MAPEAMENTO DE NOMES AMIGÁVEIS (MODELO -> TELA)
+    nomes_funcionalidades = {
+        'pilar': 'Pilares',
+        'categoriaauditoria': 'Categorias de Auditoria',
+        'norma': 'Normas',
+        'ferramentadigital': 'Ferramentas Digitais',
+        'checklist': 'Checklists',
+        'modeloauditoria': 'Modelos de Auditoria',
+        'auditoria': 'Agendamentos',
+        'auditoriainstancia': 'Execuções de Auditoria',
+        'planodeacao': 'Planos de Ação',
+        'naoconformidade': 'Não Conformidades',  # Movido para cá
+        'usuario': 'Usuários',
+        'group': 'Perfis de Acesso (Grupos)',
+        'detalhegrupo': 'Detalhes do Grupo',
+        'cliente': 'Clientes',
+        'fornecedor': 'Fornecedores',
+        'ativo': 'Ativos',
+        'categoria': 'Categorias',
+        'marca': 'Marcas',
+        'modelo': 'Modelos',
+        'item': 'Itens',
+        'almoxarifado': 'Almoxarifados',
+        'empresa': 'Unidades de Negócio',
+        'area': 'Áreas',
+        'setor': 'Setores',
+        'subsetor': 'Subsetores',
+        # Cadastros Base
+        'turno': 'Turnos',
+        'turnodetalhedia': 'Detalhes de Turno',
+        'unidademedida': 'Unidades de Medida',
+        'categoriaitem': 'Categorias',
+        'subcategoriaitem': 'Subcategorias',
+    }
+
+    # 2. MAPEAMENTO DE NOMES DE MÓDULOS (APP -> TÍTULO DO ACCORDION)
+    nomes_modulos = {
+        'auditorias': 'Gestão de Auditorias',
+        'usuarios': 'Gestão de Usuários',
+        'organizacao': 'Estrutura Organizacional',
+        'ativos': 'Gestão de Ativos',
+        'itens': 'Estoque & Itens',
+        'clientes': 'Gestão de Clientes',  # Se o app for 'clientes'
+        'fornecedores': 'Gestão de Fornecedores',
+        'cadastros_base': 'Cadastros Gerais',
+        # Criamos uma chave "virtual" para o módulo novo
+        'modulo_planos': 'Gestão de Planos de Ação',
+        'auth': 'Grupos & Permissões',
+    }
+
+    # 3. LISTA NEGRA: O QUE NÃO DEVE APARECER NA TELA
+    ignorar_apps = [
+        'admin', 'authtoken', 'contenttypes', 'sessions',
+        'easy_thumbnails', 'guardian', 'cadastros_base',  # Outros apps técnicos comuns
+    ]
+
+    # Adicione aqui os modelos estranhos que você quer esconder
+    ignorar_modelos = [
+        'log entry', 'permission', 'content type', 'session', 'admin log',
+        'token', 'token proxy',
+        # Modelos técnicos do plano de ação que você não quer ver:
+        'forum', 'mensagemforum', 'responsavellocal', 'anexoresposta',
+        'evidenciaplano', 'ferramentacausaraiz',
+    ]
+
+    # Busca as permissões no banco
+    permissions = Permission.objects.select_related('content_type')\
+        .exclude(content_type__app_label__in=ignorar_apps)\
+        .exclude(content_type__model__in=ignorar_modelos)\
+        .order_by('content_type__model')
+
+    # Agrupa permissões por modelo
+    perms_por_modelo = defaultdict(list)
+    for perm in permissions:
+        perms_por_modelo[perm.content_type.model].append(perm)
+
+    # Estrutura final
+    modulos = defaultdict(list)
+
+    # 4. ORGANIZAÇÃO E LÓGICA DE OVERRIDE (AQUI ACONTECE A MÁGICA)
+    for model_codename, perms in perms_por_modelo.items():
+        if not perms:
+            continue
+
+        app_label = perms[0].content_type.app_label
+
+        # --- LÓGICA DE OVERRIDE (MUDAR DE LUGAR) ---
+
+        # Se for Plano de Ação ou Não Conformidade, forçamos ir para o módulo 'modulo_planos'
+        if model_codename in ['planodeacao', 'naoconformidade']:
+            chave_modulo = 'modulo_planos'
+        else:
+            chave_modulo = app_label
+
+        # Pega o nome bonito do módulo ou usa o nome do app formatado
+        modulo_nome = nomes_modulos.get(
+            chave_modulo, chave_modulo.replace('_', ' ').title())
+
+        # Pega o nome bonito da funcionalidade ou usa o nome do model formatado
+        funcionalidade_nome = nomes_funcionalidades.get(
+            model_codename, model_codename.replace('_', ' ').title())
+
+        # Mapeia as ações
+        acoes = {
+            'add': next((p for p in perms if p.codename.startswith('add_')), None),
+            'view': next((p for p in perms if p.codename.startswith('view_')), None),
+            'change': next((p for p in perms if p.codename.startswith('change_')), None),
+            'delete': next((p for p in perms if p.codename.startswith('delete_')), None),
+        }
+
+        # Só adiciona se tiver pelo menos uma ação válida
+        if any(acoes.values()):
+            modulos[modulo_nome].append({
+                'nome': funcionalidade_nome,
+                'acoes': acoes
+            })
+
+    # Ordena os módulos e as funcionalidades dentro deles
+    modulos_ordenados = {
+        k: sorted(v, key=lambda x: x['nome']) for k, v in sorted(modulos.items())
+    }
+
+    return modulos_ordenados
 
 
 @login_required

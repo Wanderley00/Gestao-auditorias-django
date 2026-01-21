@@ -1,103 +1,224 @@
 {% extends 'auditorias/base.html' %}
 
-{% block title %}{{ title }} - Sistema de Auditorias{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <div class="d-flex justify-content-between align-items-center">
+
+<style>
+    /* ================================================================== */
+    /* 1. ESTILOS GLOBAIS DA PÁGINA (Ajustado para TELA CHEIA)            */
+    /* ================================================================== */
+    .main-container {
+        width: 100%;       /* Ocupa 100% da largura disponível */
+        max-width: none;   /* Remove a limitação de 1200px */
+        padding: 0 20px;   /* Pequeno respiro nas laterais */
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        margin-top: 20px;
+    }
+    .content-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; color: #333; }
+    .content-subtitle { color: #64748b; font-size: 14px; }
+
+    /* Botões Padrão */
+    .btn-secondary {
+        background-color: #fff; color: #333; border: 1px solid #ddd;
+        padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s;
+    }
+    .btn-secondary:hover { background-color: #f8f9fa; }
+
+    /* Card Padrão */
+    .card {
+        background: #fff; border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+        width: 100%; /* Garante que o card estique */
+    }
+    .card-body { padding: 32px; }
+
+    /* Inputs Padrão (.form-control) */
+    .form-group { margin-bottom: 24px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 12px; color: #1F54DE; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .form-control {
+        width: 100%; padding: 12px 16px; border: 1px solid #d1d5db;
+        border-radius: 6px; font-size: 14px; transition: all 0.2s ease; height: 50px;
+    }
+    .form-control:focus { outline: none; border-color: #1F54DE; box-shadow: 0 0 0 3px rgba(31, 84, 222, 0.1); }
+    .field-help { font-size: 13px; color: #64748b; margin-top: 6px; }
+
+    /* Botão Salvar Largo */
+    .btn-save-full {
+        width: 100%; background-color: #1F54DE; color: white; border: none;
+        padding: 14px; border-radius: 6px; font-weight: 700; cursor: pointer;
+        font-size: 15px; transition: background 0.2s; margin-top: 10px;
+    }
+    .btn-save-full:hover { background-color: #1643b8; }
+
+
+    /* ================================================================== */
+    /* 2. ESTILOS DA MATRIZ DE PERMISSÕES (Mantidos intactos)             */
+    /* ================================================================== */
+    .accordion-item { margin-bottom: 10px; border: 1px solid #e3e6f0; border-radius: 6px; overflow: hidden; width: 100%; }
+    .accordion-header {
+        background-color: #f8f9fc; padding: 12px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #4e73df; font-size: 14px; border-radius: 4px; transition: background 0.2s;
+    }
+    .accordion-header:hover { background-color: #eaecf4; }
+    .accordion-icon { transition: transform 0.3s ease; color: #858796; }
+    .accordion-header.active .accordion-icon { transform: rotate(180deg); }
+    .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: white; border-top: 1px solid #e3e6f0; }
+    
+    .table-custom { width: 100%; border-collapse: collapse; margin: 0; }
+    .table-custom th { text-align: center; font-size: 11px; font-weight: 800; color: #b7b9cc; text-transform: uppercase; padding: 12px; background: #fff; border-bottom: 1px solid #e3e6f0; }
+    .table-custom th.text-left { text-align: left; padding-left: 20px; }
+    .table-custom td { padding: 12px; border-bottom: 1px solid #fdfdfe; vertical-align: middle; text-align: center; color: #5a5c69; font-size: 13px; font-weight: 600; }
+    .table-custom td.text-left { text-align: left; padding-left: 20px; }
+    .table-custom tr:hover td { background-color: #f8f9fc; }
+    .table-custom tr:last-child td { border-bottom: none; }
+    
+    .check-custom { width: 18px; height: 18px; accent-color: #1F54DE; cursor: pointer; margin-top: 5px; }
+    .no-perm-dash { color: #e3e6f0; font-weight: bold; }
+</style>
+
+<div class="main-container">
+
+    <div class="content-header">
         <div>
-            <h2 class="content-title">{{ title }}</h2>
-            <p class="content-subtitle">Defina o nome do perfil e marque o que ele pode fazer.</p>
+            <h2 class="content-title">{% if grupo %}Editando: {{ grupo.name }}{% else %}Novo Perfil de Acesso{% endif %}</h2>
+            <p class="content-subtitle">Defina o nome e descrição do grupo e marque as permissões que ele pode ter.</p>
         </div>
         <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
-</div>
 
-<form method="post">
-    {% csrf_token %}
-    
-    <div class="card mb-4 shadow-sm border-left-primary">
-        <div class="card-body">
-            <div class="form-group required">
-                <label for="name" class="font-weight-bold text-uppercase text-xs text-gray-600">Nome do Perfil de Acesso</label>
-                <input type="text" 
-                       name="name" 
-                       id="name" 
-                       class="form-control form-control-lg" 
-                       value="{{ grupo.name|default:'' }}" 
-                       placeholder="Ex: Auditor Externo, Gerente de Qualidade..." 
-                       required>
-                <small class="text-muted">Dê um nome claro para identificar a função deste grupo.</small>
+    <form method="post" id="permForm">
+        {% csrf_token %}
+        
+        <div class="card">
+            <div class="card-body">
+                
+                <div class="form-group required">
+                    <label for="name" class="form-label">Nome do Perfil de Acesso</label>
+                    <input type="text" name="name" id="name" class="form-control" 
+                           value="{{ grupo.name|default:'' }}" 
+                           placeholder="Ex: Auditor, Gerente, Administrador" required>
+                    <div class="field-help">Dê um nome claro para identificar a função deste grupo.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <input type="text" name="descricao" id="descricao" class="form-control" 
+                           value="{{ grupo.detalhe.descricao|default:'' }}" 
+                           placeholder="Descreva as responsabilidades deste perfil...">
+                </div>
+
+                <button type="submit" class="btn-save-full">
+                    <i class="fas fa-save mr-2"></i> Salvar Perfil
+                </button>
+
             </div>
         </div>
-    </div>
 
-    <h4 class="mb-3 text-gray-800"><i class="fas fa-lock"></i> Permissões do Sistema</h4>
-    
-    <div class="row">
-        {% for modulo, permissoes in perms_agrupadas.items %}
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-light">
-                    <h6 class="m-0 font-weight-bold text-primary">{{ modulo }}</h6>
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input toggle-all" id="toggle_{{ forloop.counter }}" onchange="toggleCard(this)">
-                        <label class="custom-control-label small" for="toggle_{{ forloop.counter }}">Tudo</label>
-                    </div>
+        <h4 style="color: #333; margin-top: 32px; margin-bottom: 16px; font-weight: 700; font-size: 18px;">
+            <i class="fas fa-lock" style="margin-right: 8px;"></i>
+            Permissões do Sistema
+        </h4>
+
+        {% if perms_agrupadas %}
+            {% for app_nome, funcionalidades in perms_agrupadas.items %}
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>{{ app_nome }}</span>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
                 
-                <div class="card-body">
-                    <div class="row">
-                        {% for perm in permissoes %}
-                        <div class="col-12 mb-2">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" 
-                                       class="custom-control-input perm-check" 
-                                       id="perm_{{ perm.id }}" 
-                                       name="permissoes" 
-                                       value="{{ perm.id }}"
-                                       {% if perm.id in grupo_perms_ids %}checked{% endif %}>
-                                <label class="custom-control-label text-dark" for="perm_{{ perm.id }}">
-                                    {% if 'add_' in perm.codename %}<span class="badge badge-success badge-pill mr-1">Criar</span>
-                                    {% elif 'change_' in perm.codename %}<span class="badge badge-warning badge-pill mr-1 text-white">Editar</span>
-                                    {% elif 'delete_' in perm.codename %}<span class="badge badge-danger badge-pill mr-1">Excluir</span>
-                                    {% elif 'view_' in perm.codename %}<span class="badge badge-info badge-pill mr-1">Ver</span>
-                                    {% else %}{{ perm.name }}{% endif %}
-                                    
-                                    <span class="small text-muted ml-1">
-                                        {{ perm.name|cut:"Can add "|cut:"Can change "|cut:"Can delete "|cut:"Can view " }}
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+                <div class="accordion-body">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th class="text-left" style="width: 40%;">Funcionalidade</th>
+                                <th style="width: 15%;">Criar</th>
+                                <th style="width: 15%;">Visualizar</th>
+                                <th style="width: 15%;">Editar</th>
+                                <th style="width: 15%;">Excluir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for func in funcionalidades %}
+                            <tr>
+                                <td class="text-left">{{ func.nome }}</td>
+                                
+                                <td>
+                                    {% if func.acoes.add %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.add.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.add.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.view %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.view.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.view.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.change %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.change.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.change.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.delete %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.delete.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.delete.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-light border text-center">
+                Nenhuma permissão carregada.
+            </div>
+        {% endif %}
 
-    <div class="fixed-bottom bg-white border-top py-3 px-4 shadow-lg d-flex justify-content-end" style="z-index: 1000;">
-        <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-light mr-2">Cancelar</a>
-        <button type="submit" class="btn btn-success btn-lg icon-split">
-            <span class="icon text-white-50"><i class="fas fa-save"></i></span>
-            <span class="text">Salvar Permissões</span>
-        </button>
-    </div>
-    <div style="height: 80px;"></div> </form>
+        <div style="height: 50px;"></div>
+    </form>
+</div>
 
+{% block extra_js_script %}
 <script>
-    function toggleCard(toggleBtn) {
-        // Acha o card pai desse botão
-        let card = toggleBtn.closest('.card');
-        // Acha todos os checkboxes dentro desse card
-        let checkboxes = card.querySelectorAll('.perm-check');
-        // Marca ou desmarca todos baseado no switch "Tudo"
-        checkboxes.forEach(cb => cb.checked = toggleBtn.checked);
+    function toggleAccordion(header) {
+        header.classList.toggle('active');
+        var body = header.nextElementSibling;
+        if (body.style.maxHeight) {
+            body.style.maxHeight = null;
+        } else {
+            body.style.maxHeight = body.scrollHeight + "px";
+        }
     }
+    document.addEventListener("DOMContentLoaded", function() {
+        const firstHeader = document.querySelector('.accordion-header');
+        if(firstHeader) {
+            toggleAccordion(firstHeader);
+        }
+    });
 </script>
+{% endblock %}
+
 {% endblock %}

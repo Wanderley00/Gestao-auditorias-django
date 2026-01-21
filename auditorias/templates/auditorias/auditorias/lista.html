@@ -15,10 +15,12 @@
             </button>
 
             {# BOTÃO DE CRIAÇÃO (Texto alterado para "Criar Agendamento") #}
+            {% if perms.auditorias.add_auditoria %}
             <a href="{% url create_url %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
                 Criar Agendamento
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -79,14 +81,19 @@
     <td>{{ object.data_fim|date:"d/m/Y"|default:"-" }}</td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_auditoria %}
             <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Agendamento"
                  onclick='openRedirectModal("{% url 'auditorias:redirecionar_agendamento' object.pk %}", {{ object.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
                 <i class="fas fa-people-arrows"></i>
             </button>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_auditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Agendamento"
                     onclick="confirmDelete('{% url 'auditorias:deletar_auditoria' object.pk %}', 'Agendamento #{{ object.id }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}

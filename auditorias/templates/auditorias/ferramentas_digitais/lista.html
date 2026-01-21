@@ -2,7 +2,7 @@
 
 {% block table_headers %}
     <th>Nome da Ferramenta</th>
-    <th style="width: 120px;">Ações</th>
+    <!-- A coluna de Ações foi removida -->
 {% endblock %}
 
 {% block table_row %}
@@ -11,15 +11,5 @@
             {{ object.nome }}
         </div>
     </td>
-    <td>
-        <div class="action-buttons">
-            <a href="{% url 'auditorias:editar_ferramenta_digital' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Ferramenta">
-                <i class="fas fa-edit"></i>
-            </a>
-            <button type="button" class="btn btn-danger btn-icon" title="Deletar Ferramenta"
-                    onclick="confirmDelete('{% url 'auditorias:deletar_ferramenta_digital' object.pk %}', '{{ object.nome }}')">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    </td>
+    <!-- A célula de Ações foi removida -->
 {% endblock %}

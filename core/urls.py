@@ -15,6 +15,7 @@ from auditorias.views import (
     AuditoriaInstanciaDetailAPIView,
     SubmeterAuditoriaAPIView,
     LocaisPermitidosAPIView,
+    AuditoriasQuarentenaAPIView,
 )
 
 
@@ -62,6 +63,8 @@ api_urlpatterns = [
     # Auditorias
     path('auditorias/pendentes/', AuditoriasPendentesAPIView.as_view(),
          name='api_auditorias_pendentes'),
+    path('auditorias/quarentena/', AuditoriasQuarentenaAPIView.as_view(),
+         name='api_auditorias_quarentena'),
     path('auditorias/concluidas/', AuditoriasConcluidasAPIView.as_view(),
          name='api_auditorias_concluidas'),
     path('instancias/<int:pk>/', AuditoriaInstanciaDetailAPIView.as_view(),
@@ -70,6 +73,8 @@ api_urlpatterns = [
          name='api_instancia_locais'),
     path('instancias/<int:pk>/submeter/',
          SubmeterAuditoriaAPIView.as_view(), name='api_instancia_submeter'),
+
+
 ]
 
 

@@ -39,7 +39,8 @@ def lista_empresas(request):
         'export_url': 'organizacao:exportar_empresas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma empresa cadastrada.',
-        'empty_subtitle': 'Comece criando a primeira empresa.'
+        'empty_subtitle': 'Comece criando a primeira empresa.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_empresa')
     }
     return render(request, 'organizacao/empresas/lista.html', context)
 
@@ -179,7 +180,8 @@ def lista_areas(request):
         'export_url': 'organizacao:exportar_areas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma área cadastrada.',
-        'empty_subtitle': 'Comece criando a primeira área.'
+        'empty_subtitle': 'Comece criando a primeira área.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_area')
     }
     return render(request, 'organizacao/areas/lista.html', context)
 
@@ -321,7 +323,8 @@ def lista_setores(request):
         'export_url': 'organizacao:exportar_setores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum setor cadastrado.',
-        'empty_subtitle': 'Comece criando o primeiro setor.'
+        'empty_subtitle': 'Comece criando o primeiro setor.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_setor')
     }
     return render(request, 'organizacao/setores/lista.html', context)
 
@@ -465,7 +468,8 @@ def lista_subsetores(request):
         'export_url': 'organizacao:exportar_subsetores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum subsetor cadastrado.',
-        'empty_subtitle': 'Comece criando o primeiro subsetor.'
+        'empty_subtitle': 'Comece criando o primeiro subsetor.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_subsetor')
     }
     return render(request, 'organizacao/subsetores/lista.html', context)
 

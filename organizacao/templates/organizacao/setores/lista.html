@@ -27,13 +27,17 @@
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.organizacao.change_setor %}
             <a href="{% url 'organizacao:editar_setor' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Setor">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.organizacao.delete_setor %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Setor"
                     onclick="confirmDelete('{% url 'organizacao:deletar_setor' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}

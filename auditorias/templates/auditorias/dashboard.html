@@ -101,14 +101,18 @@
         </div>
         <div style="display: flex; gap: 10px;">
             {# Botão Voltar #}
+            {% if perms.auditorias.view_auditoria %}
             <a href="{% url 'auditorias:lista_execucoes' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
+            {% endif %}
 
+            {% if perms.auditorias.add_auditoria %}
             {# Botão Agendar (Já existia) #}
             <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Agendar Auditoria
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -258,7 +262,7 @@
     // 2. GRÁFICO DE PIZZA (CONFORMIDADE)
     var optionsPizza = {
         series: dataConformidade, // [Conforme, Não Conforme]
-        labels: ['Itens Conformes', 'Itens Não Conformes'],
+        labels: ['Conformes', 'Não Conformes'],
         chart: {
             type: 'donut',
             height: 350

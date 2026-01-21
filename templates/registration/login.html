@@ -8,6 +8,48 @@
     <title>Login - Sistema de Auditorias</title>
     
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <style>
+        .login-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .login-alert.alert-warning {
+            background-color: #fffbeb; /* Amarelo bem claro */
+            border-color: #f59e0b; /* Amarelo/Laranja */
+            color: #b45309; /* Texto Laranja Escuro */
+        }
+
+        .login-alert-icon {
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .login-alert-content {
+            flex: 1;
+        }
+
+        .login-alert-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .login-alert-message {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
     <div class="bg-shape"></div>
@@ -15,41 +57,7 @@
     <div class="bg-shape"></div>
     <div class="bg-shape"></div>
 
-    <!-- NOVO: Container de mensagens fixo no topo da tela -->
-    <div class="toast-container" id="toastContainer">
-        {% if form.errors %}
-            <div class="toast toast-error" data-auto-hide="8000">
-                <div class="toast-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div class="toast-content">
-                    <div class="toast-title">Acesso Negado</div>
-                    <div class="toast-message">
-                        {% if form.non_field_errors %}
-                            {{ form.non_field_errors.0 }}
-                        {% else %}
-                            Por favor, entre com um usuário e senha corretos. Note que ambos os campos diferenciam maiúsculas e minúsculas.
-                        {% endif %}
-                    </div>
-                </div>
-                <button type="button" class="toast-close" onclick="closeToast(this)" aria-label="Fechar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-                <div class="toast-progress">
-                    <div class="progress-bar"></div>
-                </div>
-            </div>
-        {% endif %}
-        
-        <!-- Container para toasts dinâmicos -->
-        <div id="dynamicToasts"></div>
-    </div>
+    <!-- O BLOCO ANTIGO DE TOAST FOI REMOVIDO DAQUI -->
 
     <div class="login-container">
         <div class="welcome-section">
@@ -76,6 +84,24 @@
                 <h2>Auditorias</h2>
                 <p>Faça o login para acessar a plataforma</p>
             </div>
+            
+            <!-- Bloco de mensagens correto, posicionado dentro do formulário -->
+            {% if form.errors or request.GET.next %}
+                <div class="login-alert alert-warning">
+                    <div class="login-alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="login-alert-content">
+                        {% if request.GET.next and not form.errors %}
+                            <div class="login-alert-title">Sessão expirada</div>
+                            <div class="login-alert-message">Sua sessão expirou por inatividade. Por favor, faça login novamente para continuar.</div>
+                        {% elif form.non_field_errors %}
+                            <div class="login-alert-title">Acesso Negado</div>
+                            <div class="login-alert-message">{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
             
             <form method="post" class="login-form" id="loginForm" novalidate>
                 {% csrf_token %}

@@ -42,19 +42,24 @@
     </td>
     <td>
         <div class="action-buttons">
+
+            {% if perms.auditorias.change_checklist %}
             <a href="{% url 'auditorias:editar_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Checklist">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
             
             {# --- BOTÃO DE HISTÓRICO ADICIONADO AQUI --- #}
             <a href="{% url 'auditorias:historico_versoes_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Histórico de Versões">
                 <i class="fas fa-history"></i>
             </a>
 
+            {% if perms.auditorias.delete_checklist %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Checklist"
                     onclick="confirmDelete('{% url 'auditorias:deletar_checklist' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}

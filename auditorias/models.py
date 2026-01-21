@@ -116,6 +116,11 @@ class FerramentaDigital(models.Model):
     nome = models.CharField(max_length=100, unique=True,
                             verbose_name="Nome da Ferramenta")
 
+    aplicavel_em_checklist = models.BooleanField(
+        default=True,
+        verbose_name="É aplicável em checklists?"
+    )
+
     class Meta:
         verbose_name = "Ferramenta Digital"
         verbose_name_plural = "Ferramentas Digitais"
@@ -135,6 +140,14 @@ class Checklist(models.Model):
         verbose_name="Ferramenta Digital",
         related_name='checklists'
     )
+
+    # --- NOVO CAMPO ADICIONADO AQUI ---
+    normas_relacionadas = models.ManyToManyField(
+        Norma,
+        blank=True,  # Permite que um checklist não tenha nenhuma norma
+        verbose_name="Normas Relacionadas"
+    )
+
     # --- NOVOS CAMPOS PARA VERSIONAMENTO ---
     version = models.PositiveIntegerField(default=1, verbose_name="Versão")
     is_latest = models.BooleanField(
@@ -231,7 +244,6 @@ class OpcaoResposta(models.Model):
         choices=[
             ('CONFORME', 'Conforme'),
             ('NAO_CONFORME', 'Não Conforme'),
-            ('DESVIO_SOLUCIONADO', 'Desvio Solucionado'),
             ('NA', 'N/A'),
         ],
         verbose_name="Status Vinculado"

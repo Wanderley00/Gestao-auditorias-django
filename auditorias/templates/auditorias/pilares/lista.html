@@ -69,17 +69,23 @@
 </td>
 <td>
     <div class="action-buttons">
+        {% if perms.auditorias.change_pilar %}
         <a href="{% url 'auditorias:editar_pilar' object.pk %}" 
            class="btn btn-secondary btn-icon" 
            title="Editar pilar">
             <i class="fas fa-edit"></i> 
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.delete_pilar %}
         <button type="button" 
                 class="btn btn-danger btn-icon" 
                 title="Deletar pilar"
                 onclick="confirmDelete('{% url 'auditorias:deletar_pilar' object.pk %}', '{{ object.nome }}')">
             <i class="fas fa-trash"></i> 
         </button>
+        {% endif %}
+
     </div>
 </td>
 {% endblock %}

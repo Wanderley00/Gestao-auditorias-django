@@ -11,15 +11,19 @@
 
         <div style="display: flex; gap: 10px;">
             
+            {% if perms.auth.view_group %}
             <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
                 <i class="fas fa-users-cog" style="color: #4e73df;"></i>
                 Gerenciar Grupos
             </a>
+            {% endif %}
 
+            {% if perms.usuarios.add_usuario %}
             <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary">
                 <i class="fas fa-user-plus"></i>
                 Novo Usuário
             </a>
+            {% endif %}
             
         </div>
     </div>
@@ -103,16 +107,23 @@
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.usuarios.change_usuario %}
             <a href="{% url 'usuarios:editar_usuario' object.pk %}" 
                class="btn btn-secondary btn-icon" 
                title="Editar usuário">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+
+            {% if request.user.is_superuser %}
             <a href="{% url 'usuarios:alterar_senha_usuario' object.pk %}" 
                class="btn btn-warning btn-icon" 
                title="Alterar senha">
                 <i class="fas fa-key"></i>
             </a>
+            {% endif %}
+
+            {% if perms.usuarios.delete_usuario %}
             {% if object != request.user %}
             <button type="button" 
                     class="btn btn-danger btn-icon" 
@@ -120,6 +131,7 @@
                     onclick="confirmDelete('{% url 'usuarios:deletar_usuario' object.pk %}', '{{ object.get_full_name|default:object.username }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
             {% endif %}
         </div>
     </td>

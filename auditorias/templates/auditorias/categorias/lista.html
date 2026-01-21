@@ -59,13 +59,19 @@
     <td>{{ object.data_cadastro|date:"d/m/Y" }}</td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_categoriaauditoria %}
             <a href="{% url 'auditorias:editar_categoria_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Categoria">
                 <i class="fas fa-edit"></i> 
             </a>
+            {% endif %}
+
+            {% if perms.auditorias.delete_categoriaauditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Categoria"
                     onclick="confirmDelete('{% url 'auditorias:deletar_categoria_auditoria' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
+
         </div>
     </td> 
 {% endblock %}

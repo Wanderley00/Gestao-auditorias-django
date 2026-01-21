@@ -22,10 +22,12 @@
                 Quarentena
             </a>
 
+            {% if perms.auditorias.add_auditoria %}
             <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary shadow-sm">
                 <i class="fas fa-plus mr-2"></i>
                 Novo Agendamento
             </a>
+            {% endif %}
 
         </div>
     </div>
@@ -102,14 +104,19 @@
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_auditoriainstancia %}
             <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Auditoria"
           onclick='openRedirectModal("{% url 'auditorias:redirecionar_execucao' object.pk %}", {{ object.responsavel.id|default:object.auditoria_agendada.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
                 <i class="fas fa-people-arrows"></i>
             </button>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_auditoriainstancia %}
             <button type="button" class="btn btn-danger btn-icon" title="Excluir Execução"
                     onclick="confirmDelete('{% url 'auditorias:deletar_execucao' object.pk %}', 'Execução #{{ object.id }}')">
     <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}

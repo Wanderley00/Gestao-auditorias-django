@@ -1,112 +1,79 @@
-{% extends 'auditorias/base.html' %}
+{% extends 'auditorias/lista_generica.html' %}
 
-{% block title %}Perfis de Acesso - Sistema de Auditorias{% endblock %}
+{% block title %}Perfis de Acesso{% endblock %}
 {% block page_title %}Perfis de Acesso{% endblock %}
 
-{% block content %}
+{% block header_content %}
 <div class="content-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         
         <div>
-            <h2 class="content-title">Perfis de Acesso</h2>
-            <p class="content-subtitle">Gerencie os cargos e permissões dos usuários do sistema.</p>
+            <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #333;">Perfis de Acesso</h2>
+            <p class="content-subtitle text-muted mb-0">Gerencie os cargos e permissões dos usuários do sistema.</p>
         </div>
 
         <div>
-            <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Novo Perfil
+            {# TRAVA DE SEGURANÇA: Só mostra se tiver permissão auth.add_group #}
+            {% if perms.auth.add_group %}
+            <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus mr-2"></i>
+                Novo Grupo
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-arrow-left" style="color: #666;"></i> Voltar
             </a>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Perfis Cadastrados</h6>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Nome do Perfil</th>
-                        <th>Permissões</th>
-                        <th>Usuários</th>
-                        <th style="width: 150px;" class="text-center">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for grupo in page_obj %}
-                    <tr>
-                        <td class="align-middle font-weight-bold text-dark">{{ grupo.name }}</td>
-                        <td class="align-middle">
-                            {% if grupo.permissions.count > 0 %}
-                                <span class="badge badge-info">{{ grupo.permissions.count }} permissões</span>
-                            {% else %}
-                                <span class="badge badge-secondary">Sem permissões</span>
-                            {% endif %}
-                        </td>
-                        <td class="align-middle">
-                            <i class="fas fa-user text-gray-400 mr-1"></i>
-                            {{ grupo.user_set.count }} usuários
-                        </td>
-                        <td class="text-center align-middle">
-                            <a href="{% url 'usuarios:editar_grupo' grupo.pk %}" class="btn btn-sm btn-info btn-icon" title="Editar Permissões">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" 
-                                    class="btn btn-sm btn-danger btn-icon" 
-                                    title="Excluir Perfil"
-                                    onclick="confirmDelete('{% url 'usuarios:deletar_grupo' grupo.pk %}', '{{ grupo.name }}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-5 text-muted">
-                            <i class="fas fa-users-slash fa-3x mb-3"></i>
-                            <p class="mb-0">Nenhum perfil de acesso cadastrado.</p>
-                            <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-link">Criar o primeiro</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{% block search_form %}{% endblock %}
+{% block extra_filters %}{% endblock %}
+
+{% block table_headers %}
+    <tr>
+        <th>Nome do Perfil</th>
+        <th style="text-align: center;">Permissões</th>
+        <th style="text-align: center;">Usuários Vinculados</th>
+        <th style="width: 120px; text-align: center;">Ações</th>
+    </tr>
+{% endblock %}
+
+{% block table_row %}
+    <td class="align-middle">
+        <div style="font-weight: 700; color: #2563EC; font-size: 14px;">
+            {{ object.name }}
         </div>
-        
-        {% if page_obj.has_other_pages %}
-        <div class="mt-3">
-            <nav aria-label="Navegação de páginas">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}">Anterior</a>
-                    </li>
-                    {% endif %}
-                    
-                    <li class="page-item disabled">
-                        <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}">Próxima</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+        <div style="font-size: 12px; color: #858796; margin-top: 2px;">
+            {{ object.detalhe.descricao|default:"Sem descrição definida." }}
         </div>
-        {% endif %}
-    </div>
-</div>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <span class="badge badge-info">{{ object.permissions.count }} permissões</span>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <span style="color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-user-friends mr-1" style="color: #b7b9cc;"></i> 
+            {{ object.total_usuarios }} usuário{{ object.total_usuarios|pluralize }}
+        </span>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <div class="action-buttons" style="justify-content: center;">
+            {% if perms.auth.change_group %}
+            <a href="{% url 'usuarios:editar_grupo' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Perfil"
+               style="background: #fff; border: 1px solid #d1d3e2; color: #858796;">
+                <i class="fas fa-edit"></i>
+            </a>
+            {% endif %}
 
-<script>
-function confirmDelete(url, nome) {
-    if (confirm(`Tem certeza que deseja excluir o perfil "${nome}"?\nOs usuários vinculados perderão essas permissões.`)) {
-        window.location.href = url;
-    }
-}
-</script>
+            {% if perms.auth.delete_group %}
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Perfil"
+                    onclick="confirmDelete('{% url 'usuarios:deletar_grupo' object.pk %}', '{{ object.name }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+    </td>
 {% endblock %}

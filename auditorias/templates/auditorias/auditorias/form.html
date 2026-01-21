@@ -186,6 +186,48 @@
 
 {% block extra_js %}
 {{ block.super }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mainForm');
+    const dataInicioInput = document.getElementById('data_inicio');
+    const dataFimInput = document.getElementById('data_fim');
+
+    if (form && dataInicioInput && dataFimInput) {
+        
+        // 1. Intercepta o envio do formulário
+        form.addEventListener('submit', function(event) {
+            
+            // 2. Pega a data de hoje no formato YYYY-MM-DD
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0); // Zera o tempo para comparar apenas o dia
+
+            // 3. Valida a Data de Início
+            const dataInicioValue = dataInicioInput.value;
+            if (dataInicioValue) {
+                const dataInicio = new Date(dataInicioValue + 'T00:00:00'); // Adiciona T00:00 para evitar problemas de fuso
+                if (dataInicio < hoje) {
+                    alert('Erro: A Data de Início não pode ser no passado.');
+                    event.preventDefault(); // Impede o envio do formulário
+                    return;
+                }
+            }
+
+            // 4. Valida a Data de Fim (se preenchida)
+            const dataFimValue = dataFimInput.value;
+            if (dataFimValue) {
+                const dataFim = new Date(dataFimValue + 'T00:00:00');
+                if (dataFim < hoje) {
+                    alert('Erro: A data "Até o Dia" não pode ser no passado.');
+                    event.preventDefault(); // Impede o envio do formulário
+                    return;
+                }
+            }
+        });
+    }
+});
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ===================================================================
@@ -201,9 +243,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Removi o plugin 'remove_button' para ficar com cara de select padrão
     });
 
-    new TomSelect('#ativos_auditados',{
+    // CORREÇÃO 1: Guardamos a instância do TomSelect em uma variável
+    const ativosTomSelect = new TomSelect('#ativos_auditados',{
         plugins: ['remove_button'],
-        placeholder: 'Selecione um ou mais ativos...',
+        placeholder: 'Selecione um ou mais ativos...', // Placeholder inicial
         sortField: {
             field: "text",
             direction: "asc"
@@ -342,18 +385,22 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (nivel === 'AREA' && areaSelect.value) local_id = areaSelect.value;
         else if (nivel === 'EMPRESA' && empresaSelect.value) local_id = empresaSelect.value;
         
-        const ativosTomSelect = ativos_auditados.tomselect;
+        // Limpa seleções e opções existentes
         ativosTomSelect.clear();
         ativosTomSelect.clearOptions();
-        ativosTomSelect.addOption({value: '', text: 'Carregando...'});
         
         if (nivel && local_id) {
+            // Define o placeholder para "Carregando..."
+            ativosTomSelect.settings.placeholder = 'Carregando ativos...';
+            ativosTomSelect.refreshOptions(false); // Atualiza a UI para mostrar o novo placeholder
+
             const url = `{% url 'auditorias:get_ativos_por_local' %}?nivel=${nivel}&local_id=${local_id}`;
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    ativosTomSelect.clearOptions();
                     if (data.length > 0) {
+                        // Se encontrou ativos, restaura o placeholder padrão
+                        ativosTomSelect.settings.placeholder = 'Selecione um ou mais ativos...';
                         data.forEach(ativo => {
                             ativosTomSelect.addOption({
                                 value: ativo.id,
@@ -361,12 +408,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         });
                     } else {
-                        ativosTomSelect.addOption({value: '', text: 'Nenhum ativo encontrado para este local'});
+                        // Se não encontrou, define um placeholder informativo
+                        ativosTomSelect.settings.placeholder = 'Nenhum ativo encontrado para este local';
                     }
+                    // Atualiza a UI com o placeholder final e as novas opções
+                    ativosTomSelect.refreshOptions(false);
                 });
         } else {
-            ativosTomSelect.clearOptions();
-            ativosTomSelect.addOption({value: '', text: 'Selecione um local para ver os ativos'});
+            // Se nenhum local foi selecionado, define o placeholder inicial
+            ativosTomSelect.settings.placeholder = 'Selecione um local para ver os ativos';
+            ativosTomSelect.refreshOptions(false);
         }
     }
 

@@ -108,11 +108,13 @@
                                         </td>
                                         <td>
                                             <div class="action-buttons">
+                                                {% if perms.auditorias.change_checklist%}
                                                 <a href="{% url 'auditorias:editar_checklist' versao.pk %}" 
                                                 class="btn btn-secondary btn-icon" 
                                                 title="Visualizar Versão"> 
                                                     <i class="fas fa-eye"></i> 
                                                 </a>
+                                                {% endif %}
                                                 <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}?versoes={{ versao.pk }}" 
                                                 class="btn btn-primary btn-icon" 
                                                 title="Selecionar para Comparar"> 

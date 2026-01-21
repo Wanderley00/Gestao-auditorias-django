@@ -42,13 +42,17 @@
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_modeloauditoria %}
             <a href="{% url 'auditorias:editar_modelo_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Modelo">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.auditorias.delete_modeloauditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Modelo"
                     onclick="confirmDelete('{% url 'auditorias:deletar_modelo_auditoria' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}

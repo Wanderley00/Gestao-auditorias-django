@@ -141,7 +141,7 @@
             <div class="sidebar-logo">
                 <i class="fas fa-clipboard-check"></i>
             </div>
-            <div class="sidebar-title">Auditorias SKF</div>
+            <div class="sidebar-title">Sistema de Auditorias</div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
@@ -157,19 +157,28 @@
     <div class="nav-section">
         <div class="nav-section-title">Gestão de Auditorias</div>
         
+        {% if perms.auditorias.view_auditoria %}
         <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
             <i class="fas fa-calendar-alt"></i>
             <span class="nav-item-text">Agendamentos</span>
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.view_auditoriainstancia %}
         <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
             <i class="fas fa-tasks"></i>
             <span class="nav-item-text">Auditorias</span>
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.view_auditoriainstancia %}
         <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
             <i class="fas fa-history"></i>
             <span class="nav-item-text">Histórico</span>
         </a>
+        {% endif %}
 
+        {% if perms.auditorias.view_norma or perms.auditorias.view_pilar or perms.auditorias.view_categoriaauditoria or perms.auditorias.view_checklist or perms.auditorias.view_modeloauditoria or perms.auditorias.view_ferramentadigital %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -179,28 +188,32 @@
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem">
-                    <i class="fas fa-book"></i> Normas
-                </a>
-                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem">
-                    <i class="fas fa-columns"></i> Pilares
-                </a>
-                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem">
-                    <i class="fas fa-tags"></i> Categorias
-                </a>
-                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem">
-                    <i class="fas fa-list-ul"></i> Checklists
-                </a>
-                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem">
-                    <i class="fas fa-file-alt"></i> Modelos
-                </a>
-                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-subitem">
-                    <i class="fas fa-laptop-code"></i> Ferramentas
-                </a>
+                {% if perms.auditorias.view_norma %}
+                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem"><i class="fas fa-book"></i> Normas</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_pilar %}
+                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem"><i class="fas fa-columns"></i> Pilares</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_categoriaauditoria %}
+                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem"><i class="fas fa-tags"></i> Categorias</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_checklist %}
+                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem"><i class="fas fa-list-ul"></i> Checklists</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_modeloauditoria %}
+                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem"><i class="fas fa-file-alt"></i> Modelos</a>
+                {% endif %}
+            
             </div>
         </div>
+        {% endif %}
     </div>
 
+    {% if perms.auditorias.view_planodeacao %}
     <div class="nav-section">
         <div class="nav-section-title">Plano de Ação</div>
         <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
@@ -208,7 +221,9 @@
             <span class="nav-item-text">Gerenciamento de Planos</span>
         </a>
     </div>
+    {% endif %}
 
+    {% if perms.organizacao.view_empresa or perms.organizacao.view_area or perms.organizacao.view_setor or perms.organizacao.view_subsetor %}
     <div class="nav-section">
         <div class="nav-section-title">Estrutura</div>
         
@@ -221,27 +236,36 @@
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem">
-                    <i class="fas fa-building"></i> Unid. de Negócio
-                </a>
-                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem">
-                    <i class="fas fa-map-marked-alt"></i> Áreas
-                </a>
-                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem">
-                    <i class="fas fa-layer-group"></i> Setores
-                </a>
-                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem">
-                    <i class="fas fa-th-large"></i> Subsetores
-                </a>
+                {% if perms.organizacao.view_empresa %}
+                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem"><i class="fas fa-building"></i> Unid. de Negócio</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_area %}
+                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem"><i class="fas fa-map-marked-alt"></i> Áreas</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_setor %}
+                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem"><i class="fas fa-layer-group"></i> Setores</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_subsetor %}
+                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem"><i class="fas fa-th-large"></i> Subsetores</a>
+                {% endif %}
             </div>
         </div>
     </div>
+    {% endif %}
 
+    {% if perms.ativos.view_ativo or perms.ativos.view_categoria or perms.ativos.view_marca or perms.ativos.view_modelo %}
     <div class="nav-section">
         <div class="nav-section-title">Gestão de Ativos</div>
+        
+        {% if perms.ativos.view_ativo %}
         <a href="{% url 'ativos:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie"></i><span class="nav-item-text">Dashboard</span></a>
         <a href="{% url 'ativos:lista_ativos' %}" class="nav-item"><i class="fas fa-archive"></i><span class="nav-item-text">Ativos</span></a>
+        {% endif %}
         
+        {% if perms.ativos.view_categoria or perms.ativos.view_marca or perms.ativos.view_modelo %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -251,24 +275,31 @@
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem">
-                    <i class="fas fa-tag"></i> Categorias
-                </a>
-                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem">
-                    <i class="fas fa-certificate"></i> Marcas
-                </a>
-                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem">
-                    <i class="fas fa-cube"></i> Modelos
-                </a>
+                {% if perms.ativos.view_categoria %}
+                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem"><i class="fas fa-tag"></i> Categorias</a>
+                {% endif %}
+                {% if perms.ativos.view_marca %}
+                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem"><i class="fas fa-certificate"></i> Marcas</a>
+                {% endif %}
+                {% if perms.ativos.view_modelo %}
+                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem"><i class="fas fa-cube"></i> Modelos</a>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
+    {% endif %}
 
+    {% if perms.itens.view_item or perms.itens.view_categoria or perms.itens.view_subcategoria or perms.itens.view_almoxarifado %}
     <div class="nav-section">
         <div class="nav-section-title">Estoque & Itens</div>
+        
+        {% if perms.itens.view_item %}
         <a href="{% url 'itens:dashboard' %}" class="nav-item"><i class="fas fa-tachometer-alt"></i><span class="nav-item-text">Dashboard</span></a>
         <a href="{% url 'itens:lista_itens' %}" class="nav-item"><i class="fas fa-box"></i><span class="nav-item-text">Itens</span></a>
+        {% endif %}
         
+        {% if perms.itens.view_categoria or perms.itens.view_subcategoria or perms.itens.view_almoxarifado %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -278,28 +309,42 @@
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem">
-                    <i class="fas fa-tags"></i> Categorias
-                </a>
-                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem">
-                    <i class="fas fa-tag"></i> Subcategorias
-                </a>
-                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem">
-                    <i class="fas fa-warehouse"></i> Almoxarifados
-                </a>
+                {% if perms.itens.view_categoria %}
+                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem"><i class="fas fa-tags"></i> Categorias</a>
+                {% endif %}
+                {% if perms.itens.view_subcategoria %}
+                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem"><i class="fas fa-tag"></i> Subcategorias</a>
+                {% endif %}
+                {% if perms.itens.view_almoxarifado %}
+                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem"><i class="fas fa-warehouse"></i> Almoxarifados</a>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
+    {% endif %}
 
+    {% if perms.clientes.view_cliente or perms.fornecedores.view_fornecedor %}
     <div class="nav-section">
         <div class="nav-section-title">Externos</div>
+        
+        {% if perms.clientes.view_cliente %}
         <a href="{% url 'clientes:lista_clientes' %}" class="nav-item"><i class="fas fa-user-tie"></i><span class="nav-item-text">Clientes</span></a>
+        {% endif %}
+        
+        {% if perms.fornecedores.view_fornecedor %}
         <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item"><i class="fas fa-truck"></i><span class="nav-item-text">Fornecedores</span></a>
+        {% endif %}
     </div>
+    {% endif %}
 
     <div class="nav-section">
         <div class="nav-section-title">Gerenciamento de usuários</div>
+        
+        {% if perms.usuarios.view_usuario %}
         <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item"><i class="fas fa-users"></i><span class="nav-item-text">Usuários</span></a>
+        {% endif %}
+        
         <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
             {% csrf_token %}
             <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
@@ -316,11 +361,7 @@
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('toggled'); // Adiciona/Remove a classe que ativa o CSS acima
-    
-    // Opcional: Se você ajusta a margem do conteúdo principal, faça aqui também
-    // const mainContent = document.getElementById('main-content');
-    // mainContent.classList.toggle('toggled');
+    sidebar.classList.toggle('collapsed'); // <-- CORRIGIDO para 'collapsed'
 }
 
 function toggleGroup(element) {
@@ -328,15 +369,99 @@ function toggleGroup(element) {
     group.classList.toggle('open');
 }
 
-// Opcional: Manter o menu aberto se a página atual estiver dentro dele
 document.addEventListener("DOMContentLoaded", function() {
-    // Procura por links ativos dentro dos submenus
-    const activeLinks = document.querySelectorAll('.nav-subitem.active'); // Certifique-se de adicionar lógica 'active' no Django para subitems
     
-    if(activeLinks.length > 0) {
-        activeLinks.forEach(link => {
-            // Abre o pai do link ativo
-            link.closest('.nav-group').classList.add('open');
+    // Mantém o menu aberto se a página atual estiver dentro dele
+    const activeSubItem = document.querySelector('.nav-subitem.active');
+    if(activeSubItem) {
+        const parentGroup = activeSubItem.closest('.nav-group');
+        if (parentGroup) {
+            parentGroup.classList.add('open');
+        }
+    }
+
+    // ==========================================================
+    // INÍCIO DA NOVA LÓGICA DO FILTRO
+    // ==========================================================
+    const searchInput = document.getElementById('sidebarSearch');
+    const sidebarNav = document.getElementById('sidebarNav');
+
+    if (searchInput && sidebarNav) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+
+            // Seleciona todos os itens de menu de primeiro nível e os grupos
+            const navItems = sidebarNav.querySelectorAll('.nav-item');
+            const navGroups = sidebarNav.querySelectorAll('.nav-group');
+
+            // Filtra os itens diretos (não estão em grupos)
+            navItems.forEach(item => {
+                const itemText = item.querySelector('.nav-item-text')?.textContent.toLowerCase() || '';
+                if (itemText.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Filtra os grupos
+            navGroups.forEach(group => {
+                const triggerText = group.querySelector('.nav-group-trigger .nav-item-text')?.textContent.toLowerCase() || '';
+                const subItems = group.querySelectorAll('.nav-subitem');
+                let groupHasMatch = false;
+
+                // Verifica se o próprio título do grupo corresponde
+                if (triggerText.includes(searchTerm)) {
+                    groupHasMatch = true;
+                }
+
+                // Mostra/esconde subitens dentro do grupo
+                subItems.forEach(subItem => {
+                    const subItemText = subItem.textContent.toLowerCase();
+                    if (subItemText.includes(searchTerm)) {
+                        subItem.style.display = 'block';
+                        groupHasMatch = true; // Se um filho corresponde, o pai deve aparecer
+                    } else {
+                        subItem.style.display = 'none';
+                    }
+                });
+
+                // Se o título do grupo ou algum de seus filhos corresponde, mostra o grupo
+                if (groupHasMatch) {
+                    group.style.display = 'block';
+                    // Se a busca não estiver vazia, expande o grupo para mostrar o resultado
+                    if (searchTerm) {
+                        group.classList.add('open');
+                    }
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+            
+            // Lógica para esconder os títulos de seção se estiverem vazios
+            const navSections = sidebarNav.querySelectorAll('.nav-section');
+            navSections.forEach(section => {
+                const visibleItems = section.querySelectorAll('.nav-item[style*="display: flex"], .nav-group[style*="display: block"]');
+                const title = section.querySelector('.nav-section-title');
+                if (title) {
+                    title.style.display = visibleItems.length > 0 ? 'block' : 'none';
+                }
+            });
+
+            // Se o campo de busca estiver vazio, reseta tudo para o estado original
+            if (searchTerm === '') {
+                navItems.forEach(item => item.style.display = 'flex');
+                navGroups.forEach(group => {
+                    group.style.display = 'block';
+                    group.querySelectorAll('.nav-subitem').forEach(sub => sub.style.display = 'block');
+                    // Não fecha os grupos que já estavam abertos
+                    // group.classList.remove('open');
+                });
+                navSections.forEach(section => {
+                    const title = section.querySelector('.nav-section-title');
+                    if(title) title.style.display = 'block';
+                });
+            }
         });
     }
 });

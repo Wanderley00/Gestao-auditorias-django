@@ -36,10 +36,12 @@
                 </a>
             {% endif %}
 
+            {% if perms.auditorias.add_planodeacao %}
             {% if current_mode == 'active' %}
                 <a href="#" class="btn btn-primary" onclick="openModalNovoPlano()">
                     <i class="fas fa-plus"></i> Novo Plano
                 </a>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -1377,7 +1379,7 @@
             
             <div id="tab-acoes" class="tab-content-panel active">
                 <div class="form-grid">
-                    <div class="form-group"><label>ID do Plano</label><div id="detalheId" class="form-value-box"></div></div>
+                    <div class="form-group"><label>ID do Plano de Ação</label><div id="detalheId" class="form-value-box"></div></div>
                     <div class="form-group"><label>ID da Auditoria</label><div id="detalheIdAuditoria" class="form-value-box"></div></div>
                     <div class="form-group"><label>Status Atual</label><div id="detalheStatus" class="form-value-box" style="font-weight: bold;"></div></div>
                     <div class="form-group"><label>Responsável</label><div id="detalheResponsavel" class="form-value-box"></div></div>

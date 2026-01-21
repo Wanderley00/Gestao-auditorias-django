@@ -2064,6 +2064,11 @@ class FerramentaDigital(models.Model):
     nome = models.CharField(max_length=100, unique=True,
                             verbose_name="Nome da Ferramenta")
 
+    aplicavel_em_checklist = models.BooleanField(
+        default=True,
+        verbose_name="É aplicável em checklists?"
+    )
+
     class Meta:
         verbose_name = "Ferramenta Digital"
         verbose_name_plural = "Ferramentas Digitais"
@@ -2083,6 +2088,14 @@ class Checklist(models.Model):
         verbose_name="Ferramenta Digital",
         related_name='checklists'
     )
+
+    # --- NOVO CAMPO ADICIONADO AQUI ---
+    normas_relacionadas = models.ManyToManyField(
+        Norma,
+        blank=True,  # Permite que um checklist não tenha nenhuma norma
+        verbose_name="Normas Relacionadas"
+    )
+
     # --- NOVOS CAMPOS PARA VERSIONAMENTO ---
     version = models.PositiveIntegerField(default=1, verbose_name="Versão")
     is_latest = models.BooleanField(
@@ -2179,7 +2192,6 @@ class OpcaoResposta(models.Model):
         choices=[
             ('CONFORME', 'Conforme'),
             ('NAO_CONFORME', 'Não Conforme'),
-            ('DESVIO_SOLUCIONADO', 'Desvio Solucionado'),
             ('NA', 'N/A'),
         ],
         verbose_name="Status Vinculado"
@@ -3236,14 +3248,6 @@ urlpatterns = [
 
     path('ferramentas-digitais/', views.lista_ferramentas_digitais,
          name='lista_ferramentas_digitais'),
-    path('ferramentas-digitais/criar/', views.criar_ferramenta_digital,
-         name='criar_ferramenta_digital'),
-    path('ferramentas-digitais/<int:pk>/editar/',
-         views.editar_ferramenta_digital, name='editar_ferramenta_digital'),
-    path('ferramentas-digitais/<int:pk>/deletar/',
-         views.deletar_ferramenta_digital, name='deletar_ferramenta_digital'),
-    path('ferramentas-digitais/exportar-csv/', views.exportar_ferramentas_digitais_csv,
-         name='exportar_ferramentas_digitais_csv'),  # NOVO
 
     path('checklists/', views.lista_checklists, name='lista_checklists'),
     path('checklists/criar/', views.criar_checklist, name='criar_checklist'),
@@ -3426,6 +3430,10 @@ from django.db.models.functions import Concat
 
 from django.utils import timezone
 
+from datetime import date, timedelta
+
+from django.db.models import F, ExpressionWrapper, fields
+
 from django.db import transaction
 
 from django.db.models.functions import TruncMonth
@@ -3574,7 +3582,8 @@ def lista_pilares(request):
         'export_url': 'auditorias:exportar_pilares_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum pilar cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro pilar.'
+        'empty_subtitle': 'Comece criando o primeiro pilar.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_pilar')
     }
     return render(request, 'auditorias/pilares/lista.html', context)
 
@@ -3709,7 +3718,8 @@ def lista_categorias_auditoria(request):
         'export_url': 'auditorias:exportar_categorias_auditoria_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma categoria de auditoria cadastrada',
-        'empty_subtitle': 'Comece criando a primeira categoria de auditoria.'
+        'empty_subtitle': 'Comece criando a primeira categoria de auditoria.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_categoriaauditoria')
     }
     return render(request, 'auditorias/categorias/lista.html', context)
 
@@ -3861,7 +3871,8 @@ def lista_normas(request):
         'export_url': 'auditorias:exportar_normas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma norma cadastrada',
-        'empty_subtitle': 'Comece criando a primeira norma.'
+        'empty_subtitle': 'Comece criando a primeira norma.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_norma')
     }
     return render(request, 'auditorias/normas/lista.html', context)
 
@@ -3988,12 +3999,8 @@ def lista_ferramentas_digitais(request):
         'search': search,
         'title': 'Ferramentas Digitais',
         'singular': 'Ferramenta Digital',
-        'button_text': 'Nova Ferramenta Digital',
-        'create_url': 'auditorias:criar_ferramenta_digital',
-        'export_url': 'auditorias:exportar_ferramentas_digitais_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma ferramenta digital cadastrada',
-        'empty_subtitle': 'Comece criando a primeira ferramenta digital.'
     }
     return render(request, 'auditorias/ferramentas_digitais/lista.html', context)
 
@@ -4114,6 +4121,8 @@ def lista_checklists(request):
         'title': 'Checklists',
         'create_url': 'auditorias:criar_checklist',
         'export_url': 'auditorias:exportar_checklists_csv',  # NOVO
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_checklist')
+
     }
     return render(request, 'auditorias/checklists/lista.html', context)
 
@@ -4126,6 +4135,9 @@ def criar_checklist(request):
         ferramenta_id = request.POST.get('ferramenta')
         ativo = request.POST.get('ativo') == 'on'
 
+        # --- CAPTURA DAS NORMAS ---
+        normas_ids = request.POST.getlist('normas_relacionadas')
+
         if nome:
             try:
                 # Criar o checklist básico
@@ -4133,6 +4145,10 @@ def criar_checklist(request):
                     nome=nome,
                     ativo=ativo
                 )
+
+                # --- ASSOCIAÇÃO DAS NORMAS ---
+                if normas_ids:
+                    checklist.normas_relacionadas.set(normas_ids)
 
                 if ferramenta_id:
                     checklist.ferramenta_id = ferramenta_id
@@ -4151,10 +4167,11 @@ def criar_checklist(request):
             messages.error(request, 'Nome é obrigatório!')
 
     context = {
-        'ferramentas': FerramentaDigital.objects.all(),
+        'ferramentas': FerramentaDigital.objects.filter(aplicavel_em_checklist=True),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': 'Criar Checklist',
-        'back_url': 'auditorias:lista_checklists'
+        'back_url': 'auditorias:lista_checklists',
+        'todas_as_normas': Norma.objects.filter(ativo=True)
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
@@ -4177,6 +4194,8 @@ def _create_new_version_from_request(request, checklist_original):
     new_version_number = latest_version_number + 1
     # --- FIM DA CORREÇÃO ---
 
+    normas_ids = request.POST.getlist('normas_relacionadas')
+
     # 4. Cria o novo objeto Checklist com o número de versão correto.
     nova_versao = Checklist.objects.create(
         nome=request.POST.get('nome'),
@@ -4186,6 +4205,10 @@ def _create_new_version_from_request(request, checklist_original):
         is_latest=True,
         original_checklist=base_checklist
     )
+
+    # --- ASSOCIAÇÃO DAS NORMAS À NOVA VERSÃO ---
+    if normas_ids:
+        nova_versao.normas_relacionadas.set(normas_ids)
 
     # (O restante da função para copiar os tópicos e perguntas continua o mesmo)
     # ... (código existente para processar a estrutura do checklist)
@@ -4313,10 +4336,11 @@ def editar_checklist(request, pk):
     context = {
         'checklist': checklist_a_ser_editado,
         'object': checklist_a_ser_editado,
-        'ferramentas': FerramentaDigital.objects.all(),
+        'ferramentas': FerramentaDigital.objects.filter(aplicavel_em_checklist=True),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': f'Editar Checklist: {checklist_a_ser_editado.nome} (V{checklist_a_ser_editado.version})',
-        'back_url': 'auditorias:lista_checklists'
+        'back_url': 'auditorias:lista_checklists',
+        'todas_as_normas': Norma.objects.filter(ativo=True)
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
@@ -4447,8 +4471,8 @@ def processar_estrutura_checklist(request, checklist):
                 topico = Topico.objects.create(
                     checklist=checklist, descricao=topico_descricao, ordem=topico_ordem)
             else:
-                topico = Topico.objects.get(
-                    pk=int(topico_id_str), checklist=checklist)
+                topico = get_object_or_404(Topico, pk=int(
+                    topico_id_str), checklist=checklist)
                 topico.descricao = topico_descricao
                 topico.ordem = topico_ordem
                 topico.save()
@@ -4469,8 +4493,8 @@ def processar_estrutura_checklist(request, checklist):
                         pergunta = Pergunta.objects.create(
                             topico=topico, descricao=pergunta_descricao, ordem=pergunta_ordem)
                     else:
-                        pergunta = Pergunta.objects.get(
-                            pk=int(pergunta_id_str), topico=topico)
+                        pergunta = get_object_or_404(
+                            Pergunta, pk=int(pergunta_id_str), topico=topico)
                         pergunta.descricao = pergunta_descricao
                         pergunta.ordem = pergunta_ordem
 
@@ -4498,14 +4522,14 @@ def processar_estrutura_checklist(request, checklist):
                                 opcao = OpcaoResposta.objects.create(
                                     pergunta=pergunta)
                             else:
-                                opcao = OpcaoResposta.objects.get(
-                                    pk=int(opcao_id_str), pergunta=pergunta)
+                                opcao = get_object_or_404(OpcaoResposta, pk=int(
+                                    opcao_id_str), pergunta=pergunta)
 
                             opcao.descricao = o_value
                             opcao.status = request.POST.get(
                                 f'opcao-resposta-status[{opcao_id_full}]')
-                            opcao.ordem = request.POST.get(
-                                f'opcao-resposta-ordem[{opcao_id_full}]', 0)
+                            opcao.ordem = int(request.POST.get(
+                                f'opcao-resposta-ordem[{opcao_id_full}]', 0))
                             opcao.save()
                             opcoes_resposta_ids_processadas.add(opcao.id)
 
@@ -4516,21 +4540,37 @@ def processar_estrutura_checklist(request, checklist):
                             opcao_id_str = opcao_id_full.replace(
                                 f'{pergunta_id_full}-', '')
 
+                            # ==========================================================
+                            # INÍCIO DA CORREÇÃO
+                            # ==========================================================
                             if opcao_id_str.startswith('new-'):
+                                # Passa todos os dados diretamente na criação
                                 opcao = OpcaoPorcentagem.objects.create(
-                                    pergunta=pergunta)
+                                    pergunta=pergunta,
+                                    descricao=o_value,
+                                    peso=int(request.POST.get(
+                                        f'opcao-porcentagem-peso[{opcao_id_full}]', 0)),
+                                    cor=request.POST.get(
+                                        f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF'),
+                                    ordem=int(request.POST.get(
+                                        f'opcao-porcentagem-ordem[{opcao_id_full}]', 0))
+                                )
                             else:
-                                opcao = OpcaoPorcentagem.objects.get(
-                                    pk=int(opcao_id_str), pergunta=pergunta)
+                                # Lógica de atualização continua a mesma
+                                opcao = get_object_or_404(OpcaoPorcentagem, pk=int(
+                                    opcao_id_str), pergunta=pergunta)
+                                opcao.descricao = o_value
+                                opcao.peso = int(request.POST.get(
+                                    f'opcao-porcentagem-peso[{opcao_id_full}]', 0))
+                                opcao.cor = request.POST.get(
+                                    f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
+                                opcao.ordem = int(request.POST.get(
+                                    f'opcao-porcentagem-ordem[{opcao_id_full}]', 0))
+                                opcao.save()
+                            # ==========================================================
+                            # FIM DA CORREÇÃO
+                            # ==========================================================
 
-                            opcao.descricao = o_value
-                            opcao.peso = request.POST.get(
-                                f'opcao-porcentagem-peso[{opcao_id_full}]', 0)
-                            opcao.cor = request.POST.get(
-                                f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
-                            opcao.ordem = request.POST.get(
-                                f'opcao-porcentagem-ordem[{opcao_id_full}]', 0)
-                            opcao.save()
                             opcoes_porcentagem_ids_processadas.add(opcao.id)
 
     # Deletar itens que não foram processados (removidos do formulário)
@@ -4781,6 +4821,8 @@ def _gerar_dados_comparacao(versoes):
 
         comparacao['topicos_comparados'].append(topico_data)
 
+    comparacao['versoes_data'] = versoes_data
+
     return comparacao
 
 
@@ -4837,7 +4879,8 @@ def lista_modelos_auditoria(request):
         'export_url': 'auditorias:exportar_modelos_auditoria_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum modelo de auditoria cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.'
+        'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_modeloauditoria')
     }
     return render(request, 'auditorias/modelos_auditoria/lista.html', context)
 
@@ -4881,7 +4924,7 @@ def criar_modelo_auditoria(request):
             messages.error(request, 'Descrição é obrigatória!')
 
     context = {
-        'checklists': Checklist.objects.filter(ativo=True),
+        'checklists': Checklist.objects.filter(ativo=True, is_latest=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Criar Modelo de Auditoria',
@@ -4931,7 +4974,7 @@ def editar_modelo_auditoria(request, pk):
 
     context = {
         'modelo': modelo,
-        'checklists': Checklist.objects.filter(ativo=True),
+        'checklists': Checklist.objects.filter(ativo=True, is_latest=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Editar Modelo de Auditoria',
@@ -5044,6 +5087,33 @@ def criar_auditoria(request):
     """Cria uma nova auditoria agendada com a nova lógica de locais."""
     if request.method == 'POST':
         try:
+            # --- VALIDAÇÃO DE DATAS NO BACKEND ---
+            hoje = timezone.now().date()
+            data_inicio_str = request.POST.get('data_inicio')
+            data_fim_str = request.POST.get('data_fim')
+
+            if data_inicio_str:
+                data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                if data_inicio < hoje:
+                    messages.error(
+                        request, 'A Data de Início não pode ser no passado.')
+                    # Redireciona de volta para o formulário
+                    return redirect('auditorias:criar_auditoria')
+            else:
+                # Se a data de início é obrigatória e não foi enviada
+                messages.error(request, 'A Data de Início é obrigatória.')
+                return redirect('auditorias:criar_auditoria')
+
+            if data_fim_str:
+                data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+                if data_fim < data_inicio:  # Garante que a data fim não é antes da de início
+                    messages.error(
+                        request, 'A data "Até o Dia" não pode ser anterior à Data de Início.')
+                    return redirect('auditorias:criar_auditoria')
+            else:
+                data_fim = None
+
             with transaction.atomic():
                 # --- Captura todos os dados do formulário ---
                 data_inicio_str = request.POST.get('data_inicio')
@@ -5143,6 +5213,21 @@ def editar_auditoria(request, pk):
     auditoria = get_object_or_404(Auditoria, pk=pk)
     if request.method == 'POST':
         try:
+            hoje = timezone.now().date()
+            data_inicio_str = request.POST.get('data_inicio')
+            data_fim_str = request.POST.get('data_fim')
+
+            if data_inicio_str:
+                data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                # Para edição, permitimos que a data de início seja hoje ou no passado
+                # se a auditoria já começou, mas não pode ser alterada para o passado.
+                # A regra mais simples e segura é impedir que seja anterior à data original.
+                if data_inicio < auditoria.data_inicio:
+                    messages.error(
+                        request, 'A Data de Início não pode ser movida para o passado.')
+                    return redirect('auditorias:editar_auditoria', pk=pk)
+
             with transaction.atomic():
                 data_inicio_str = request.POST.get('data_inicio')
                 data_fim_str = request.POST.get('data_fim')
@@ -5573,20 +5658,39 @@ class AuditoriasPendentesAPIView(ListAPIView):
         relevantes para o usuário que fez a requisição.
         """
         user = self.request.user
+        hoje = timezone.now().date()
+
         # Filtra as instâncias não executadas
         # E que a auditoria pai tenha o usuário logado como responsável
-        return AuditoriaInstancia.objects.filter(
+        # 1. Pega o queryset de todas as auditorias não executadas do usuário
+        todas_pendentes = AuditoriaInstancia.objects.filter(
             executada=False,
             responsavel=user,
-            # Filtra para incluir apenas auditorias de hoje ou do passado
-            data_execucao__lte=timezone.now().date()
         ).select_related(
+            'auditoria_agendada__local_empresa',
             'auditoria_agendada__local_empresa',
             'auditoria_agendada__local_area',
             'auditoria_agendada__local_setor',
             'auditoria_agendada__local_subsetor',
             'auditoria_agendada__ferramenta'
         ).order_by('data_execucao')
+
+        # 2. Pega os IDs das auditorias que estão em quarentena (usando a mesma lógica da outra view)
+        quarentena_ids = AuditoriaInstancia.objects.filter(
+            executada=False,
+            responsavel=user,
+            data_execucao__lt=hoje
+        ).annotate(
+            limite_quarentena=F(
+                'auditoria_agendada__modelos__categoria__dias_para_quarentena'),
+            dias_de_atraso=ExpressionWrapper(
+                hoje - F('data_execucao'), output_field=fields.DurationField())
+        ).filter(
+            dias_de_atraso__gt=F('limite_quarentena') * timedelta(days=1)
+        ).values_list('id', flat=True)
+
+        # 3. Retorna a lista de pendentes EXCLUINDO os IDs da quarentena
+        return todas_pendentes.exclude(id__in=quarentena_ids).order_by('data_execucao')
 
 
 class AuditoriaInstanciaDetailAPIView(RetrieveAPIView):
@@ -6000,9 +6104,6 @@ def detalhes_auditoria(request, pk):
 
 @login_required
 def detalhes_historico_auditoria(request, pk):
-    """
-    Exibe os detalhes de uma instância de auditoria concluída.
-    """
     instancia = get_object_or_404(
         AuditoriaInstancia.objects.select_related(
             'checklist_usado',
@@ -6012,6 +6113,7 @@ def detalhes_historico_auditoria(request, pk):
         ).prefetch_related(
             'auditoria_agendada__modelos__categoria__pilar',
             'respostas__opcao_resposta',
+            'respostas__opcao_porcentagem',  # Adiciona prefetch para otimizar
             'respostas__anexos'
         ),
         pk=pk
@@ -6038,40 +6140,42 @@ def detalhes_historico_auditoria(request, pk):
             seconds = total_seconds % 60
             tempo_execucao_str = f"{hours:02}:{minutes:02}:{seconds:02}"
 
-    total_perguntas = 0
-    if instancia.checklist_usado:
-        total_perguntas = Pergunta.objects.filter(
-            topico__checklist=instancia.checklist_usado).count()
+    taxa_conformidade = None
+    pontuacao_final = None
 
-    # --- NOVA LÓGICA DE CÁLCULO DE CONFORMIDADE ---
-    # Conta quantos itens são "Não Aplicável" (NA)
-    qtd_na = respostas_queryset.filter(opcao_resposta__status='NA').count()
+    # 1. Cálculos para Perguntas de Conformidade
+    respostas_conformidade = instancia.respostas.filter(
+        opcao_resposta__isnull=False)
+    if respostas_conformidade.exists():
+        qtd_na = respostas_conformidade.filter(
+            opcao_resposta__status='NA').count()
+        qtd_nc = respostas_conformidade.filter(
+            opcao_resposta__status='NAO_CONFORME').count()
+        total_respondido_conf = respostas_conformidade.count()
+        itens_aplicaveis = total_respondido_conf - qtd_na
 
-    # Conta quantos itens são "Não Conforme" (NC)
-    # Nota: Mesmo se o desvio foi solucionado, ele conta como uma Não Conformidade no histórico
-    qtd_nc = respostas_queryset.filter(
-        opcao_resposta__status='NAO_CONFORME').count()
+        taxa_conformidade = ((itens_aplicaveis - qtd_nc) /
+                             itens_aplicaveis * 100) if itens_aplicaveis > 0 else 0.0
 
-    # Itens Aplicáveis = Total de perguntas respondidas - NAs
-    # (Usamos o count das respostas para garantir que só conta o que foi respondido)
-    total_respondido = respostas_queryset.count()
-    itens_aplicaveis = total_respondido - qtd_na
+    # 2. Cálculos para Perguntas de Pontuação
+    respostas_porcentagem = instancia.respostas.filter(
+        opcao_porcentagem__isnull=False)
+    if respostas_porcentagem.exists():
+        total_pontos = sum(
+            r.opcao_porcentagem.peso for r in respostas_porcentagem if r.opcao_porcentagem)
+        total_respostas_validas = respostas_porcentagem.count()
 
-    if itens_aplicaveis > 0:
-        # A nota é: (Aplicáveis - Não Conformidades) / Aplicáveis
-        taxa_conformidade = (
-            (itens_aplicaveis - qtd_nc) / itens_aplicaveis) * 100
-    else:
-        taxa_conformidade = 0.0
-    # -----------------------------------------------
+        pontuacao_final = (
+            total_pontos / total_respostas_validas) if total_respostas_validas > 0 else 0.0
 
+    # 3. Resumo da Auditoria (mantém o foco em conformidade)
     summary_stats = {
-        'total_itens': total_perguntas,
-        'nao_conformidade_maior': respostas_queryset.filter(grau_nc='NC MAIOR').count(),
-        'nao_conformidade_menor': respostas_queryset.filter(grau_nc='NC MENOR').count(),
-        'desvios_solucionados': respostas_queryset.filter(desvio_solucionado=True).count(),
-        'oportunidades_melhoria': respostas_queryset.filter(oportunidade_melhoria=True).count(),
-        'nao_aplicaveis': qtd_na,
+        'total_itens': instancia.respostas.count(),
+        'nao_conformidade_maior': respostas_conformidade.filter(grau_nc='NC MAIOR').count(),
+        'nao_conformidade_menor': respostas_conformidade.filter(grau_nc='NC MENOR').count(),
+        'desvios_solucionados': respostas_conformidade.filter(desvio_solucionado=True).count(),
+        'oportunidades_melhoria': respostas_conformidade.filter(oportunidade_melhoria=True).count(),
+        'nao_aplicaveis': respostas_conformidade.filter(opcao_resposta__status='NA').count(),
     }
 
     context = {
@@ -6080,8 +6184,11 @@ def detalhes_historico_auditoria(request, pk):
         'respostas_map': respostas_map,
         'tempo_execucao': tempo_execucao_str,
         'summary_stats': summary_stats,
-        # Passamos a nova variável para o template
+
+        # --- NOVAS VARIÁVEIS DE CONTEXTO ---
         'taxa_conformidade': taxa_conformidade,
+        'pontuacao_final': pontuacao_final,
+        # --- FIM DAS NOVAS VARIÁVEIS ---
     }
     return render(request, 'auditorias/detalhes_historico.html', context)
 
@@ -6209,6 +6316,7 @@ def lista_planos_de_acao(request):
         'usuarios_ativos': usuarios_ativos,
         'categorias': categorias,
         'subsetores': subsetores,
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_planodeacao')
     }
     return render(request, 'auditorias/planos_de_acao/lista.html', context)
 
@@ -7035,6 +7143,42 @@ def lista_quarentena(request):
     }
     return render(request, 'auditorias/lista_quarentena.html', context)
 
+
+class AuditoriasQuarentenaAPIView(ListAPIView):
+    """
+    Endpoint da API que retorna a lista de instâncias de auditoria
+    que estão em quarentena (atrasadas além da tolerância).
+    """
+    serializer_class = AuditoriaInstanciaListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        hoje = timezone.now().date()
+
+        # Usamos anotações do Django para fazer o cálculo direto no banco de dados
+        # Isso é muito mais eficiente do que iterar em Python
+        queryset = AuditoriaInstancia.objects.filter(
+            executada=False,
+            responsavel=user,
+            data_execucao__lt=hoje
+        ).annotate(
+            # Pega o limite de dias da categoria associada
+            limite_quarentena=F(
+                'auditoria_agendada__modelos__categoria__dias_para_quarentena'),
+            # Calcula a diferença de dias entre hoje e a data de execução
+            dias_de_atraso=ExpressionWrapper(
+                hoje - F('data_execucao'), output_field=fields.DurationField())
+        ).filter(
+            # Filtra apenas onde os dias de atraso são MAIORES que o limite
+            dias_de_atraso__gt=F('limite_quarentena') * timedelta(days=1)
+        ).select_related(
+            'auditoria_agendada__ferramenta',
+            'local_execucao'
+        ).order_by('data_execucao')
+
+        return queryset
+
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\__init__.py
@@ -7235,14 +7379,18 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         </div>
         <div style="display: flex; gap: 10px;">
             {# Botão Voltar #}
-            <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-secondary">
+            {% if perms.auditorias.view_auditoria %}
+            <a href="{% url 'auditorias:lista_execucoes' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
+            {% endif %}
 
+            {% if perms.auditorias.add_auditoria %}
             {# Botão Agendar (Já existia) #}
             <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Agendar Auditoria
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -7392,7 +7540,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     // 2. GRÁFICO DE PIZZA (CONFORMIDADE)
     var optionsPizza = {
         series: dataConformidade, // [Conforme, Não Conforme]
-        labels: ['Itens Conformes', 'Itens Não Conformes'],
+        labels: ['Conformes', 'Não Conformes'],
         chart: {
             type: 'donut',
             height: 350
@@ -8180,6 +8328,8 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         tr { page-break-inside: avoid; }
         .grade-icon, .stat-item { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
+    .progress-bar-cell { background-color: #f1f5f9; border-radius: 4px; height: 12px; width: 100%; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
 </style>
 
 <div class="report-actions">
@@ -8193,21 +8343,28 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 <div class="report-paper">
     
-    <div class="report-header-section">
-        <div class="report-title">
-            {% if instancia.auditoria_agendada.local_empresa.logo %}
-                <img src="{{ instancia.auditoria_agendada.local_empresa.logo.url }}" alt="Logo" style="height: 40px; margin-bottom: 10px;">
-            {% endif %}
-            <h1>Relatório de Auditoria</h1>
-            <div class="report-meta">Nº Registro: #{{ instancia.id }} | Gerado em: {% now "d/m/Y H:i" %}</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">Resultado Final</div>
-            <div style="font-size: 28px; font-weight: 800; color: var(--primary);">
-                {{ taxa_conformidade|floatformat:1 }}%
+    <div style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 40px;">
+
+        {% if taxa_conformidade is not None %}
+            <!-- Bloco da Conformidade -->
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">CONFORMIDADE</div>
+                <div style="font-size: 28px; font-weight: 800; color: var(--primary);">
+                    {{ taxa_conformidade|floatformat:1 }}%
+                </div>
             </div>
-            <div style="font-size: 11px; color: #64748b;">de Conformidade</div>
-        </div>
+        {% endif %}
+
+        {% if pontuacao_final is not None %}
+            <!-- Bloco da Pontuação Média -->
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">PONTUAÇÃO MÉDIA</div>
+                <div style="font-size: 28px; font-weight: 800; color: var(--accent);">
+                    {{ pontuacao_final|floatformat:1 }}
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 
     <div class="info-grid-formal">
@@ -8311,13 +8468,22 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                         {% with resposta=respostas_map|get_item:pergunta.id %}
                         <tr>
                             <td class="col-id">{{ forloop.counter }}</td>
-                            
-                            <td class="col-desc">
-                                <div>{{ pergunta.descricao }}</div>
-                                {% if pergunta.obrigatoria %}
-                                    <small style="color: var(--error); font-size: 9px;">* Obrigatório</small>
-                                {% endif %}
-                            </td>
+                            <td class="col-desc">{{ pergunta.descricao }}</td>
+
+                            {% if resposta and resposta.opcao_porcentagem %}
+                                <!-- RENDERIZAÇÃO PARA RESPOSTA DE PORCENTAGEM -->
+                                <td class="col-grau" style="font-weight: 700; font-size: 14px; color: {{ resposta.opcao_porcentagem.cor }};">
+                                    {{ resposta.opcao_porcentagem.peso }}%
+                                </td>
+                                <td class="col-resp">
+                                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                                        <span>{{ resposta.opcao_porcentagem.descricao }}</span>
+                                        <div class="progress-bar-cell">
+                                            <div class="progress-bar-fill" style="width: {{ resposta.opcao_porcentagem.peso }}%; background-color: {{ resposta.opcao_porcentagem.cor }};"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                            {% else %}
 
                             <td class="col-grau">
                                 {% if resposta %}
@@ -8360,6 +8526,8 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                                     <span style="color: #cbd5e1;">-</span>
                                 {% endif %}
                             </td>
+
+                            {% endif %}
 
                             <td class="col-resp">
                                 {% if resposta %}
@@ -8474,6 +8642,43 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 {% extends 'auditorias/lista_generica.html' %}
 
+{# --- 1. CABEÇALHO PERSONALIZADO (NOVO) --- #}
+{% block header_content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        
+        <div>
+            <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #333;">Execução de Auditorias</h2>
+            <p class="content-subtitle text-muted mb-0">Acompanhe o status e os resultados das auditorias em andamento.</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            
+            <a href="{% url 'auditorias:dashboard' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-chart-pie mr-2" style="color: #7c3aed;"></i> 
+                Dashboard
+            </a>
+
+            <a href="{% url 'auditorias:lista_quarentena' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-biohazard mr-2" style="color: #e74a3b;"></i> 
+                Quarentena
+            </a>
+
+            {% if perms.auditorias.add_auditoria %}
+            <a href="{% url 'auditorias:criar_auditoria' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus mr-2"></i>
+                Novo Agendamento
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{# --- 2. RESTANTE DO CÓDIGO (MANTIDO IGUAL AO SEU) --- #}
+
 {# Remove o formulário de busca genérico herdado do template pai #}
 {% block search_form %}{% endblock %}
 
@@ -8541,14 +8746,19 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_auditoriainstancia %}
             <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Auditoria"
           onclick='openRedirectModal("{% url 'auditorias:redirecionar_execucao' object.pk %}", {{ object.responsavel.id|default:object.auditoria_agendada.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
                 <i class="fas fa-people-arrows"></i>
             </button>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_auditoriainstancia %}
             <button type="button" class="btn btn-danger btn-icon" title="Excluir Execução"
                     onclick="confirmDelete('{% url 'auditorias:deletar_execucao' object.pk %}', 'Execução #{{ object.id }}')">
     <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -8581,7 +8791,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             return;
         }
 
-     const tableBody = table.querySelector('tbody');
+      const tableBody = table.querySelector('tbody');
         // LOG 4: Verifica se o corpo da tabela (tbody) foi encontrado.
         if (!tableBody) {
             return;
@@ -8998,10 +9208,15 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             <h2 class="content-title">{{ title }}</h2>
             <p class="content-subtitle">Administrar {{ title|lower }} do sistema</p>
         </div>
+        
+        {# AQUI ESTÁ A TRAVA DE SEGURANÇA #}
+        {# O botão só aparece se a variável 'tem_permissao_criar' for True #}
+        {% if tem_permissao_criar %}
         <a href="{% url create_url %}" class="btn btn-primary">
             <i class="fas fa-plus"></i>
             {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
         </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -9134,12 +9349,14 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                         {% if empty_subtitle %}{{ empty_subtitle }}{% else %}Comece criando {{ artigo|default:'o' }} primeiro {{ singular|default:title|slice:":-1"|lower }}.{% endif %}
                     {% endif %}
                 </p>
+                {% if tem_permissao_criar %}
                 {% if not request.GET %}
                 <a href="{% url create_url %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i>
                     {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
                 </a>
                 {% else %}
+                {% endif %}
                 <a href="?" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     Limpar Busca
@@ -9237,12 +9454,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 {% extends 'auditorias/base.html' %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Auditorias em Quarentena</h2>
-        <a href="{% url 'auditorias:lista_auditorias' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Voltar para Auditorias
-        </a>
+<div class="container-fluid">
+    
+    <div class="content-header mb-4 mt-4">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            
+            <div>
+                <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #0F172A;">Auditorias em Quarentena</h2>
+                <p class="content-subtitle text-muted mb-0">Analise e gerencie as auditorias que excederam o tempo limite de execução.</p>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'auditorias:lista_execucoes' %}" class="btn btn-secondary shadow-sm" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                    <i class="fas fa-arrow-left mr-2" style="color: #666;"></i> 
+                    Voltar para Auditorias
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="card shadow">
@@ -9292,12 +9520,14 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                             <td class="text-danger font-weight-bold">+{{ item.dias_na_quarentena }}</td>
 
                             <td class="text-center">
+                                {% if perms.auditorias.delete_auditoria %}
                                 <button type="button" 
                                         class="btn btn-sm btn-danger" 
                                         title="Excluir esta execução"
                                         onclick="confirmDelete('{% url 'auditorias:deletar_execucao' item.pk %}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
@@ -9514,6 +9744,48 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 {% block extra_js %}
 {{ block.super }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mainForm');
+    const dataInicioInput = document.getElementById('data_inicio');
+    const dataFimInput = document.getElementById('data_fim');
+
+    if (form && dataInicioInput && dataFimInput) {
+        
+        // 1. Intercepta o envio do formulário
+        form.addEventListener('submit', function(event) {
+            
+            // 2. Pega a data de hoje no formato YYYY-MM-DD
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0); // Zera o tempo para comparar apenas o dia
+
+            // 3. Valida a Data de Início
+            const dataInicioValue = dataInicioInput.value;
+            if (dataInicioValue) {
+                const dataInicio = new Date(dataInicioValue + 'T00:00:00'); // Adiciona T00:00 para evitar problemas de fuso
+                if (dataInicio < hoje) {
+                    alert('Erro: A Data de Início não pode ser no passado.');
+                    event.preventDefault(); // Impede o envio do formulário
+                    return;
+                }
+            }
+
+            // 4. Valida a Data de Fim (se preenchida)
+            const dataFimValue = dataFimInput.value;
+            if (dataFimValue) {
+                const dataFim = new Date(dataFimValue + 'T00:00:00');
+                if (dataFim < hoje) {
+                    alert('Erro: A data "Até o Dia" não pode ser no passado.');
+                    event.preventDefault(); // Impede o envio do formulário
+                    return;
+                }
+            }
+        });
+    }
+});
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ===================================================================
@@ -9529,9 +9801,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Removi o plugin 'remove_button' para ficar com cara de select padrão
     });
 
-    new TomSelect('#ativos_auditados',{
+    // CORREÇÃO 1: Guardamos a instância do TomSelect em uma variável
+    const ativosTomSelect = new TomSelect('#ativos_auditados',{
         plugins: ['remove_button'],
-        placeholder: 'Selecione um ou mais ativos...',
+        placeholder: 'Selecione um ou mais ativos...', // Placeholder inicial
         sortField: {
             field: "text",
             direction: "asc"
@@ -9670,18 +9943,22 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (nivel === 'AREA' && areaSelect.value) local_id = areaSelect.value;
         else if (nivel === 'EMPRESA' && empresaSelect.value) local_id = empresaSelect.value;
         
-        const ativosTomSelect = ativos_auditados.tomselect;
+        // Limpa seleções e opções existentes
         ativosTomSelect.clear();
         ativosTomSelect.clearOptions();
-        ativosTomSelect.addOption({value: '', text: 'Carregando...'});
         
         if (nivel && local_id) {
+            // Define o placeholder para "Carregando..."
+            ativosTomSelect.settings.placeholder = 'Carregando ativos...';
+            ativosTomSelect.refreshOptions(false); // Atualiza a UI para mostrar o novo placeholder
+
             const url = `{% url 'auditorias:get_ativos_por_local' %}?nivel=${nivel}&local_id=${local_id}`;
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    ativosTomSelect.clearOptions();
                     if (data.length > 0) {
+                        // Se encontrou ativos, restaura o placeholder padrão
+                        ativosTomSelect.settings.placeholder = 'Selecione um ou mais ativos...';
                         data.forEach(ativo => {
                             ativosTomSelect.addOption({
                                 value: ativo.id,
@@ -9689,12 +9966,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         });
                     } else {
-                        ativosTomSelect.addOption({value: '', text: 'Nenhum ativo encontrado para este local'});
+                        // Se não encontrou, define um placeholder informativo
+                        ativosTomSelect.settings.placeholder = 'Nenhum ativo encontrado para este local';
                     }
+                    // Atualiza a UI com o placeholder final e as novas opções
+                    ativosTomSelect.refreshOptions(false);
                 });
         } else {
-            ativosTomSelect.clearOptions();
-            ativosTomSelect.addOption({value: '', text: 'Selecione um local para ver os ativos'});
+            // Se nenhum local foi selecionado, define o placeholder inicial
+            ativosTomSelect.settings.placeholder = 'Selecione um local para ver os ativos';
+            ativosTomSelect.refreshOptions(false);
         }
     }
 
@@ -9883,23 +10164,18 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             <p class="content-subtitle">Administrar auditorias agendadas do sistema</p>
         </div>
         <div style="display: flex; gap: 10px;">
-            {# NOVO BOTÃO CALENDÁRIO #}
+            {# BOTÃO CALENDÁRIO #}
             <button type="button" onclick="openCalendarModal()" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
                 <i class="fas fa-calendar-alt" style="color: #0ea5e9;"></i> Calendário
             </button>
 
-            <a href="{% url 'auditorias:dashboard' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
-                <i class="fas fa-chart-pie" style="color: #7c3aed;"></i> Dashboard
-            </a>
-
-            <a href="{% url 'auditorias:lista_quarentena' %}" class="btn btn-warning ml-2" style="color: white;">
-                <i class="fas fa-biohazard"></i> Auditorias em Quarentena
-            </a>
-            
+            {# BOTÃO DE CRIAÇÃO (Texto alterado para "Criar Agendamento") #}
+            {% if perms.auditorias.add_auditoria %}
             <a href="{% url create_url %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
-                {% if button_text %}{{ button_text }}{% else %}Criar {{ singular|default:title|slice:":-1" }}{% endif %}
+                Criar Agendamento
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -9960,20 +10236,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     <td>{{ object.data_fim|date:"d/m/Y"|default:"-" }}</td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_auditoria %}
             <button type="button" class="btn btn-secondary btn-icon" title="Redirecionar Agendamento"
                  onclick='openRedirectModal("{% url 'auditorias:redirecionar_agendamento' object.pk %}", {{ object.responsavel.id|default:"null" }}, {{ all_users_json|safe }})'>
                 <i class="fas fa-people-arrows"></i>
             </button>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_auditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Agendamento"
                     onclick="confirmDelete('{% url 'auditorias:deletar_auditoria' object.pk %}', 'Agendamento #{{ object.id }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
 
-{# --- CORREÇÃO: CSS MOVIDO PARA DENTRO DE EXTRA_JS (OU CONTENT) PARA GARANTIR CARREGAMENTO --- #}
-{# Como o bloco extra_css não existe no base.html, colocamos o style aqui junto com os scripts #}
 {% block extra_js %}
     {{ block.super }}
     <style>
@@ -9998,7 +10277,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             text-transform: uppercase;
         }
 
-        /* GRID FIX: Força o display grid */
         .calendar-grid-header {
             display: grid !important;
             grid-template-columns: repeat(7, 1fr) !important;
@@ -10015,7 +10293,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             grid-template-columns: repeat(7, 1fr) !important;
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0; /* Adicionei borda externa */
+            border: 1px solid #e2e8f0;
         }
 
         .calendar-day {
@@ -10024,7 +10302,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             padding: 5px;
             background: white;
             position: relative;
-            margin: -1px 0 0 -1px; /* Bordas colapsadas */
+            margin: -1px 0 0 -1px;
         }
 
         .calendar-day.other-month {
@@ -10041,7 +10319,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         }
         .other-month .day-number { color: #ccc; }
 
-        /* Barras de Evento */
         .event-bar {
             display: block;
             padding: 2px 6px;
@@ -10056,14 +10333,12 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             border-radius: 2px;
         }
 
-        /* Cores das barras */
         .bg-success { background-color: #10b981; }
         .bg-warning { background-color: #f59e0b; }
         .bg-secondary { background-color: #94a3b8; }
         .bg-info { background-color: #0ea5e9; }
         .bg-danger { background-color: #ef4444; }
 
-        /* Legenda */
         .calendar-legend {
             display: flex;
             justify-content: center;
@@ -10087,7 +10362,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </style>
 
     <script>
-    // --- LÓGICA DA TABELA (FILTROS) ---
     document.addEventListener('DOMContentLoaded', function() {
         const filters = document.querySelectorAll('.column-filter');
         const table = document.querySelector('#dataTable');
@@ -10121,12 +10395,9 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         if (filters.length > 0) {
             filters.forEach(filter => filter.addEventListener('input', applyTableFilters));
         }
-        
-        // Inicializa calendário
         renderCalendar();
     });
 
-    // --- LÓGICA DO CALENDÁRIO ---
     let currentDate = new Date();
 
     function openCalendarModal() {
@@ -10181,13 +10452,11 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const prevMonthDays = new Date(year, month, 0).getDate();
         
-        // Dias do mês anterior
         for (let i = firstDayOfMonth; i > 0; i--) {
             const dayNum = prevMonthDays - i + 1;
             grid.innerHTML += `<div class="calendar-day other-month"><div class="day-number">${dayNum}</div></div>`;
         }
 
-        // Dias do mês atual
         for (let i = 1; i <= daysInMonth; i++) {
             let barsHtml = '';
             
@@ -10206,7 +10475,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             `;
         }
 
-        // Dias do próximo mês
         const totalCells = firstDayOfMonth + daysInMonth;
         const nextMonthDays = (totalCells > 35 ? 42 : 35) - totalCells;
         
@@ -10217,7 +10485,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </script>
 {% endblock %}
 
-{# --- USANDO BLOCK CONTENT PARA O HTML DO MODAL --- #}
 {% block content %}
     {{ block.super }}
 
@@ -10235,9 +10502,9 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 
                 <div class="calendar-controls">
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-danger" onclick="mudarMes(-1)">Anterior</button>
-                        <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Hoje</button>
-                        <button class="btn btn-sm btn-danger" onclick="mudarMes(1)">Próximo</button>
+                        <button class="btn btn-sm btn-primary" onclick="mudarMes(-1)">Anterior</button>
+                        <button class="btn btn-sm btn-secondary" onclick="irParaHoje()">Este Mês</button>
+                        <button class="btn btn-sm btn-primary" onclick="mudarMes(1)">Próximo</button>
                     </div>
                     <h2 id="calendarTitle" class="calendar-month-title">Dezembro 2025</h2>
                     <div style="width: 150px;"></div>
@@ -10265,7 +10532,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             </div>
             
             <div class="modal-footer" style="padding: 10px 25px;">
-                <button type="button" class="btn btn-danger" onclick="closeCalendarModal()">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="closeCalendarModal()">Fechar</button>
             </div>
         </div>
     </div>
@@ -10402,13 +10669,19 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     <td>{{ object.data_cadastro|date:"d/m/Y" }}</td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_categoriaauditoria %}
             <a href="{% url 'auditorias:editar_categoria_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Categoria">
                 <i class="fas fa-edit"></i> 
             </a>
+            {% endif %}
+
+            {% if perms.auditorias.delete_categoriaauditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Categoria"
                     onclick="confirmDelete('{% url 'auditorias:deletar_categoria_auditoria' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
+
         </div>
     </td> 
 {% endblock %}
@@ -10703,14 +10976,20 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                     {% for topico in comparacao_data.topicos_comparados %}
                     <tr class="topico-row" data-topico="{{ topico.nome }}">
                         <td class="element-name">
-                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome }}')">
+                            
+                            <!-- ===== BOTÃO REINSERIDO AQUI ===== -->
+                            <button class="expand-btn" onclick="toggleTopico(this, '{{ topico.nome|escapejs }}')">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
+                            <!-- =================================== -->
+
                             <strong>{{ topico.nome }}</strong>
                         </td>
                         {% for versao in versoes_comparadas %}
                         <td class="topico-info">
-                            <span class="badge badge-info">{{ topico.perguntas_agrupadas|length }} perguntas</span>
+                            {% with perguntas_da_versao=comparacao_data.versoes_data|get_item:versao.pk|get_item:topico.nome %}
+                                <span class="badge badge-info">{{ perguntas_da_versao|length|default:0 }} PERGUNTAS</span>
+                            {% endwith %}
                         </td>
                         {% endfor %}
                     </tr>
@@ -12091,6 +12370,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                                 </div>
                             </div>
                         </div>
+                        <div class="form-row single">
+                            <div class="form-group">
+                                <label for="normas_relacionadas" class="form-label">Normas Relacionadas</label>
+                                
+                                <!-- Verifique se o 'id' e 'multiple' estão presentes -->
+                                <select id="normas_relacionadas" name="normas_relacionadas" multiple placeholder="Selecione as normas...">
+                                    {% for norma in todas_as_normas %}
+                                        <option value="{{ norma.pk }}" 
+                                            {% if checklist and norma in checklist.normas_relacionadas.all %}selected{% endif %}>
+                                            {{ norma }} <!-- Usar o __str__ do modelo é uma boa prática -->
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                <div class="field-help">Selecione as normas que este checklist ajuda a verificar.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -12356,6 +12652,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 </template>
 
 <script>
+
 // Função para trocar de aba
 function switchTab(event, tabId) {
     if (event) event.preventDefault();
@@ -12368,21 +12665,25 @@ function switchTab(event, tabId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Script iniciado');
     
+    // Inicializa o TomSelect para o campo de Normas (movido para cá)
+    new TomSelect('#normas_relacionadas',{
+        plugins: ['remove_button'],
+        placeholder: 'Selecione uma ou mais normas...',
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+
     const topicsContainer = document.getElementById('topics-container');
     const statusOpcoesElement = document.getElementById('status-opcoes-data');
     let statusOpcoes = [];
     
-    if (statusOpcoesElement) {
-        try {
-            statusOpcoes = JSON.parse(statusOpcoesElement.textContent);
-        } catch (e) {
-            console.error('Erro ao parsear status opções:', e);
-            statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'], ['NA', 'N/A']];
-        }
-    } else {
-        statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['DESVIO_SOLUCIONADO', 'Desvio Solucionado'], ['NA', 'N/A']];
+    try {
+        statusOpcoes = JSON.parse(statusOpcoesElement.textContent);
+    } catch (e) {
+        statusOpcoes = [['CONFORME', 'Conforme'], ['NAO_CONFORME', 'Não Conforme'], ['NA', 'N/A']];
     }
 
     let newTopicCounter = 0;
@@ -12553,8 +12854,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalTopic = target.closest('.topic-wrapper');
         const clone = originalTopic.cloneNode(true);
         const newTopicId = getNewId('topic');
-        clone.dataset.topicId = newTopicId;
         
+        clone.dataset.topicId = newTopicId;
+
+        // Renomeia os inputs do próprio tópico
         const descInput = clone.querySelector('input[name*="topico-descricao"]');
         descInput.value = `${descInput.value} (cópia)`;
         descInput.name = `topico-descricao[${newTopicId}]`;
@@ -12562,16 +12865,45 @@ document.addEventListener('DOMContentLoaded', function() {
         const orderInput = clone.querySelector('.js-topic-order');
         orderInput.name = `topico-ordem[${newTopicId}]`;
 
+        // Itera sobre cada pergunta clonada para atualizar seus IDs e nomes
         clone.querySelectorAll('.question-card').forEach(question => {
+            const originalQuestionId = question.dataset.questionId;
             const newQuestionId = getNewId('question');
             question.dataset.questionId = newQuestionId;
-            const newNamePrefix = `${newTopicId}-${newQuestionId}`;
             
-            question.querySelectorAll('[name*="pergunta-"]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-.*?\]/, `[${newNamePrefix}]`));
+            const oldQuestionPrefix = `[${originalTopic.dataset.topicId}-${originalQuestionId}]`;
+            const newQuestionPrefix = `[${newTopicId}-${newQuestionId}]`;
+            
+            // Atualiza todos os 'name' e 'id' da pergunta
+            question.querySelectorAll(`[name*="${oldQuestionPrefix}"], [id*="${originalQuestionId}"]`).forEach(el => {
+                const oldName = el.name;
+                const oldId = el.id;
 
+                if (oldName) {
+                    el.name = oldName.replace(`[${originalTopic.dataset.topicId}-${originalQuestionId}]`, newQuestionPrefix);
+                }
+                if (oldId) {
+                    el.id = oldId.replace(`_${originalQuestionId}`, `_${newQuestionId}`);
+                    const label = question.querySelector(`label[for="${oldId}"]`);
+                    if (label) {
+                        label.setAttribute('for', el.id);
+                    }
+                }
+            });
+
+            // Itera sobre as opções para garantir que seus IDs também sejam novos
             question.querySelectorAll('.option-item').forEach(option => {
+                const originalOptionId = option.querySelector('input, select')?.name.match(/(\d+|new-\d+)$/)?.[0] || getNewId('option');
                 const newOptionId = getNewId('option');
-                option.querySelectorAll('[name]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-(new-|\d+)-.*?\]/, `[${newNamePrefix}-${newOptionId}]`));
+
+                option.querySelectorAll('[name]').forEach(el => {
+                    // Reconstrói o name do zero para garantir
+                    const match = el.name.match(/^(opcao-\w+-\w+)\[(.*)\]$/);
+                    if (match) {
+                        const baseName = match[1];
+                        el.name = `${baseName}[${newTopicId}-${newQuestionId}-${newOptionId}]`;
+                    }
+                });
             });
         });
 
@@ -12623,15 +12955,46 @@ document.addEventListener('DOMContentLoaded', function() {
         const newQuestionId = getNewId('question');
         clone.dataset.questionId = newQuestionId;
         
+        // Limpa o valor da descrição clonada e adiciona "(cópia)"
         const descTextarea = clone.querySelector('textarea[name*="pergunta-descricao"]');
         descTextarea.value = `${descTextarea.value} (cópia)`;
-        
-        const newNamePrefix = `${topicId}-${newQuestionId}`;
 
-        clone.querySelectorAll('[name*="pergunta-"]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-.*?\]/, `[${newNamePrefix}]`));
+        const oldQuestionId = originalQuestion.dataset.questionId;
+        
+        // Atualiza todos os 'name', 'id' e 'for' da pergunta clonada
+        clone.querySelectorAll(`[name*="${oldQuestionId}"], [id*="${oldQuestionId}"]`).forEach(el => {
+            const oldName = el.name;
+            const oldId = el.id;
+
+            if (oldName) {
+                // Reconstrói o name usando o novo ID da pergunta
+                el.name = oldName.replace(`[${topicId}-${oldQuestionId}]`, `[${topicId}-${newQuestionId}]`);
+            }
+            if (oldId) {
+                // Atualiza o ID do elemento
+                const newId = oldId.replace(`_${oldQuestionId}`, `_${newQuestionId}`);
+                el.id = newId;
+                
+                // Busca e atualiza o 'for' do label correspondente
+                const label = clone.querySelector(`label[for="${oldId}"]`);
+                if (label) {
+                    label.setAttribute('for', newId);
+                }
+            }
+        });
+
+        // Itera sobre as opções clonadas para garantir que recebam novos IDs
         clone.querySelectorAll('.option-item').forEach(option => {
             const newOptionId = getNewId('option');
-            option.querySelectorAll('[name]').forEach(el => el.name = el.name.replace(/\[(new-|\d+)-(new-|\d+)-.*?\]/, `[${newNamePrefix}-${newOptionId}]`));
+            
+            option.querySelectorAll('[name]').forEach(el => {
+                // Reconstrói o name da opção do zero para máxima segurança
+                const match = el.name.match(/^(opcao-\w+-\w+)\[(.*)\]$/);
+                if (match) {
+                    const baseName = match[1];
+                    el.name = `${baseName}[${topicId}-${newQuestionId}-${newOptionId}]`;
+                }
+            });
         });
 
         originalQuestion.parentNode.insertBefore(clone, originalQuestion.nextSibling);
@@ -12684,7 +13047,43 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
-    document.body.addEventListener('change', (e) => {
+    /**
+     * Garante que apenas "Criar uma Opção" ou "Porcentagem" possam ser marcados.
+     * @param {HTMLInputElement} checkbox - O checkbox que foi alterado.
+     */
+    function handleCheckboxExclusivity(checkbox) {
+        // Só faz algo se o checkbox foi MARCADO
+        if (!checkbox.checked) return;
+
+        const questionCard = checkbox.closest('.question-card');
+        if (!questionCard) return;
+        
+        let siblingCheckbox;
+
+        // Se o checkbox de 'Opção' foi marcado, desmarca o de 'Porcentagem'
+        if (checkbox.name.includes('pergunta-criar_opcao')) {
+            siblingCheckbox = questionCard.querySelector('[name*="pergunta-porcentagem"]');
+        } 
+        // Se o checkbox de 'Porcentagem' foi marcado, desmarca o de 'Opção'
+        else if (checkbox.name.includes('pergunta-porcentagem')) {
+            siblingCheckbox = questionCard.querySelector('[name*="pergunta-criar_opcao"]');
+        }
+
+        // Se encontramos o "irmão" e ele está marcado, desmarcamos
+        if (siblingCheckbox && siblingCheckbox.checked) {
+            siblingCheckbox.checked = false;
+            // Dispara o evento de 'change' para que a UI se atualize (esconda a seção de opções)
+            siblingCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    document.body.addEventListener('change', function(e) {
+        // Lógica de exclusividade dos checkboxes
+        if (e.target.classList.contains('js-response-type')) {
+            handleCheckboxExclusivity(e.target);
+        }
+
+        // Lógica para mostrar/esconder seções de opções
         if (e.target.classList.contains('js-response-type') && e.target.dataset.controls) {
             const section = e.target.closest('.question-card').querySelector(`.${e.target.dataset.controls}`);
             if (section) section.style.display = e.target.checked ? 'block' : 'none';
@@ -12743,6 +13142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
         });
     }
+
+
 
     updateOrders();
     console.log('Script carregado completamente');
@@ -12864,11 +13265,13 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                                         </td>
                                         <td>
                                             <div class="action-buttons">
+                                                {% if perms.auditorias.change_checklist%}
                                                 <a href="{% url 'auditorias:editar_checklist' versao.pk %}" 
                                                 class="btn btn-secondary btn-icon" 
                                                 title="Visualizar Versão"> 
                                                     <i class="fas fa-eye"></i> 
                                                 </a>
+                                                {% endif %}
                                                 <a href="{% url 'auditorias:comparar_versoes_checklist' original.pk %}?versoes={{ versao.pk }}" 
                                                 class="btn btn-primary btn-icon" 
                                                 title="Selecionar para Comparar"> 
@@ -13166,19 +13569,24 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </td>
     <td>
         <div class="action-buttons">
+
+            {% if perms.auditorias.change_checklist %}
             <a href="{% url 'auditorias:editar_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Checklist">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
             
             {# --- BOTÃO DE HISTÓRICO ADICIONADO AQUI --- #}
             <a href="{% url 'auditorias:historico_versoes_checklist' object.pk %}" class="btn btn-secondary btn-icon" title="Histórico de Versões">
                 <i class="fas fa-history"></i>
             </a>
 
+            {% if perms.auditorias.delete_checklist %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Checklist"
                     onclick="confirmDelete('{% url 'auditorias:deletar_checklist' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -13269,7 +13677,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 {% block table_headers %}
     <th>Nome da Ferramenta</th>
-    <th style="width: 120px;">Ações</th>
+    <!-- A coluna de Ações foi removida -->
 {% endblock %}
 
 {% block table_row %}
@@ -13278,17 +13686,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             {{ object.nome }}
         </div>
     </td>
-    <td>
-        <div class="action-buttons">
-            <a href="{% url 'auditorias:editar_ferramenta_digital' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Ferramenta">
-                <i class="fas fa-edit"></i>
-            </a>
-            <button type="button" class="btn btn-danger btn-icon" title="Deletar Ferramenta"
-                    onclick="confirmDelete('{% url 'auditorias:deletar_ferramenta_digital' object.pk %}', '{{ object.nome }}')">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    </td>
+    <!-- A célula de Ações foi removida -->
 {% endblock %}
 _____________________________________
 
@@ -13408,13 +13806,17 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_modeloauditoria %}
             <a href="{% url 'auditorias:editar_modelo_auditoria' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Modelo">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.auditorias.delete_modeloauditoria %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Modelo"
                     onclick="confirmDelete('{% url 'auditorias:deletar_modelo_auditoria' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -13792,13 +14194,18 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.auditorias.change_norma%}
             <a href="{% url 'auditorias:editar_norma' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Norma">
                 <i class="fas fa-edit"></i> 
             </a>
+            {% endif %}
+            
+            {% if perms.auditorias.delete_norma%}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Norma"
                     onclick="confirmDelete('{% url 'auditorias:deletar_norma' object.pk %}', '{{ object.descricao }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td> 
 {% endblock %}
@@ -14950,6 +15357,8 @@ _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditorias\partials\_header.html
 
+<!-- auditorias/templates/auditorias/partials/_header.html -->
+
 <header class="main-header">
     <div class="header-content">
         <h1 class="page-title">{% block page_title %}{% endblock %}</h1> 
@@ -14961,7 +15370,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 </div>
                 <div class="user-info">
                     <div class="user-name">{{ user.get_full_name|default:user.username }}</div> 
-                    <div class="user-role">Administrador</div>
+                    
+                    <!-- ========================================================== -->
+                    <!-- INÍCIO DA LÓGICA CORRIGIDA -->
+                    <!-- ========================================================== -->
+                    <div class="user-role">
+                        {% if user.is_superuser %}
+                            Superusuário
+                        {% elif user.groups.all %}
+                            {{ user.groups.first.name }}
+                        {% else %}
+                            Usuário
+                        {% endif %}
+                    </div>
+                    <!-- ========================================================== -->
+                    <!-- FIM DA LÓGICA CORRIGIDA -->
+                    <!-- ========================================================== -->
+
                 </div> 
             </div> 
         </div>
@@ -15798,7 +16223,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             <div class="sidebar-logo">
                 <i class="fas fa-clipboard-check"></i>
             </div>
-            <div class="sidebar-title">Auditorias SKF</div>
+            <div class="sidebar-title">Sistema de Auditorias</div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
@@ -15814,19 +16239,28 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
     <div class="nav-section">
         <div class="nav-section-title">Gestão de Auditorias</div>
         
+        {% if perms.auditorias.view_auditoria %}
         <a href="{% url 'auditorias:lista_auditorias' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_auditorias' %}active{% endif %}">
             <i class="fas fa-calendar-alt"></i>
             <span class="nav-item-text">Agendamentos</span>
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.view_auditoriainstancia %}
         <a href="{% url 'auditorias:lista_execucoes' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_execucoes' %}active{% endif %}">
             <i class="fas fa-tasks"></i>
             <span class="nav-item-text">Auditorias</span>
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.view_auditoriainstancia %}
         <a href="{% url 'auditorias:historico_concluidas' %}" class="nav-item {% if request.resolver_match.url_name == 'historico_concluidas' %}active{% endif %}">
             <i class="fas fa-history"></i>
             <span class="nav-item-text">Histórico</span>
         </a>
+        {% endif %}
 
+        {% if perms.auditorias.view_norma or perms.auditorias.view_pilar or perms.auditorias.view_categoriaauditoria or perms.auditorias.view_checklist or perms.auditorias.view_modeloauditoria or perms.auditorias.view_ferramentadigital %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -15836,28 +16270,32 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem">
-                    <i class="fas fa-book"></i> Normas
-                </a>
-                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem">
-                    <i class="fas fa-columns"></i> Pilares
-                </a>
-                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem">
-                    <i class="fas fa-tags"></i> Categorias
-                </a>
-                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem">
-                    <i class="fas fa-list-ul"></i> Checklists
-                </a>
-                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem">
-                    <i class="fas fa-file-alt"></i> Modelos
-                </a>
-                <a href="{% url 'auditorias:lista_ferramentas_digitais' %}" class="nav-subitem">
-                    <i class="fas fa-laptop-code"></i> Ferramentas
-                </a>
+                {% if perms.auditorias.view_norma %}
+                <a href="{% url 'auditorias:lista_normas' %}" class="nav-subitem"><i class="fas fa-book"></i> Normas</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_pilar %}
+                <a href="{% url 'auditorias:lista_pilares' %}" class="nav-subitem"><i class="fas fa-columns"></i> Pilares</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_categoriaauditoria %}
+                <a href="{% url 'auditorias:lista_categorias_auditoria' %}" class="nav-subitem"><i class="fas fa-tags"></i> Categorias</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_checklist %}
+                <a href="{% url 'auditorias:lista_checklists' %}" class="nav-subitem"><i class="fas fa-list-ul"></i> Checklists</a>
+                {% endif %}
+                
+                {% if perms.auditorias.view_modeloauditoria %}
+                <a href="{% url 'auditorias:lista_modelos_auditoria' %}" class="nav-subitem"><i class="fas fa-file-alt"></i> Modelos</a>
+                {% endif %}
+            
             </div>
         </div>
+        {% endif %}
     </div>
 
+    {% if perms.auditorias.view_planodeacao %}
     <div class="nav-section">
         <div class="nav-section-title">Plano de Ação</div>
         <a href="{% url 'auditorias:lista_planos_de_acao' %}" class="nav-item {% if request.resolver_match.url_name == 'lista_planos_de_acao' %}active{% endif %}">
@@ -15865,7 +16303,9 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
             <span class="nav-item-text">Gerenciamento de Planos</span>
         </a>
     </div>
+    {% endif %}
 
+    {% if perms.organizacao.view_empresa or perms.organizacao.view_area or perms.organizacao.view_setor or perms.organizacao.view_subsetor %}
     <div class="nav-section">
         <div class="nav-section-title">Estrutura</div>
         
@@ -15878,27 +16318,36 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem">
-                    <i class="fas fa-building"></i> Unid. de Negócio
-                </a>
-                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem">
-                    <i class="fas fa-map-marked-alt"></i> Áreas
-                </a>
-                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem">
-                    <i class="fas fa-layer-group"></i> Setores
-                </a>
-                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem">
-                    <i class="fas fa-th-large"></i> Subsetores
-                </a>
+                {% if perms.organizacao.view_empresa %}
+                <a href="{% url 'organizacao:lista_empresas' %}" class="nav-subitem"><i class="fas fa-building"></i> Unid. de Negócio</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_area %}
+                <a href="{% url 'organizacao:lista_areas' %}" class="nav-subitem"><i class="fas fa-map-marked-alt"></i> Áreas</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_setor %}
+                <a href="{% url 'organizacao:lista_setores' %}" class="nav-subitem"><i class="fas fa-layer-group"></i> Setores</a>
+                {% endif %}
+                
+                {% if perms.organizacao.view_subsetor %}
+                <a href="{% url 'organizacao:lista_subsetores' %}" class="nav-subitem"><i class="fas fa-th-large"></i> Subsetores</a>
+                {% endif %}
             </div>
         </div>
     </div>
+    {% endif %}
 
+    {% if perms.ativos.view_ativo or perms.ativos.view_categoria or perms.ativos.view_marca or perms.ativos.view_modelo %}
     <div class="nav-section">
         <div class="nav-section-title">Gestão de Ativos</div>
+        
+        {% if perms.ativos.view_ativo %}
         <a href="{% url 'ativos:dashboard' %}" class="nav-item"><i class="fas fa-chart-pie"></i><span class="nav-item-text">Dashboard</span></a>
         <a href="{% url 'ativos:lista_ativos' %}" class="nav-item"><i class="fas fa-archive"></i><span class="nav-item-text">Ativos</span></a>
+        {% endif %}
         
+        {% if perms.ativos.view_categoria or perms.ativos.view_marca or perms.ativos.view_modelo %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -15908,24 +16357,31 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem">
-                    <i class="fas fa-tag"></i> Categorias
-                </a>
-                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem">
-                    <i class="fas fa-certificate"></i> Marcas
-                </a>
-                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem">
-                    <i class="fas fa-cube"></i> Modelos
-                </a>
+                {% if perms.ativos.view_categoria %}
+                <a href="{% url 'ativos:lista_categorias' %}" class="nav-subitem"><i class="fas fa-tag"></i> Categorias</a>
+                {% endif %}
+                {% if perms.ativos.view_marca %}
+                <a href="{% url 'ativos:lista_marcas' %}" class="nav-subitem"><i class="fas fa-certificate"></i> Marcas</a>
+                {% endif %}
+                {% if perms.ativos.view_modelo %}
+                <a href="{% url 'ativos:lista_modelos' %}" class="nav-subitem"><i class="fas fa-cube"></i> Modelos</a>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
+    {% endif %}
 
+    {% if perms.itens.view_item or perms.itens.view_categoria or perms.itens.view_subcategoria or perms.itens.view_almoxarifado %}
     <div class="nav-section">
         <div class="nav-section-title">Estoque & Itens</div>
+        
+        {% if perms.itens.view_item %}
         <a href="{% url 'itens:dashboard' %}" class="nav-item"><i class="fas fa-tachometer-alt"></i><span class="nav-item-text">Dashboard</span></a>
         <a href="{% url 'itens:lista_itens' %}" class="nav-item"><i class="fas fa-box"></i><span class="nav-item-text">Itens</span></a>
+        {% endif %}
         
+        {% if perms.itens.view_categoria or perms.itens.view_subcategoria or perms.itens.view_almoxarifado %}
         <div class="nav-group">
             <div class="nav-group-trigger" onclick="toggleGroup(this)">
                 <div class="trigger-content">
@@ -15935,28 +16391,42 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 <i class="fas fa-chevron-right arrow"></i>
             </div>
             <div class="nav-group-items">
-                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem">
-                    <i class="fas fa-tags"></i> Categorias
-                </a>
-                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem">
-                    <i class="fas fa-tag"></i> Subcategorias
-                </a>
-                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem">
-                    <i class="fas fa-warehouse"></i> Almoxarifados
-                </a>
+                {% if perms.itens.view_categoria %}
+                <a href="{% url 'itens:lista_categorias' %}" class="nav-subitem"><i class="fas fa-tags"></i> Categorias</a>
+                {% endif %}
+                {% if perms.itens.view_subcategoria %}
+                <a href="{% url 'itens:lista_subcategorias' %}" class="nav-subitem"><i class="fas fa-tag"></i> Subcategorias</a>
+                {% endif %}
+                {% if perms.itens.view_almoxarifado %}
+                <a href="{% url 'itens:lista_almoxarifados' %}" class="nav-subitem"><i class="fas fa-warehouse"></i> Almoxarifados</a>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
+    {% endif %}
 
+    {% if perms.clientes.view_cliente or perms.fornecedores.view_fornecedor %}
     <div class="nav-section">
         <div class="nav-section-title">Externos</div>
+        
+        {% if perms.clientes.view_cliente %}
         <a href="{% url 'clientes:lista_clientes' %}" class="nav-item"><i class="fas fa-user-tie"></i><span class="nav-item-text">Clientes</span></a>
+        {% endif %}
+        
+        {% if perms.fornecedores.view_fornecedor %}
         <a href="{% url 'fornecedores:lista_fornecedores' %}" class="nav-item"><i class="fas fa-truck"></i><span class="nav-item-text">Fornecedores</span></a>
+        {% endif %}
     </div>
+    {% endif %}
 
     <div class="nav-section">
         <div class="nav-section-title">Gerenciamento de usuários</div>
+        
+        {% if perms.usuarios.view_usuario %}
         <a href="{% url 'usuarios:lista_usuarios' %}" class="nav-item"><i class="fas fa-users"></i><span class="nav-item-text">Usuários</span></a>
+        {% endif %}
+        
         <form method="post" action="{% url 'logout' %}" style="display: inline;" id="logoutForm">
             {% csrf_token %}
             <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="nav-item">
@@ -15973,11 +16443,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('toggled'); // Adiciona/Remove a classe que ativa o CSS acima
-    
-    // Opcional: Se você ajusta a margem do conteúdo principal, faça aqui também
-    // const mainContent = document.getElementById('main-content');
-    // mainContent.classList.toggle('toggled');
+    sidebar.classList.toggle('collapsed'); // <-- CORRIGIDO para 'collapsed'
 }
 
 function toggleGroup(element) {
@@ -15985,15 +16451,99 @@ function toggleGroup(element) {
     group.classList.toggle('open');
 }
 
-// Opcional: Manter o menu aberto se a página atual estiver dentro dele
 document.addEventListener("DOMContentLoaded", function() {
-    // Procura por links ativos dentro dos submenus
-    const activeLinks = document.querySelectorAll('.nav-subitem.active'); // Certifique-se de adicionar lógica 'active' no Django para subitems
     
-    if(activeLinks.length > 0) {
-        activeLinks.forEach(link => {
-            // Abre o pai do link ativo
-            link.closest('.nav-group').classList.add('open');
+    // Mantém o menu aberto se a página atual estiver dentro dele
+    const activeSubItem = document.querySelector('.nav-subitem.active');
+    if(activeSubItem) {
+        const parentGroup = activeSubItem.closest('.nav-group');
+        if (parentGroup) {
+            parentGroup.classList.add('open');
+        }
+    }
+
+    // ==========================================================
+    // INÍCIO DA NOVA LÓGICA DO FILTRO
+    // ==========================================================
+    const searchInput = document.getElementById('sidebarSearch');
+    const sidebarNav = document.getElementById('sidebarNav');
+
+    if (searchInput && sidebarNav) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+
+            // Seleciona todos os itens de menu de primeiro nível e os grupos
+            const navItems = sidebarNav.querySelectorAll('.nav-item');
+            const navGroups = sidebarNav.querySelectorAll('.nav-group');
+
+            // Filtra os itens diretos (não estão em grupos)
+            navItems.forEach(item => {
+                const itemText = item.querySelector('.nav-item-text')?.textContent.toLowerCase() || '';
+                if (itemText.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Filtra os grupos
+            navGroups.forEach(group => {
+                const triggerText = group.querySelector('.nav-group-trigger .nav-item-text')?.textContent.toLowerCase() || '';
+                const subItems = group.querySelectorAll('.nav-subitem');
+                let groupHasMatch = false;
+
+                // Verifica se o próprio título do grupo corresponde
+                if (triggerText.includes(searchTerm)) {
+                    groupHasMatch = true;
+                }
+
+                // Mostra/esconde subitens dentro do grupo
+                subItems.forEach(subItem => {
+                    const subItemText = subItem.textContent.toLowerCase();
+                    if (subItemText.includes(searchTerm)) {
+                        subItem.style.display = 'block';
+                        groupHasMatch = true; // Se um filho corresponde, o pai deve aparecer
+                    } else {
+                        subItem.style.display = 'none';
+                    }
+                });
+
+                // Se o título do grupo ou algum de seus filhos corresponde, mostra o grupo
+                if (groupHasMatch) {
+                    group.style.display = 'block';
+                    // Se a busca não estiver vazia, expande o grupo para mostrar o resultado
+                    if (searchTerm) {
+                        group.classList.add('open');
+                    }
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+            
+            // Lógica para esconder os títulos de seção se estiverem vazios
+            const navSections = sidebarNav.querySelectorAll('.nav-section');
+            navSections.forEach(section => {
+                const visibleItems = section.querySelectorAll('.nav-item[style*="display: flex"], .nav-group[style*="display: block"]');
+                const title = section.querySelector('.nav-section-title');
+                if (title) {
+                    title.style.display = visibleItems.length > 0 ? 'block' : 'none';
+                }
+            });
+
+            // Se o campo de busca estiver vazio, reseta tudo para o estado original
+            if (searchTerm === '') {
+                navItems.forEach(item => item.style.display = 'flex');
+                navGroups.forEach(group => {
+                    group.style.display = 'block';
+                    group.querySelectorAll('.nav-subitem').forEach(sub => sub.style.display = 'block');
+                    // Não fecha os grupos que já estavam abertos
+                    // group.classList.remove('open');
+                });
+                navSections.forEach(section => {
+                    const title = section.querySelector('.nav-section-title');
+                    if(title) title.style.display = 'block';
+                });
+            }
         });
     }
 });
@@ -16127,17 +16677,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
 </td>
 <td>
     <div class="action-buttons">
+        {% if perms.auditorias.change_pilar %}
         <a href="{% url 'auditorias:editar_pilar' object.pk %}" 
            class="btn btn-secondary btn-icon" 
            title="Editar pilar">
             <i class="fas fa-edit"></i> 
         </a>
+        {% endif %}
+
+        {% if perms.auditorias.delete_pilar %}
         <button type="button" 
                 class="btn btn-danger btn-icon" 
                 title="Deletar pilar"
                 onclick="confirmDelete('{% url 'auditorias:deletar_pilar' object.pk %}', '{{ object.nome }}')">
             <i class="fas fa-trash"></i> 
         </button>
+        {% endif %}
+
     </div>
 </td>
 {% endblock %}
@@ -16483,10 +17039,12 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\auditori
                 </a>
             {% endif %}
 
+            {% if perms.auditorias.add_planodeacao %}
             {% if current_mode == 'active' %}
                 <a href="#" class="btn btn-primary" onclick="openModalNovoPlano()">
                     <i class="fas fa-plus"></i> Novo Plano
                 </a>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -20735,6 +21293,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
             <div class="field-help">Email único para comunicações</div>
         </div>
     </div>
+
     
     <div class="form-row">
         <div class="form-group">
@@ -20852,44 +21411,24 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
     </div>
 </div>
 
-<!-- Grupos -->
 <div style="margin-bottom: 32px;">
     <h4 style="color: var(--text-primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
         <i class="fas fa-users"></i>
-        Grupos
+        Perfil de Acesso
     </h4>
     
-    <div class="form-group">
-        <label class="form-label">Grupos do Usuário</label>
-        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px;">
-            {% if grupos %}
-                {% for grupo in grupos %}
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                    <input type="checkbox" 
-                           name="grupos" 
-                           value="{{ grupo.id }}" 
-                           id="grupo_{{ grupo.id }}"
-                           {% if usuario and grupo in usuario.groups.all %}checked{% endif %}>
-                    <label for="grupo_{{ grupo.id }}" style="margin: 0; cursor: pointer; flex: 1;">
-                        <div style="font-weight: 600; color: var(--text-primary);">{{ grupo.name }}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">
-                            {{ grupo.permissions.count }} permissão{{ grupo.permissions.count|pluralize:"ões" }}
-                        </div>
-                    </label>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div style="text-align: center; color: var(--text-muted); padding: 24px;">
-                    <i class="fas fa-users" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                    <p>Nenhum grupo disponível</p>
-                    <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-primary btn-sm" style="margin-top: 12px;">
-                        <i class="fas fa-plus"></i>
-                        Criar Grupo
-                    </a>
-                </div>
-            {% endif %}
-        </div>
-        <div class="field-help">Selecione os grupos aos quais o usuário pertence</div>
+    <div class="form-group required">
+        <label for="grupo" class="form-label">Grupo do Usuário</label>
+        <select name="grupo" id="grupo" class="form-control" required>
+            <option value="">Selecione um perfil...</option>
+            {% for grupo in grupos %}
+                <option value="{{ grupo.id }}" 
+                    {% if grupo_atual_id == grupo.id %}selected{% endif %}>
+                    {{ grupo.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <div class="field-help">Selecione o perfil de acesso único para este usuário.</div>
     </div>
 </div>
 {% endblock %}
@@ -21023,18 +21562,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
             strengthIndicator.className = 'password-strength';
             passwordField.parentNode.appendChild(strengthIndicator);
             
-            // Adicionar lista de requisitos
-            const requirements = document.createElement('ul');
-            requirements.className = 'password-requirements';
-            requirements.innerHTML = `
-                <li id="req-length">Pelo menos 8 caracteres</li>
-                <li id="req-uppercase">Pelo menos 1 letra maiúscula</li>
-                <li id="req-lowercase">Pelo menos 1 letra minúscula</li>
-                <li id="req-number">Pelo menos 1 número</li>
-                <li id="req-special">Pelo menos 1 caractere especial</li>
-            `;
-            passwordField.parentNode.appendChild(requirements);
-        }
         
         // Confirmação de senha
         if (passwordConfirmField) {
@@ -21200,9 +21727,25 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
     function validateForm() {
         const username = document.getElementById('username').value.trim();
         const email = document.getElementById('email').value.trim();
+        const grupo = document.getElementById('grupo').value;
         const password = document.getElementById('password')?.value;
         const passwordConfirm = document.getElementById('password_confirm')?.value;
         let isValid = true;
+
+        // Validar Grupo (NOVO)
+        if (!grupo) {
+            // Se tiver a função showFieldError, use ela, senão use alert
+            const grupoField = document.getElementById('grupo');
+            if (typeof showFieldError === 'function') {
+                showFieldError(grupoField, 'O Perfil de Acesso é obrigatório');
+            } else {
+                grupoField.style.borderColor = 'red';
+                alert('Por favor, selecione um Perfil de Acesso.');
+            }
+            isValid = false;
+        } else {
+             document.getElementById('grupo').style.borderColor = ''; // Limpa erro
+        }
         
         // Validar campos obrigatórios
         if (!username) {
@@ -21836,6 +22379,317 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios
 {% endblock %}
 
 
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios\grupos\form.html
+
+{% extends 'auditorias/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ================================================================== */
+    /* 1. ESTILOS GLOBAIS DA PÁGINA (Ajustado para TELA CHEIA)            */
+    /* ================================================================== */
+    .main-container {
+        width: 100%;       /* Ocupa 100% da largura disponível */
+        max-width: none;   /* Remove a limitação de 1200px */
+        padding: 0 20px;   /* Pequeno respiro nas laterais */
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        margin-top: 20px;
+    }
+    .content-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; color: #333; }
+    .content-subtitle { color: #64748b; font-size: 14px; }
+
+    /* Botões Padrão */
+    .btn-secondary {
+        background-color: #fff; color: #333; border: 1px solid #ddd;
+        padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s;
+    }
+    .btn-secondary:hover { background-color: #f8f9fa; }
+
+    /* Card Padrão */
+    .card {
+        background: #fff; border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+        width: 100%; /* Garante que o card estique */
+    }
+    .card-body { padding: 32px; }
+
+    /* Inputs Padrão (.form-control) */
+    .form-group { margin-bottom: 24px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 12px; color: #1F54DE; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .form-control {
+        width: 100%; padding: 12px 16px; border: 1px solid #d1d5db;
+        border-radius: 6px; font-size: 14px; transition: all 0.2s ease; height: 50px;
+    }
+    .form-control:focus { outline: none; border-color: #1F54DE; box-shadow: 0 0 0 3px rgba(31, 84, 222, 0.1); }
+    .field-help { font-size: 13px; color: #64748b; margin-top: 6px; }
+
+    /* Botão Salvar Largo */
+    .btn-save-full {
+        width: 100%; background-color: #1F54DE; color: white; border: none;
+        padding: 14px; border-radius: 6px; font-weight: 700; cursor: pointer;
+        font-size: 15px; transition: background 0.2s; margin-top: 10px;
+    }
+    .btn-save-full:hover { background-color: #1643b8; }
+
+
+    /* ================================================================== */
+    /* 2. ESTILOS DA MATRIZ DE PERMISSÕES (Mantidos intactos)             */
+    /* ================================================================== */
+    .accordion-item { margin-bottom: 10px; border: 1px solid #e3e6f0; border-radius: 6px; overflow: hidden; width: 100%; }
+    .accordion-header {
+        background-color: #f8f9fc; padding: 12px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #4e73df; font-size: 14px; border-radius: 4px; transition: background 0.2s;
+    }
+    .accordion-header:hover { background-color: #eaecf4; }
+    .accordion-icon { transition: transform 0.3s ease; color: #858796; }
+    .accordion-header.active .accordion-icon { transform: rotate(180deg); }
+    .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: white; border-top: 1px solid #e3e6f0; }
+    
+    .table-custom { width: 100%; border-collapse: collapse; margin: 0; }
+    .table-custom th { text-align: center; font-size: 11px; font-weight: 800; color: #b7b9cc; text-transform: uppercase; padding: 12px; background: #fff; border-bottom: 1px solid #e3e6f0; }
+    .table-custom th.text-left { text-align: left; padding-left: 20px; }
+    .table-custom td { padding: 12px; border-bottom: 1px solid #fdfdfe; vertical-align: middle; text-align: center; color: #5a5c69; font-size: 13px; font-weight: 600; }
+    .table-custom td.text-left { text-align: left; padding-left: 20px; }
+    .table-custom tr:hover td { background-color: #f8f9fc; }
+    .table-custom tr:last-child td { border-bottom: none; }
+    
+    .check-custom { width: 18px; height: 18px; accent-color: #1F54DE; cursor: pointer; margin-top: 5px; }
+    .no-perm-dash { color: #e3e6f0; font-weight: bold; }
+</style>
+
+<div class="main-container">
+
+    <div class="content-header">
+        <div>
+            <h2 class="content-title">{% if grupo %}Editando: {{ grupo.name }}{% else %}Novo Perfil de Acesso{% endif %}</h2>
+            <p class="content-subtitle">Defina o nome e descrição do grupo e marque as permissões que ele pode ter.</p>
+        </div>
+        <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <form method="post" id="permForm">
+        {% csrf_token %}
+        
+        <div class="card">
+            <div class="card-body">
+                
+                <div class="form-group required">
+                    <label for="name" class="form-label">Nome do Perfil de Acesso</label>
+                    <input type="text" name="name" id="name" class="form-control" 
+                           value="{{ grupo.name|default:'' }}" 
+                           placeholder="Ex: Auditor, Gerente, Administrador" required>
+                    <div class="field-help">Dê um nome claro para identificar a função deste grupo.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <input type="text" name="descricao" id="descricao" class="form-control" 
+                           value="{{ grupo.detalhe.descricao|default:'' }}" 
+                           placeholder="Descreva as responsabilidades deste perfil...">
+                </div>
+
+                <button type="submit" class="btn-save-full">
+                    <i class="fas fa-save mr-2"></i> Salvar Perfil
+                </button>
+
+            </div>
+        </div>
+
+        <h4 style="color: #333; margin-top: 32px; margin-bottom: 16px; font-weight: 700; font-size: 18px;">
+            <i class="fas fa-lock" style="margin-right: 8px;"></i>
+            Permissões do Sistema
+        </h4>
+
+        {% if perms_agrupadas %}
+            {% for app_nome, funcionalidades in perms_agrupadas.items %}
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>{{ app_nome }}</span>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                
+                <div class="accordion-body">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th class="text-left" style="width: 40%;">Funcionalidade</th>
+                                <th style="width: 15%;">Criar</th>
+                                <th style="width: 15%;">Visualizar</th>
+                                <th style="width: 15%;">Editar</th>
+                                <th style="width: 15%;">Excluir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for func in funcionalidades %}
+                            <tr>
+                                <td class="text-left">{{ func.nome }}</td>
+                                
+                                <td>
+                                    {% if func.acoes.add %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.add.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.add.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.view %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.view.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.view.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.change %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.change.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.change.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if func.acoes.delete %}
+                                        <input type="checkbox" name="permissoes" value="{{ func.acoes.delete.id }}" 
+                                            class="check-custom"
+                                            {% if func.acoes.delete.id in grupo_perms_ids %}checked{% endif %}>
+                                    {% else %}<span class="no-perm-dash">-</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-light border text-center">
+                Nenhuma permissão carregada.
+            </div>
+        {% endif %}
+
+        <div style="height: 50px;"></div>
+    </form>
+</div>
+
+{% block extra_js_script %}
+<script>
+    function toggleAccordion(header) {
+        header.classList.toggle('active');
+        var body = header.nextElementSibling;
+        if (body.style.maxHeight) {
+            body.style.maxHeight = null;
+        } else {
+            body.style.maxHeight = body.scrollHeight + "px";
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        const firstHeader = document.querySelector('.accordion-header');
+        if(firstHeader) {
+            toggleAccordion(firstHeader);
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
+_____________________________________
+
+C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templates\usuarios\grupos\lista.html
+
+{% extends 'auditorias/lista_generica.html' %}
+
+{% block title %}Perfis de Acesso{% endblock %}
+{% block page_title %}Perfis de Acesso{% endblock %}
+
+{% block header_content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        
+        <div>
+            <h2 class="content-title" style="margin-bottom: 8px; font-weight: bold; color: #333;">Perfis de Acesso</h2>
+            <p class="content-subtitle text-muted mb-0">Gerencie os cargos e permissões dos usuários do sistema.</p>
+        </div>
+
+        <div>
+            {# TRAVA DE SEGURANÇA: Só mostra se tiver permissão auth.add_group #}
+            {% if perms.auth.add_group %}
+            <a href="{% url 'usuarios:criar_grupo' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus mr-2"></i>
+                Novo Grupo
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-arrow-left" style="color: #666;"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block search_form %}{% endblock %}
+{% block extra_filters %}{% endblock %}
+
+{% block table_headers %}
+    <tr>
+        <th>Nome do Perfil</th>
+        <th style="text-align: center;">Permissões</th>
+        <th style="text-align: center;">Usuários Vinculados</th>
+        <th style="width: 120px; text-align: center;">Ações</th>
+    </tr>
+{% endblock %}
+
+{% block table_row %}
+    <td class="align-middle">
+        <div style="font-weight: 700; color: #2563EC; font-size: 14px;">
+            {{ object.name }}
+        </div>
+        <div style="font-size: 12px; color: #858796; margin-top: 2px;">
+            {{ object.detalhe.descricao|default:"Sem descrição definida." }}
+        </div>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <span class="badge badge-info">{{ object.permissions.count }} permissões</span>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <span style="color: var(--text-secondary); font-weight: 500;">
+            <i class="fas fa-user-friends mr-1" style="color: #b7b9cc;"></i> 
+            {{ object.total_usuarios }} usuário{{ object.total_usuarios|pluralize }}
+        </span>
+    </td>
+    <td style="text-align: center;" class="align-middle">
+        <div class="action-buttons" style="justify-content: center;">
+            {% if perms.auth.change_group %}
+            <a href="{% url 'usuarios:editar_grupo' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Perfil"
+               style="background: #fff; border: 1px solid #d1d3e2; color: #858796;">
+                <i class="fas fa-edit"></i>
+            </a>
+            {% endif %}
+
+            {% if perms.auth.delete_group %}
+            <button type="button" class="btn btn-danger btn-icon" title="Deletar Perfil"
+                    onclick="confirmDelete('{% url 'usuarios:deletar_grupo' object.pk %}', '{{ object.name }}')">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+{% endblock %}
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\auditorias\templatetags\auditoria_extras.py
@@ -22587,7 +23441,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 
 DEBUG = True
 
-# # SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
@@ -22881,6 +23735,7 @@ from auditorias.views import (
     AuditoriaInstanciaDetailAPIView,
     SubmeterAuditoriaAPIView,
     LocaisPermitidosAPIView,
+    AuditoriasQuarentenaAPIView,
 )
 
 
@@ -22928,6 +23783,8 @@ api_urlpatterns = [
     # Auditorias
     path('auditorias/pendentes/', AuditoriasPendentesAPIView.as_view(),
          name='api_auditorias_pendentes'),
+    path('auditorias/quarentena/', AuditoriasQuarentenaAPIView.as_view(),
+         name='api_auditorias_quarentena'),
     path('auditorias/concluidas/', AuditoriasConcluidasAPIView.as_view(),
          name='api_auditorias_concluidas'),
     path('instancias/<int:pk>/', AuditoriaInstanciaDetailAPIView.as_view(),
@@ -22936,6 +23793,8 @@ api_urlpatterns = [
          name='api_instancia_locais'),
     path('instancias/<int:pk>/submeter/',
          SubmeterAuditoriaAPIView.as_view(), name='api_instancia_submeter'),
+
+
 ]
 
 
@@ -25100,7 +25959,8 @@ def lista_empresas(request):
         'export_url': 'organizacao:exportar_empresas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma empresa cadastrada.',
-        'empty_subtitle': 'Comece criando a primeira empresa.'
+        'empty_subtitle': 'Comece criando a primeira empresa.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_empresa')
     }
     return render(request, 'organizacao/empresas/lista.html', context)
 
@@ -25240,7 +26100,8 @@ def lista_areas(request):
         'export_url': 'organizacao:exportar_areas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma área cadastrada.',
-        'empty_subtitle': 'Comece criando a primeira área.'
+        'empty_subtitle': 'Comece criando a primeira área.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_area')
     }
     return render(request, 'organizacao/areas/lista.html', context)
 
@@ -25382,7 +26243,8 @@ def lista_setores(request):
         'export_url': 'organizacao:exportar_setores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum setor cadastrado.',
-        'empty_subtitle': 'Comece criando o primeiro setor.'
+        'empty_subtitle': 'Comece criando o primeiro setor.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_setor')
     }
     return render(request, 'organizacao/setores/lista.html', context)
 
@@ -25526,7 +26388,8 @@ def lista_subsetores(request):
         'export_url': 'organizacao:exportar_subsetores_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum subsetor cadastrado.',
-        'empty_subtitle': 'Comece criando o primeiro subsetor.'
+        'empty_subtitle': 'Comece criando o primeiro subsetor.',
+        'tem_permissao_criar': request.user.has_perm('organizacao.add_subsetor')
     }
     return render(request, 'organizacao/subsetores/lista.html', context)
 
@@ -25724,13 +26587,17 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\organizacao\templates\organiz
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.organizacao.change_area %}
             <a href="{% url 'organizacao:editar_area' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Área">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.organizacao.delete_area %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Área"
                     onclick="confirmDelete('{% url 'organizacao:deletar_area' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -25812,13 +26679,18 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\organizacao\templates\organiz
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.organizacao.change_empresa %}
             <a href="{% url 'organizacao:editar_empresa' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Empresa">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            
+            {% if perms.organizacao.delete_empresa %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Empresa"
                     onclick="confirmDelete('{% url 'organizacao:deletar_empresa' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -25903,13 +26775,17 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\organizacao\templates\organiz
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.organizacao.change_setor %}
             <a href="{% url 'organizacao:editar_setor' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Setor">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.organizacao.delete_setor %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Setor"
                     onclick="confirmDelete('{% url 'organizacao:deletar_setor' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -25994,13 +26870,17 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\organizacao\templates\organiz
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.organizacao.change_subsetor %}
             <a href="{% url 'organizacao:editar_subsetor' object.pk %}" class="btn btn-secondary btn-icon" title="Editar Subsetor">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+            {% if perms.organizacao.delete_subsetor %}
             <button type="button" class="btn btn-danger btn-icon" title="Deletar Subsetor"
                     onclick="confirmDelete('{% url 'organizacao:deletar_subsetor' object.pk %}', '{{ object.nome }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
         </div>
     </td>
 {% endblock %}
@@ -27452,378 +28332,71 @@ _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\static\js\login.js
 
-class ModernLoginForm {
-    constructor() {
-        this.form = document.getElementById('loginForm');
-        this.passwordToggle = document.getElementById('passwordToggle');
-        this.loginButton = document.getElementById('loginButton');
-        this.messagesContainer = document.getElementById('messagesContainer');
-        
-        this.init();
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+    const loginButton = document.getElementById('loginButton');
+
+    // Sai da função se o formulário não for encontrado, evitando erros.
+    if (!form) return;
+
+    // --- 1. Lógica para os Labels Flutuantes ---
+    function checkValue(input) {
+        if (input.value.trim() !== '') {
+            input.classList.add('has-value');
+        } else {
+            input.classList.remove('has-value');
+        }
     }
-    
-    init() {
-        this.setupFloatingLabels();
-        this.setupPasswordToggle();
-        this.setupFormSubmission();
-        this.initializeExistingValues();
-        this.setupFormAnimations();
-        this.initializeAutoHideMessages();
-        this.setupClientSideValidation();
-    }
-    
-    initializeExistingValues() {
-        const inputs = this.form.querySelectorAll('input[type="text"], input[type="password"]');
-        inputs.forEach(input => {
-            if (input.value.trim() !== '') {
-                input.classList.add('has-value');
+
+    [usernameInput, passwordInput].forEach(input => {
+        if (input) {
+            // Verifica o valor inicial (caso o navegador preencha automaticamente)
+            checkValue(input);
+            
+            // Adiciona os "ouvintes" de eventos
+            input.addEventListener('input', () => checkValue(input));
+            input.addEventListener('blur', () => checkValue(input));
+        }
+    });
+
+    // --- 2. Lógica para Mostrar/Ocultar Senha (O Ponto Principal da Correção) ---
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+
+            const eyeIcon = passwordToggle.querySelector('.eye-icon');
+            if (isPassword) {
+                // Se a senha estava oculta, agora será mostrada. Usamos o ícone de "olho cortado".
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                `;
+            } else {
+                // Se a senha estava visível, agora será ocultada. Usamos o ícone de "olho normal".
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                `;
             }
         });
     }
-    
-    setupFloatingLabels() {
-        const inputs = this.form.querySelectorAll('input[type="text"], input[type="password"]');
-        
-        inputs.forEach(input => {
-            input.addEventListener('input', () => {
-                if (input.value.trim() !== '') {
-                    input.classList.add('has-value');
-                } else {
-                    input.classList.remove('has-value');
-                }
-            });
-            
-            input.addEventListener('blur', () => {
-                if (input.value.trim() !== '') {
-                    input.classList.add('has-value');
-                } else {
-                    input.classList.remove('has-value');
-                }
-            });
 
-            input.addEventListener('focus', () => {
-                input.parentElement.style.transform = 'scale(1.02)';
-            });
-
-            input.addEventListener('blur', () => {
-                input.parentElement.style.transform = 'scale(1)';
-            });
-        });
-    }
-    
-    setupPasswordToggle() {
-        if (this.passwordToggle) {
-            const passwordInput = this.form.querySelector('input[type="password"]');
-            
-            this.passwordToggle.addEventListener('click', () => {
-                const type = passwordInput.type === 'password' ? 'text' : 'password';
-                passwordInput.type = type;
-                
-                const eyeIcon = this.passwordToggle.querySelector('.eye-icon');
-                if (type === 'text') {
-                    eyeIcon.innerHTML = `
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                    `;
-                } else {
-                    eyeIcon.innerHTML = `
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    `;
-                }
-            });
-        }
-    }
-    
-    setupFormSubmission() {
-        this.form.addEventListener('submit', (e) => {
-            // Validação básica do lado cliente
-            const username = this.form.querySelector('#username').value.trim();
-            const password = this.form.querySelector('#password').value;
-            
-            if (!username || !password) {
-                e.preventDefault();
-                this.showMessage('error', 'Campos Obrigatórios', 'Por favor, preencha todos os campos.');
+    // --- 3. Lógica do Botão de Login (efeito "loading") ---
+    form.addEventListener('submit', function(e) {
+        if (loginButton) {
+            // Validação simples para não ativar o loading se os campos estiverem vazios
+            if (usernameInput.value.trim() === '' || passwordInput.value.trim() === '') {
                 return;
             }
-            
-            this.loginButton.classList.add('loading');
-            this.loginButton.disabled = true;
-            
-            // Se houver erro de validação no servidor, o formulário será recarregado
-            // e as mensagens de erro do Django aparecerão
-        });
-    }
-
-    setupFormAnimations() {
-        const formElements = this.form.querySelectorAll('.form-group, .login-btn');
-        formElements.forEach((element, index) => {
-            element.style.opacity = '0';
-            element.style.transform = 'translateY(20px)';
-            element.style.animation = `fadeInUp 0.6s ease-out ${index * 0.1}s forwards`;
-        });
-    }
-    
-    setupClientSideValidation() {
-        const inputs = this.form.querySelectorAll('input[required]');
-        
-        inputs.forEach(input => {
-            input.addEventListener('blur', () => {
-                this.validateField(input);
-            });
-            
-            input.addEventListener('input', () => {
-                if (input.classList.contains('error')) {
-                    this.validateField(input);
-                }
-            });
-        });
-    }
-    
-    validateField(input) {
-        const fieldGroup = input.closest('.form-group');
-        const existingError = fieldGroup.querySelector('.field-error');
-        
-        // Remove erro existente
-        if (existingError) {
-            existingError.remove();
+            loginButton.classList.add('loading');
+            loginButton.disabled = true;
         }
-        
-        input.classList.remove('error');
-        
-        // Validação
-        if (!input.value.trim()) {
-            this.showFieldError(input, `${input.previousElementSibling.textContent} é obrigatório`);
-        } else if (input.type === 'email' && !this.isValidEmail(input.value)) {
-            this.showFieldError(input, 'Digite um email válido');
-        }
-    }
-    
-    showFieldError(input, message) {
-        input.classList.add('error');
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'field-error';
-        errorDiv.textContent = message;
-        
-        input.parentElement.parentElement.appendChild(errorDiv);
-    }
-    
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-    
-    initializeAutoHideMessages() {
-        // Configurar auto-hide para mensagens existentes
-        const existingMessages = document.querySelectorAll('.message[data-auto-hide]');
-        existingMessages.forEach(message => {
-            const timeout = parseInt(message.dataset.autoHide) || 5000;
-            this.setupAutoHide(message, timeout);
-        });
-    }
-    
-    setupAutoHide(messageElement, timeout = 5000) {
-        // Adicionar classe para animação da barra de progresso
-        setTimeout(() => {
-            messageElement.classList.add('auto-hide');
-        }, 100);
-        
-        // Esconder a mensagem após o timeout
-        setTimeout(() => {
-            this.hideMessage(messageElement);
-        }, timeout);
-    }
-    
-    showMessage(type, title, text, autoHide = true) {
-        const icons = {
-            error: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"/>
-                    </svg>`,
-            success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 13L7 11.5l1.5-1.5L10 11.5 15.5 6 17 7.5 10.5 15z"/>
-                      </svg>`,
-            warning: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L2 22h20L12 2zm-1 15h2v2h-2v-2zm0-6h2v4h-2v-4z"/>
-                      </svg>`
-        };
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message message-${type}`;
-        
-        messageDiv.innerHTML = `
-            <div class="message-icon">
-                ${icons[type] || icons.error}
-            </div>
-            <div class="message-content">
-                <div class="message-title">${title}</div>
-                <div class="message-text">${text}</div>
-            </div>
-            <button type="button" class="message-close" onclick="window.loginForm.closeMessage(this)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-            </button>
-        `;
-        
-        const dynamicMessages = document.getElementById('dynamicMessages');
-        dynamicMessages.appendChild(messageDiv);
-        
-        if (autoHide) {
-            this.setupAutoHide(messageDiv, 5000);
-        }
-        
-        return messageDiv;
-    }
-    
-    hideMessage(messageElement) {
-        messageElement.classList.add('hiding');
-        setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
-            }
-        }, 300);
-    }
-    
-    closeMessage(closeButton) {
-        const message = closeButton.closest('.message');
-        this.hideMessage(message);
-    }
-}
-
-// Função global para fechar mensagem (chamada pelo onclick no HTML)
-window.closeMessage = function(closeButton) {
-    if (window.loginForm) {
-        window.loginForm.closeMessage(closeButton);
-    }
-};
-
-// Add CSS for animations and error states
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fadeInUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-    }
-
-    .input-wrapper {
-        transition: transform 0.2s ease;
-    }
-    
-    .input-wrapper input.error {
-        border-color: var(--error) !important;
-        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
-    }
-    
-    .input-wrapper input.error + label {
-        color: var(--error) !important;
-    }
-`;
-document.head.appendChild(style);
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.loginForm = new ModernLoginForm();
-});
-
-function closeToast(closeButton) {
-    const toast = closeButton.closest('.toast');
-    hideToast(toast);
-}
-
-function hideToast(toastElement) {
-    toastElement.classList.add('hiding');
-    setTimeout(() => {
-        if (toastElement.parentNode) {
-            toastElement.parentNode.removeChild(toastElement);
-        }
-    }, 400);
-}
-
-function showToast(type, title, message, autoHide = true, duration = 6000) {
-    const icons = {
-        error: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>`,
-        success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 13L7 11.5l1.5-1.5L10 11.5 15.5 6 17 7.5 10.5 15z"/>
-                  </svg>`,
-        warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2L2 22h20L12 2zm-1 15h2v2h-2v-2zm0-6h2v4h-2v-4z"/>
-                  </svg>`
-    };
-    
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    
-    toast.innerHTML = `
-        <div class="toast-icon">
-            ${icons[type] || icons.error}
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button type="button" class="toast-close" onclick="closeToast(this)" aria-label="Fechar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-        </button>
-        <div class="toast-progress">
-            <div class="progress-bar" style="animation-duration: ${duration}ms;"></div>
-        </div>
-    `;
-    
-    const container = document.getElementById('dynamicToasts') || document.getElementById('toastContainer');
-    container.appendChild(toast);
-    
-    if (autoHide) {
-        setTimeout(() => {
-            hideToast(toast);
-        }, duration);
-    }
-    
-    return toast;
-}
-
-// Atualizar a função setupFormSubmission para usar toasts
-function setupFormSubmission() {
-    this.form.addEventListener('submit', (e) => {
-        const username = this.form.querySelector('#username').value.trim();
-        const password = this.form.querySelector('#password').value;
-        
-        if (!username || !password) {
-            e.preventDefault();
-            showToast('error', 'Campos Obrigatórios', 'Por favor, preencha todos os campos.');
-            return;
-        }
-        
-        this.loginButton.classList.add('loading');
-        this.loginButton.disabled = true;
     });
-}
 
-// Inicializar auto-hide para toasts existentes
-document.addEventListener('DOMContentLoaded', function() {
-    const existingToasts = document.querySelectorAll('.toast[data-auto-hide]');
-    existingToasts.forEach(toast => {
-        const duration = parseInt(toast.dataset.autoHide) || 6000;
-        setTimeout(() => {
-            hideToast(toast);
-        }, duration);
-    });
-    
-    // Inicializar o formulário de login
-    window.loginForm = new ModernLoginForm();
 });
 _____________________________________
 
@@ -27976,6 +28549,48 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\templates\registration\login.
     <title>Login - Sistema de Auditorias</title>
     
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <style>
+        .login-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: var(--radius-md);
+            border-left: 4px solid;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .login-alert.alert-warning {
+            background-color: #fffbeb; /* Amarelo bem claro */
+            border-color: #f59e0b; /* Amarelo/Laranja */
+            color: #b45309; /* Texto Laranja Escuro */
+        }
+
+        .login-alert-icon {
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .login-alert-content {
+            flex: 1;
+        }
+
+        .login-alert-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .login-alert-message {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
     <div class="bg-shape"></div>
@@ -27983,41 +28598,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\templates\registration\login.
     <div class="bg-shape"></div>
     <div class="bg-shape"></div>
 
-    <!-- NOVO: Container de mensagens fixo no topo da tela -->
-    <div class="toast-container" id="toastContainer">
-        {% if form.errors %}
-            <div class="toast toast-error" data-auto-hide="8000">
-                <div class="toast-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div class="toast-content">
-                    <div class="toast-title">Acesso Negado</div>
-                    <div class="toast-message">
-                        {% if form.non_field_errors %}
-                            {{ form.non_field_errors.0 }}
-                        {% else %}
-                            Por favor, entre com um usuário e senha corretos. Note que ambos os campos diferenciam maiúsculas e minúsculas.
-                        {% endif %}
-                    </div>
-                </div>
-                <button type="button" class="toast-close" onclick="closeToast(this)" aria-label="Fechar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-                <div class="toast-progress">
-                    <div class="progress-bar"></div>
-                </div>
-            </div>
-        {% endif %}
-        
-        <!-- Container para toasts dinâmicos -->
-        <div id="dynamicToasts"></div>
-    </div>
+    <!-- O BLOCO ANTIGO DE TOAST FOI REMOVIDO DAQUI -->
 
     <div class="login-container">
         <div class="welcome-section">
@@ -28044,6 +28625,24 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\templates\registration\login.
                 <h2>Auditorias</h2>
                 <p>Faça o login para acessar a plataforma</p>
             </div>
+            
+            <!-- Bloco de mensagens correto, posicionado dentro do formulário -->
+            {% if form.errors or request.GET.next %}
+                <div class="login-alert alert-warning">
+                    <div class="login-alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="login-alert-content">
+                        {% if request.GET.next and not form.errors %}
+                            <div class="login-alert-title">Sessão expirada</div>
+                            <div class="login-alert-message">Sua sessão expirou por inatividade. Por favor, faça login novamente para continuar.</div>
+                        {% elif form.non_field_errors %}
+                            <div class="login-alert-title">Acesso Negado</div>
+                            <div class="login-alert-message">{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
             
             <form method="post" class="login-form" id="loginForm" novalidate>
                 {% csrf_token %}
@@ -28099,7 +28698,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\templates\registration\login.
     <script src="{% static 'js/login.js' %}"></script>
 </body>
 </html>
-
 _____________________________________
 
 C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\admin.py
@@ -28164,7 +28762,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\models.py
 # usuarios/models.py
 
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from fornecedores.models import Fornecedor  # Importe o modelo de Fornecedor
 
 
@@ -28191,6 +28789,15 @@ class Usuario(AbstractUser):
     class Meta:
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
+
+
+class DetalheGrupo(models.Model):
+    group = models.OneToOneField(
+        Group, on_delete=models.CASCADE, related_name='detalhe')
+    descricao = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Detalhe de {self.group.name}"
 
 _____________________________________
 
@@ -28306,6 +28913,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\views.py
 
 # usuarios/views.py
 
+from django.contrib.auth.models import Permission
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
@@ -28321,11 +28929,19 @@ import csv
 from django.http import HttpResponse
 import json
 
+from django.contrib.auth.decorators import login_required, permission_required
+
+from .models import Usuario, DetalheGrupo
+
+from collections import defaultdict
+
 from .serializers import UsuarioSerializer
 
 from .models import Usuario
 
 from .serializers import AlterarSenhaSerializer
+
+from django.db.models import Count
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -28346,7 +28962,7 @@ def admin_required(user):
 # ============================================================================
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.view_usuario', raise_exception=True)
 def dashboard_usuarios(request):
     """Dashboard principal do módulo de usuários."""
     context = {
@@ -28361,9 +28977,10 @@ def dashboard_usuarios(request):
 
 
 @login_required
-@user_passes_test(admin_required)
+# <--- TRAVA FORTE: SÓ SUPERUSUÁRIO
+@user_passes_test(lambda u: u.is_superuser)
 def alterar_senha_usuario(request, pk):
-    """Altera a senha de um usuário específico"""
+    """Altera a senha de um usuário específico (Apenas Superusuário)"""
     usuario = get_object_or_404(Usuario, pk=pk)
 
     if request.method == 'POST':
@@ -28394,7 +29011,7 @@ def alterar_senha_usuario(request, pk):
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.view_usuario', raise_exception=True)
 def lista_usuarios(request):
     """Lista todos os usuários com busca e paginação"""
     search = request.GET.get('search', '')
@@ -28437,13 +29054,13 @@ def lista_usuarios(request):
         'singular': 'Usuário',
         'button_text': 'Novo Usuário',
         'create_url': 'usuarios:criar_usuario',
-        'artigo': 'o'
+        'artigo': 'o',
     }
     return render(request, 'usuarios/lista.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.add_usuario', raise_exception=True)
 def criar_usuario(request):
     """Cria um novo usuário"""
     if request.method == 'POST':
@@ -28456,12 +29073,16 @@ def criar_usuario(request):
         is_active = request.POST.get('is_active') == 'on'
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
-        grupos_ids = request.POST.getlist('grupos')
+        # MUDANÇA 1: Pegamos apenas 'grupo' (singular)
+        grupo_id = request.POST.get('grupo')
 
         # Validações
         if not username or not email or not password:
             messages.error(
                 request, 'Username, email e senha são obrigatórios!')
+        elif not grupo_id:  # <--- NOVA VALIDAÇÃO AQUI
+            messages.error(
+                request, 'É obrigatório selecionar um Perfil de Acesso (Grupo)!')
         elif password != password_confirm:
             messages.error(request, 'As senhas não coincidem!')
         elif Usuario.objects.filter(username=username).exists():
@@ -28470,35 +29091,39 @@ def criar_usuario(request):
             messages.error(request, 'Este email já está em uso!')
         else:
             try:
+                # Criação do usuário (código igual ao seu)
                 usuario = Usuario.objects.create_user(
                     username=username,
                     email=email,
                     password=password,
                     first_name=first_name,
                     last_name=last_name,
-                    is_active=is_active,
-                    is_staff=is_staff,
-                    is_superuser=is_superuser
+                    is_active=request.POST.get('is_active') == 'on',
+                    is_staff=request.POST.get('is_staff') == 'on',
+                    is_superuser=request.POST.get('is_superuser') == 'on'
                 )
 
-                # Adicionar aos grupos
-                if grupos_ids:
-                    usuario.groups.set(grupos_ids)
+                # MUDANÇA 2: Lógica de atribuição de grupo único
+                if grupo_id:
+                    grupo = Group.objects.get(id=grupo_id)
+                    usuario.groups.add(grupo)
 
                 messages.success(request, 'Usuário criado com sucesso!')
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao criar usuário: {str(e)}')
 
+    # GET: Mandamos os grupos para preencher o <select>
     context = {
-        'grupos': Group.objects.all(),
+        'grupos': Group.objects.all().order_by('name'),
         'title': 'Criar Usuário'
     }
-    return render(request, 'usuarios/form.html', context)
+    # Ajuste o nome do template se necessário
+    return render(request, 'usuarios/form_usuario.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('usuarios.change_usuario', raise_exception=True)
 def editar_usuario(request, pk):
     """Edita um usuário existente"""
     usuario = get_object_or_404(Usuario, pk=pk)
@@ -28511,29 +29136,46 @@ def editar_usuario(request, pk):
         usuario.is_active = request.POST.get('is_active') == 'on'
         usuario.is_staff = request.POST.get('is_staff') == 'on'
         usuario.is_superuser = request.POST.get('is_superuser') == 'on'
-        grupos_ids = request.POST.getlist('grupos')
+        grupo_id = request.POST.get('grupo')  # MUDANÇA 1
 
+        if not grupo_id:  # <--- NOVA VALIDAÇÃO AQUI
+            messages.error(
+                request, 'É obrigatório selecionar um Perfil de Acesso (Grupo)!')
         # Validar username único (exceto o próprio usuário)
-        if Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
+        elif Usuario.objects.filter(username=usuario.username).exclude(pk=pk).exists():
             messages.error(request, 'Este username já está em uso!')
         # Validar email único (exceto o próprio usuário)
         elif Usuario.objects.filter(email=usuario.email).exclude(pk=pk).exists():
             messages.error(request, 'Este email já está em uso!')
         else:
             try:
+                usuario.username = request.POST.get('username')
                 usuario.save()
-                usuario.groups.set(grupos_ids)
+
+                # MUDANÇA 2: Atualizar o grupo
+                if grupo_id:
+                    novo_grupo = Group.objects.get(id=grupo_id)
+                    usuario.groups.clear()
+                    usuario.groups.add(novo_grupo)
+                else:
+                    usuario.groups.clear()  # Se não selecionou nada, remove permissões
+
                 messages.success(request, 'Usuário atualizado com sucesso!')
                 return redirect('usuarios:lista_usuarios')
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar usuário: {str(e)}')
 
+    # MUDANÇA 3: Descobrir qual o grupo atual para marcar no HTML
+    grupo_atual = usuario.groups.first()  # Pega o primeiro grupo encontrado
+
     context = {
         'usuario': usuario,
-        'grupos': Group.objects.all(),
+        'grupos': Group.objects.all().order_by('name'),
+        # Envia o ID para o template
+        'grupo_atual_id': grupo_atual.id if grupo_atual else None,
         'title': 'Editar Usuário'
     }
-    return render(request, 'usuarios/form.html', context)
+    return render(request, 'usuarios/form_usuario.html', context)
 
 
 @login_required
@@ -28562,49 +29204,76 @@ def deletar_usuario(request, pk):
     return render(request, 'usuarios/deletar.html', context)
 
 
-@login_required
-@user_passes_test(admin_required)
-def alterar_senha_usuario(request, pk):
-    """Altera a senha de um usuário"""
-    usuario = get_object_or_404(Usuario, pk=pk)
-
-    if request.method == 'POST':
-        nova_senha = request.POST.get('nova_senha')
-        confirmar_senha = request.POST.get('confirmar_senha')
-
-        if not nova_senha:
-            messages.error(request, 'Nova senha é obrigatória!')
-        elif nova_senha != confirmar_senha:
-            messages.error(request, 'As senhas não coincidem!')
-        elif len(nova_senha) < 8:
-            messages.error(
-                request, 'A senha deve ter pelo menos 8 caracteres!')
-        else:
-            try:
-                usuario.set_password(nova_senha)
-                usuario.save()
-                messages.success(request, 'Senha alterada com sucesso!')
-                return redirect('usuarios:lista_usuarios')
-            except Exception as e:
-                messages.error(request, f'Erro ao alterar senha: {str(e)}')
-
-    context = {
-        'usuario': usuario,
-        'title': 'Alterar Senha'
-    }
-    return render(request, 'usuarios/alterar_senha.html', context)
-
-
 # ============================================================================
 # VIEWS PARA GRUPOS E PERMISSÕES
 # ============================================================================
+# Função auxiliar para organizar as permissões (Evita repetir código)
+# Em usuarios/views.py
+
+def get_permissions_dict():
+    """
+    Organiza as permissões em uma estrutura de matriz:
+    Módulo -> Model -> {add, change, delete, view}
+    """
+    ignorar_models = ['session', 'content type',
+                      'log entry', 'permission', 'group']
+
+    # Busca todas as permissões relevantes
+    perms = Permission.objects.exclude(content_type__model__in=ignorar_models)\
+        .select_related('content_type')\
+        .order_by('content_type__app_label', 'content_type__model')
+
+    estrutura = {}
+
+    for p in perms:
+        # Nome do App (Ex: Auditorias, Usuários)
+        app_label = p.content_type.app_label
+        # Nome do Model (Ex: Auditoria, Agendamento)
+        model_name = p.content_type.model
+        # Nome Bonito para exibir (Ex: "Agendamento de Auditoria")
+        nome_exibicao = p.content_type.name.title()
+
+        # Cria a chave do App se não existir
+        # Mapeamento para nomes mais bonitos se quiser
+        app_nome = app_label.title()
+        if app_label == 'auth':
+            app_nome = 'Administração'
+        if app_label == 'usuarios':
+            app_nome = 'Gestão de Acesso'
+
+        if app_nome not in estrutura:
+            estrutura[app_nome] = {}
+
+        # Cria a chave do Model dentro do App
+        if model_name not in estrutura[app_nome]:
+            estrutura[app_nome][model_name] = {
+                'nome': nome_exibicao,
+                'acoes': {}
+            }
+
+        # Identifica a ação baseada no codename (add_user, change_user...)
+        codename = p.codename
+        if codename.startswith('add_'):
+            estrutura[app_nome][model_name]['acoes']['add'] = p
+        elif codename.startswith('change_'):
+            estrutura[app_nome][model_name]['acoes']['change'] = p
+        elif codename.startswith('delete_'):
+            estrutura[app_nome][model_name]['acoes']['delete'] = p
+        elif codename.startswith('view_'):
+            estrutura[app_nome][model_name]['acoes']['view'] = p
+
+    return estrutura
+
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.view_group', raise_exception=True)
 def lista_grupos(request):
-    """Lista todos os grupos"""
     search = request.GET.get('search', '')
-    grupos = Group.objects.all()
+
+    # Adicionamos .select_related('detalhe') para carregar a descrição junto e ficar rápido
+    grupos = Group.objects.all().annotate(
+        total_usuarios=Count('user')
+    ).select_related('detalhe').order_by('name')
 
     if search:
         grupos = grupos.filter(name__icontains=search)
@@ -28616,86 +29285,220 @@ def lista_grupos(request):
     context = {
         'page_obj': page_obj,
         'search': search,
-        'title': 'Grupos'
+        'title': 'Perfis de Acesso'
     }
     return render(request, 'usuarios/grupos/lista.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.add_group', raise_exception=True)
 def criar_grupo(request):
-    """Cria um novo grupo"""
     if request.method == 'POST':
         name = request.POST.get('name')
-        permissoes_ids = request.POST.getlist('permissions')
+        descricao = request.POST.get('descricao')  # Pegamos a descrição
+        permissoes_ids = request.POST.getlist('permissoes')
 
         if not name:
-            messages.error(request, 'Nome do grupo é obrigatório!')
-        elif Group.objects.filter(name=name).exists():
-            messages.error(request, 'Este nome de grupo já existe!')
+            messages.error(request, 'O nome do perfil é obrigatório.')
         else:
             try:
                 grupo = Group.objects.create(name=name)
-                if permissoes_ids:
-                    grupo.permissions.set(permissoes_ids)
 
-                messages.success(request, 'Grupo criado com sucesso!')
+                # SALVAR DESCRIÇÃO: Criamos o detalhe vinculado ao grupo
+                if descricao:
+                    DetalheGrupo.objects.create(
+                        group=grupo, descricao=descricao)
+
+                if permissoes_ids:
+                    perms = Permission.objects.filter(id__in=permissoes_ids)
+                    grupo.permissions.set(perms)
+
+                messages.success(request, 'Perfil criado com sucesso!')
                 return redirect('usuarios:lista_grupos')
             except Exception as e:
-                messages.error(request, f'Erro ao criar grupo: {str(e)}')
-
-    # Organizar permissões por app
-    permissoes_por_app = {}
-    for permission in Permission.objects.select_related('content_type').all():
-        app_label = permission.content_type.app_label
-        if app_label not in permissoes_por_app:
-            permissoes_por_app[app_label] = []
-        permissoes_por_app[app_label].append(permission)
+                messages.error(request, f'Erro ao criar perfil: {e}')
 
     context = {
-        'permissoes_por_app': permissoes_por_app,
-        'title': 'Criar Grupo'
+        'perms_agrupadas': agrupar_permissoes_para_template(),
+        'title': 'Novo Perfil de Acesso'
     }
     return render(request, 'usuarios/grupos/form.html', context)
 
 
 @login_required
-@user_passes_test(admin_required)
+@permission_required('auth.change_group', raise_exception=True)
 def editar_grupo(request, pk):
-    """Edita um grupo existente"""
     grupo = get_object_or_404(Group, pk=pk)
 
     if request.method == 'POST':
-        grupo.name = request.POST.get('name')
-        permissoes_ids = request.POST.getlist('permissions')
+        name = request.POST.get('name')
+        descricao = request.POST.get('descricao')  # Pegamos a descrição
+        permissoes_ids = request.POST.getlist('permissoes')
 
-        if not grupo.name:
-            messages.error(request, 'Nome do grupo é obrigatório!')
-        elif Group.objects.filter(name=grupo.name).exclude(pk=pk).exists():
-            messages.error(request, 'Este nome de grupo já existe!')
+        if not name:
+            messages.error(request, 'O nome do perfil é obrigatório.')
         else:
             try:
+                grupo.name = name
                 grupo.save()
-                grupo.permissions.set(permissoes_ids)
-                messages.success(request, 'Grupo atualizado com sucesso!')
+
+                # SALVAR DESCRIÇÃO: Usamos update_or_create para criar se não existir ou atualizar se existir
+                DetalheGrupo.objects.update_or_create(
+                    group=grupo,
+                    defaults={'descricao': descricao}
+                )
+
+                if permissoes_ids:
+                    perms = Permission.objects.filter(id__in=permissoes_ids)
+                    grupo.permissions.set(perms)
+                else:
+                    grupo.permissions.clear()
+
+                messages.success(request, 'Perfil atualizado com sucesso!')
                 return redirect('usuarios:lista_grupos')
             except Exception as e:
-                messages.error(request, f'Erro ao atualizar grupo: {str(e)}')
+                messages.error(request, f'Erro ao atualizar perfil: {e}')
 
-    # Organizar permissões por app
-    permissoes_por_app = {}
-    for permission in Permission.objects.select_related('content_type').all():
-        app_label = permission.content_type.app_label
-        if app_label not in permissoes_por_app:
-            permissoes_por_app[app_label] = []
-        permissoes_por_app[app_label].append(permission)
+    grupo_perms_ids = list(grupo.permissions.values_list('id', flat=True))
 
     context = {
         'grupo': grupo,
-        'permissoes_por_app': permissoes_por_app,
-        'title': 'Editar Grupo'
+        'perms_agrupadas': agrupar_permissoes_para_template(),
+        'grupo_perms_ids': grupo_perms_ids,
+        'title': 'Editar Perfil de Acesso'
     }
     return render(request, 'usuarios/grupos/form.html', context)
+
+
+def agrupar_permissoes_para_template():
+    """
+    Cria uma estrutura de dados aninhada e organizada para exibir as
+    permissões no template, com overrides manuais para organização visual.
+    """
+
+    # 1. MAPEAMENTO DE NOMES AMIGÁVEIS (MODELO -> TELA)
+    nomes_funcionalidades = {
+        'pilar': 'Pilares',
+        'categoriaauditoria': 'Categorias de Auditoria',
+        'norma': 'Normas',
+        'ferramentadigital': 'Ferramentas Digitais',
+        'checklist': 'Checklists',
+        'modeloauditoria': 'Modelos de Auditoria',
+        'auditoria': 'Agendamentos',
+        'auditoriainstancia': 'Execuções de Auditoria',
+        'planodeacao': 'Planos de Ação',
+        'naoconformidade': 'Não Conformidades',  # Movido para cá
+        'usuario': 'Usuários',
+        'group': 'Perfis de Acesso (Grupos)',
+        'detalhegrupo': 'Detalhes do Grupo',
+        'cliente': 'Clientes',
+        'fornecedor': 'Fornecedores',
+        'ativo': 'Ativos',
+        'categoria': 'Categorias',
+        'marca': 'Marcas',
+        'modelo': 'Modelos',
+        'item': 'Itens',
+        'almoxarifado': 'Almoxarifados',
+        'empresa': 'Unidades de Negócio',
+        'area': 'Áreas',
+        'setor': 'Setores',
+        'subsetor': 'Subsetores',
+        # Cadastros Base
+        'turno': 'Turnos',
+        'turnodetalhedia': 'Detalhes de Turno',
+        'unidademedida': 'Unidades de Medida',
+        'categoriaitem': 'Categorias',
+        'subcategoriaitem': 'Subcategorias',
+    }
+
+    # 2. MAPEAMENTO DE NOMES DE MÓDULOS (APP -> TÍTULO DO ACCORDION)
+    nomes_modulos = {
+        'auditorias': 'Gestão de Auditorias',
+        'usuarios': 'Gestão de Usuários',
+        'organizacao': 'Estrutura Organizacional',
+        'ativos': 'Gestão de Ativos',
+        'itens': 'Estoque & Itens',
+        'clientes': 'Gestão de Clientes',  # Se o app for 'clientes'
+        'fornecedores': 'Gestão de Fornecedores',
+        'cadastros_base': 'Cadastros Gerais',
+        # Criamos uma chave "virtual" para o módulo novo
+        'modulo_planos': 'Gestão de Planos de Ação',
+        'auth': 'Grupos & Permissões',
+    }
+
+    # 3. LISTA NEGRA: O QUE NÃO DEVE APARECER NA TELA
+    ignorar_apps = [
+        'admin', 'authtoken', 'contenttypes', 'sessions',
+        'easy_thumbnails', 'guardian', 'cadastros_base',  # Outros apps técnicos comuns
+    ]
+
+    # Adicione aqui os modelos estranhos que você quer esconder
+    ignorar_modelos = [
+        'log entry', 'permission', 'content type', 'session', 'admin log',
+        'token', 'token proxy',
+        # Modelos técnicos do plano de ação que você não quer ver:
+        'forum', 'mensagemforum', 'responsavellocal', 'anexoresposta',
+        'evidenciaplano', 'ferramentacausaraiz',
+    ]
+
+    # Busca as permissões no banco
+    permissions = Permission.objects.select_related('content_type')\
+        .exclude(content_type__app_label__in=ignorar_apps)\
+        .exclude(content_type__model__in=ignorar_modelos)\
+        .order_by('content_type__model')
+
+    # Agrupa permissões por modelo
+    perms_por_modelo = defaultdict(list)
+    for perm in permissions:
+        perms_por_modelo[perm.content_type.model].append(perm)
+
+    # Estrutura final
+    modulos = defaultdict(list)
+
+    # 4. ORGANIZAÇÃO E LÓGICA DE OVERRIDE (AQUI ACONTECE A MÁGICA)
+    for model_codename, perms in perms_por_modelo.items():
+        if not perms:
+            continue
+
+        app_label = perms[0].content_type.app_label
+
+        # --- LÓGICA DE OVERRIDE (MUDAR DE LUGAR) ---
+
+        # Se for Plano de Ação ou Não Conformidade, forçamos ir para o módulo 'modulo_planos'
+        if model_codename in ['planodeacao', 'naoconformidade']:
+            chave_modulo = 'modulo_planos'
+        else:
+            chave_modulo = app_label
+
+        # Pega o nome bonito do módulo ou usa o nome do app formatado
+        modulo_nome = nomes_modulos.get(
+            chave_modulo, chave_modulo.replace('_', ' ').title())
+
+        # Pega o nome bonito da funcionalidade ou usa o nome do model formatado
+        funcionalidade_nome = nomes_funcionalidades.get(
+            model_codename, model_codename.replace('_', ' ').title())
+
+        # Mapeia as ações
+        acoes = {
+            'add': next((p for p in perms if p.codename.startswith('add_')), None),
+            'view': next((p for p in perms if p.codename.startswith('view_')), None),
+            'change': next((p for p in perms if p.codename.startswith('change_')), None),
+            'delete': next((p for p in perms if p.codename.startswith('delete_')), None),
+        }
+
+        # Só adiciona se tiver pelo menos uma ação válida
+        if any(acoes.values()):
+            modulos[modulo_nome].append({
+                'nome': funcionalidade_nome,
+                'acoes': acoes
+            })
+
+    # Ordena os módulos e as funcionalidades dentro deles
+    modulos_ordenados = {
+        k: sorted(v, key=lambda x: x['nome']) for k, v in sorted(modulos.items())
+    }
+
+    return modulos_ordenados
 
 
 @login_required
@@ -29425,10 +30228,37 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\templates\usuarios\l
 
 {% extends 'auditorias/lista_generica.html' %}
 
+{% block header_content %}
+<div class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        
+        <div>
+            <h2 class="content-title">Gerenciamento de Usuários</h2>
+            <p class="content-subtitle">Gerencie usuários, permissões e grupos do sistema</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            
+            {% if perms.auth.view_group %}
+            <a href="{% url 'usuarios:lista_grupos' %}" class="btn btn-secondary" style="background-color: #fff; color: #333; border: 1px solid #ddd;">
+                <i class="fas fa-users-cog" style="color: #4e73df;"></i>
+                Gerenciar Grupos
+            </a>
+            {% endif %}
+
+            {% if perms.usuarios.add_usuario %}
+            <a href="{% url 'usuarios:criar_usuario' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i>
+                Novo Usuário
+            </a>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block table_headers %}
-    <th style="width: 40px;">
-        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-    </th>
     <th>Usuário</th>
     <th>Email</th>
     <th>Grupos</th>
@@ -29438,9 +30268,6 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\templates\usuarios\l
 {% endblock %}
 
 {% block table_row %}
-    <td>
-        <input type="checkbox" name="selected_users" value="{{ object.pk }}" class="user-checkbox">
-    </td>
     <td>
         <div style="display: flex; align-items: center; gap: 12px;">
             <div class="user-avatar" style="width: 40px; height: 40px; font-size: 14px;">
@@ -29508,16 +30335,23 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\templates\usuarios\l
     </td>
     <td>
         <div class="action-buttons">
+            {% if perms.usuarios.change_usuario %}
             <a href="{% url 'usuarios:editar_usuario' object.pk %}" 
                class="btn btn-secondary btn-icon" 
                title="Editar usuário">
                 <i class="fas fa-edit"></i>
             </a>
+            {% endif %}
+
+            {% if request.user.is_superuser %}
             <a href="{% url 'usuarios:alterar_senha_usuario' object.pk %}" 
                class="btn btn-warning btn-icon" 
                title="Alterar senha">
                 <i class="fas fa-key"></i>
             </a>
+            {% endif %}
+
+            {% if perms.usuarios.delete_usuario %}
             {% if object != request.user %}
             <button type="button" 
                     class="btn btn-danger btn-icon" 
@@ -29525,6 +30359,7 @@ C:\Users\SV1830\Downloads\Gestao-auditorias-django\usuarios\templates\usuarios\l
                     onclick="confirmDelete('{% url 'usuarios:deletar_usuario' object.pk %}', '{{ object.get_full_name|default:object.username }}')">
                 <i class="fas fa-trash"></i>
             </button>
+            {% endif %}
             {% endif %}
         </div>
     </td>

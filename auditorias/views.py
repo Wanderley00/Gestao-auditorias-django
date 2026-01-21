@@ -49,6 +49,10 @@ from django.db.models.functions import Concat
 
 from django.utils import timezone
 
+from datetime import date, timedelta
+
+from django.db.models import F, ExpressionWrapper, fields
+
 from django.db import transaction
 
 from django.db.models.functions import TruncMonth
@@ -197,7 +201,8 @@ def lista_pilares(request):
         'export_url': 'auditorias:exportar_pilares_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum pilar cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro pilar.'
+        'empty_subtitle': 'Comece criando o primeiro pilar.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_pilar')
     }
     return render(request, 'auditorias/pilares/lista.html', context)
 
@@ -332,7 +337,8 @@ def lista_categorias_auditoria(request):
         'export_url': 'auditorias:exportar_categorias_auditoria_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma categoria de auditoria cadastrada',
-        'empty_subtitle': 'Comece criando a primeira categoria de auditoria.'
+        'empty_subtitle': 'Comece criando a primeira categoria de auditoria.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_categoriaauditoria')
     }
     return render(request, 'auditorias/categorias/lista.html', context)
 
@@ -484,7 +490,8 @@ def lista_normas(request):
         'export_url': 'auditorias:exportar_normas_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma norma cadastrada',
-        'empty_subtitle': 'Comece criando a primeira norma.'
+        'empty_subtitle': 'Comece criando a primeira norma.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_norma')
     }
     return render(request, 'auditorias/normas/lista.html', context)
 
@@ -611,12 +618,8 @@ def lista_ferramentas_digitais(request):
         'search': search,
         'title': 'Ferramentas Digitais',
         'singular': 'Ferramenta Digital',
-        'button_text': 'Nova Ferramenta Digital',
-        'create_url': 'auditorias:criar_ferramenta_digital',
-        'export_url': 'auditorias:exportar_ferramentas_digitais_csv',  # NOVO
         'artigo': 'a',
         'empty_message': 'Nenhuma ferramenta digital cadastrada',
-        'empty_subtitle': 'Comece criando a primeira ferramenta digital.'
     }
     return render(request, 'auditorias/ferramentas_digitais/lista.html', context)
 
@@ -737,6 +740,8 @@ def lista_checklists(request):
         'title': 'Checklists',
         'create_url': 'auditorias:criar_checklist',
         'export_url': 'auditorias:exportar_checklists_csv',  # NOVO
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_checklist')
+
     }
     return render(request, 'auditorias/checklists/lista.html', context)
 
@@ -749,6 +754,9 @@ def criar_checklist(request):
         ferramenta_id = request.POST.get('ferramenta')
         ativo = request.POST.get('ativo') == 'on'
 
+        # --- CAPTURA DAS NORMAS ---
+        normas_ids = request.POST.getlist('normas_relacionadas')
+
         if nome:
             try:
                 # Criar o checklist básico
@@ -756,6 +764,10 @@ def criar_checklist(request):
                     nome=nome,
                     ativo=ativo
                 )
+
+                # --- ASSOCIAÇÃO DAS NORMAS ---
+                if normas_ids:
+                    checklist.normas_relacionadas.set(normas_ids)
 
                 if ferramenta_id:
                     checklist.ferramenta_id = ferramenta_id
@@ -774,10 +786,11 @@ def criar_checklist(request):
             messages.error(request, 'Nome é obrigatório!')
 
     context = {
-        'ferramentas': FerramentaDigital.objects.all(),
+        'ferramentas': FerramentaDigital.objects.filter(aplicavel_em_checklist=True),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': 'Criar Checklist',
-        'back_url': 'auditorias:lista_checklists'
+        'back_url': 'auditorias:lista_checklists',
+        'todas_as_normas': Norma.objects.filter(ativo=True)
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
@@ -800,6 +813,8 @@ def _create_new_version_from_request(request, checklist_original):
     new_version_number = latest_version_number + 1
     # --- FIM DA CORREÇÃO ---
 
+    normas_ids = request.POST.getlist('normas_relacionadas')
+
     # 4. Cria o novo objeto Checklist com o número de versão correto.
     nova_versao = Checklist.objects.create(
         nome=request.POST.get('nome'),
@@ -809,6 +824,10 @@ def _create_new_version_from_request(request, checklist_original):
         is_latest=True,
         original_checklist=base_checklist
     )
+
+    # --- ASSOCIAÇÃO DAS NORMAS À NOVA VERSÃO ---
+    if normas_ids:
+        nova_versao.normas_relacionadas.set(normas_ids)
 
     # (O restante da função para copiar os tópicos e perguntas continua o mesmo)
     # ... (código existente para processar a estrutura do checklist)
@@ -936,10 +955,11 @@ def editar_checklist(request, pk):
     context = {
         'checklist': checklist_a_ser_editado,
         'object': checklist_a_ser_editado,
-        'ferramentas': FerramentaDigital.objects.all(),
+        'ferramentas': FerramentaDigital.objects.filter(aplicavel_em_checklist=True),
         'status_opcoes': OpcaoResposta._meta.get_field('status').choices,
         'title': f'Editar Checklist: {checklist_a_ser_editado.nome} (V{checklist_a_ser_editado.version})',
-        'back_url': 'auditorias:lista_checklists'
+        'back_url': 'auditorias:lista_checklists',
+        'todas_as_normas': Norma.objects.filter(ativo=True)
     }
     return render(request, 'auditorias/checklists/form.html', context)
 
@@ -1070,8 +1090,8 @@ def processar_estrutura_checklist(request, checklist):
                 topico = Topico.objects.create(
                     checklist=checklist, descricao=topico_descricao, ordem=topico_ordem)
             else:
-                topico = Topico.objects.get(
-                    pk=int(topico_id_str), checklist=checklist)
+                topico = get_object_or_404(Topico, pk=int(
+                    topico_id_str), checklist=checklist)
                 topico.descricao = topico_descricao
                 topico.ordem = topico_ordem
                 topico.save()
@@ -1092,8 +1112,8 @@ def processar_estrutura_checklist(request, checklist):
                         pergunta = Pergunta.objects.create(
                             topico=topico, descricao=pergunta_descricao, ordem=pergunta_ordem)
                     else:
-                        pergunta = Pergunta.objects.get(
-                            pk=int(pergunta_id_str), topico=topico)
+                        pergunta = get_object_or_404(
+                            Pergunta, pk=int(pergunta_id_str), topico=topico)
                         pergunta.descricao = pergunta_descricao
                         pergunta.ordem = pergunta_ordem
 
@@ -1121,14 +1141,14 @@ def processar_estrutura_checklist(request, checklist):
                                 opcao = OpcaoResposta.objects.create(
                                     pergunta=pergunta)
                             else:
-                                opcao = OpcaoResposta.objects.get(
-                                    pk=int(opcao_id_str), pergunta=pergunta)
+                                opcao = get_object_or_404(OpcaoResposta, pk=int(
+                                    opcao_id_str), pergunta=pergunta)
 
                             opcao.descricao = o_value
                             opcao.status = request.POST.get(
                                 f'opcao-resposta-status[{opcao_id_full}]')
-                            opcao.ordem = request.POST.get(
-                                f'opcao-resposta-ordem[{opcao_id_full}]', 0)
+                            opcao.ordem = int(request.POST.get(
+                                f'opcao-resposta-ordem[{opcao_id_full}]', 0))
                             opcao.save()
                             opcoes_resposta_ids_processadas.add(opcao.id)
 
@@ -1139,21 +1159,37 @@ def processar_estrutura_checklist(request, checklist):
                             opcao_id_str = opcao_id_full.replace(
                                 f'{pergunta_id_full}-', '')
 
+                            # ==========================================================
+                            # INÍCIO DA CORREÇÃO
+                            # ==========================================================
                             if opcao_id_str.startswith('new-'):
+                                # Passa todos os dados diretamente na criação
                                 opcao = OpcaoPorcentagem.objects.create(
-                                    pergunta=pergunta)
+                                    pergunta=pergunta,
+                                    descricao=o_value,
+                                    peso=int(request.POST.get(
+                                        f'opcao-porcentagem-peso[{opcao_id_full}]', 0)),
+                                    cor=request.POST.get(
+                                        f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF'),
+                                    ordem=int(request.POST.get(
+                                        f'opcao-porcentagem-ordem[{opcao_id_full}]', 0))
+                                )
                             else:
-                                opcao = OpcaoPorcentagem.objects.get(
-                                    pk=int(opcao_id_str), pergunta=pergunta)
+                                # Lógica de atualização continua a mesma
+                                opcao = get_object_or_404(OpcaoPorcentagem, pk=int(
+                                    opcao_id_str), pergunta=pergunta)
+                                opcao.descricao = o_value
+                                opcao.peso = int(request.POST.get(
+                                    f'opcao-porcentagem-peso[{opcao_id_full}]', 0))
+                                opcao.cor = request.POST.get(
+                                    f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
+                                opcao.ordem = int(request.POST.get(
+                                    f'opcao-porcentagem-ordem[{opcao_id_full}]', 0))
+                                opcao.save()
+                            # ==========================================================
+                            # FIM DA CORREÇÃO
+                            # ==========================================================
 
-                            opcao.descricao = o_value
-                            opcao.peso = request.POST.get(
-                                f'opcao-porcentagem-peso[{opcao_id_full}]', 0)
-                            opcao.cor = request.POST.get(
-                                f'opcao-porcentagem-cor[{opcao_id_full}]', '#FFFFFF')
-                            opcao.ordem = request.POST.get(
-                                f'opcao-porcentagem-ordem[{opcao_id_full}]', 0)
-                            opcao.save()
                             opcoes_porcentagem_ids_processadas.add(opcao.id)
 
     # Deletar itens que não foram processados (removidos do formulário)
@@ -1404,6 +1440,8 @@ def _gerar_dados_comparacao(versoes):
 
         comparacao['topicos_comparados'].append(topico_data)
 
+    comparacao['versoes_data'] = versoes_data
+
     return comparacao
 
 
@@ -1460,7 +1498,8 @@ def lista_modelos_auditoria(request):
         'export_url': 'auditorias:exportar_modelos_auditoria_csv',  # NOVO
         'artigo': 'o',
         'empty_message': 'Nenhum modelo de auditoria cadastrado',
-        'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.'
+        'empty_subtitle': 'Comece criando o primeiro modelo de auditoria.',
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_modeloauditoria')
     }
     return render(request, 'auditorias/modelos_auditoria/lista.html', context)
 
@@ -1504,7 +1543,7 @@ def criar_modelo_auditoria(request):
             messages.error(request, 'Descrição é obrigatória!')
 
     context = {
-        'checklists': Checklist.objects.filter(ativo=True),
+        'checklists': Checklist.objects.filter(ativo=True, is_latest=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Criar Modelo de Auditoria',
@@ -1554,7 +1593,7 @@ def editar_modelo_auditoria(request, pk):
 
     context = {
         'modelo': modelo,
-        'checklists': Checklist.objects.filter(ativo=True),
+        'checklists': Checklist.objects.filter(ativo=True, is_latest=True),
         'categorias': CategoriaAuditoria.objects.filter(ativo=True),
         'ferramentas_causa_raiz': FerramentaCausaRaiz.objects.all(),
         'title': 'Editar Modelo de Auditoria',
@@ -1667,6 +1706,33 @@ def criar_auditoria(request):
     """Cria uma nova auditoria agendada com a nova lógica de locais."""
     if request.method == 'POST':
         try:
+            # --- VALIDAÇÃO DE DATAS NO BACKEND ---
+            hoje = timezone.now().date()
+            data_inicio_str = request.POST.get('data_inicio')
+            data_fim_str = request.POST.get('data_fim')
+
+            if data_inicio_str:
+                data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                if data_inicio < hoje:
+                    messages.error(
+                        request, 'A Data de Início não pode ser no passado.')
+                    # Redireciona de volta para o formulário
+                    return redirect('auditorias:criar_auditoria')
+            else:
+                # Se a data de início é obrigatória e não foi enviada
+                messages.error(request, 'A Data de Início é obrigatória.')
+                return redirect('auditorias:criar_auditoria')
+
+            if data_fim_str:
+                data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+                if data_fim < data_inicio:  # Garante que a data fim não é antes da de início
+                    messages.error(
+                        request, 'A data "Até o Dia" não pode ser anterior à Data de Início.')
+                    return redirect('auditorias:criar_auditoria')
+            else:
+                data_fim = None
+
             with transaction.atomic():
                 # --- Captura todos os dados do formulário ---
                 data_inicio_str = request.POST.get('data_inicio')
@@ -1766,6 +1832,21 @@ def editar_auditoria(request, pk):
     auditoria = get_object_or_404(Auditoria, pk=pk)
     if request.method == 'POST':
         try:
+            hoje = timezone.now().date()
+            data_inicio_str = request.POST.get('data_inicio')
+            data_fim_str = request.POST.get('data_fim')
+
+            if data_inicio_str:
+                data_inicio = datetime.strptime(
+                    data_inicio_str, '%Y-%m-%d').date()
+                # Para edição, permitimos que a data de início seja hoje ou no passado
+                # se a auditoria já começou, mas não pode ser alterada para o passado.
+                # A regra mais simples e segura é impedir que seja anterior à data original.
+                if data_inicio < auditoria.data_inicio:
+                    messages.error(
+                        request, 'A Data de Início não pode ser movida para o passado.')
+                    return redirect('auditorias:editar_auditoria', pk=pk)
+
             with transaction.atomic():
                 data_inicio_str = request.POST.get('data_inicio')
                 data_fim_str = request.POST.get('data_fim')
@@ -2187,29 +2268,54 @@ class AuditoriasPendentesAPIView(ListAPIView):
     pendentes para o usuário autenticado.
     """
     serializer_class = AuditoriaInstanciaListSerializer
-    # Garante que apenas usuários logados acessem
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Este método é sobrescrito para retornar apenas os objetos
-        relevantes para o usuário que fez a requisição.
-        """
         user = self.request.user
-        # Filtra as instâncias não executadas
-        # E que a auditoria pai tenha o usuário logado como responsável
-        return AuditoriaInstancia.objects.filter(
+        hoje = timezone.now().date()
+
+        # 1. Pega todas as pendentes (não executadas) do usuário
+        # Usamos distinct() para evitar duplicatas causadas pelos joins
+        todas_pendentes = AuditoriaInstancia.objects.filter(
             executada=False,
             responsavel=user,
-            # Filtra para incluir apenas auditorias de hoje ou do passado
-            data_execucao__lte=timezone.now().date()
         ).select_related(
             'auditoria_agendada__local_empresa',
             'auditoria_agendada__local_area',
             'auditoria_agendada__local_setor',
             'auditoria_agendada__local_subsetor',
             'auditoria_agendada__ferramenta'
-        ).order_by('data_execucao')
+        ).distinct()
+
+        # 2. Lógica de Quarentena (Corrigida para SQLite)
+        # Em vez de calcular no banco com F() * timedelta, buscamos os dados e filtramos no Python
+
+        # Busca instâncias atrasadas
+        candidatos_quarentena = AuditoriaInstancia.objects.filter(
+            executada=False,
+            responsavel=user,
+            data_execucao__lt=hoje
+        ).values(
+            'id',
+            'data_execucao',
+            # Tenta pegar o limite da categoria do primeiro modelo associado
+            'auditoria_agendada__modelos__categoria__dias_para_quarentena'
+        )
+
+        quarentena_ids = set()
+
+        for item in candidatos_quarentena:
+            data_exec = item['data_execucao']
+            # Se não tiver configuração, assume padrão de 7 dias
+            limite = item['auditoria_agendada__modelos__categoria__dias_para_quarentena'] or 7
+
+            dias_atraso = (hoje - data_exec).days
+
+            if dias_atraso > limite:
+                quarentena_ids.add(item['id'])
+
+        # 3. Retorna a lista de pendentes EXCLUINDO os IDs que estão em quarentena
+        return todas_pendentes.exclude(id__in=quarentena_ids).order_by('data_execucao')
 
 
 class AuditoriaInstanciaDetailAPIView(RetrieveAPIView):
@@ -2623,9 +2729,6 @@ def detalhes_auditoria(request, pk):
 
 @login_required
 def detalhes_historico_auditoria(request, pk):
-    """
-    Exibe os detalhes de uma instância de auditoria concluída.
-    """
     instancia = get_object_or_404(
         AuditoriaInstancia.objects.select_related(
             'checklist_usado',
@@ -2635,6 +2738,7 @@ def detalhes_historico_auditoria(request, pk):
         ).prefetch_related(
             'auditoria_agendada__modelos__categoria__pilar',
             'respostas__opcao_resposta',
+            'respostas__opcao_porcentagem',  # Adiciona prefetch para otimizar
             'respostas__anexos'
         ),
         pk=pk
@@ -2661,40 +2765,42 @@ def detalhes_historico_auditoria(request, pk):
             seconds = total_seconds % 60
             tempo_execucao_str = f"{hours:02}:{minutes:02}:{seconds:02}"
 
-    total_perguntas = 0
-    if instancia.checklist_usado:
-        total_perguntas = Pergunta.objects.filter(
-            topico__checklist=instancia.checklist_usado).count()
+    taxa_conformidade = None
+    pontuacao_final = None
 
-    # --- NOVA LÓGICA DE CÁLCULO DE CONFORMIDADE ---
-    # Conta quantos itens são "Não Aplicável" (NA)
-    qtd_na = respostas_queryset.filter(opcao_resposta__status='NA').count()
+    # 1. Cálculos para Perguntas de Conformidade
+    respostas_conformidade = instancia.respostas.filter(
+        opcao_resposta__isnull=False)
+    if respostas_conformidade.exists():
+        qtd_na = respostas_conformidade.filter(
+            opcao_resposta__status='NA').count()
+        qtd_nc = respostas_conformidade.filter(
+            opcao_resposta__status='NAO_CONFORME').count()
+        total_respondido_conf = respostas_conformidade.count()
+        itens_aplicaveis = total_respondido_conf - qtd_na
 
-    # Conta quantos itens são "Não Conforme" (NC)
-    # Nota: Mesmo se o desvio foi solucionado, ele conta como uma Não Conformidade no histórico
-    qtd_nc = respostas_queryset.filter(
-        opcao_resposta__status='NAO_CONFORME').count()
+        taxa_conformidade = ((itens_aplicaveis - qtd_nc) /
+                             itens_aplicaveis * 100) if itens_aplicaveis > 0 else 0.0
 
-    # Itens Aplicáveis = Total de perguntas respondidas - NAs
-    # (Usamos o count das respostas para garantir que só conta o que foi respondido)
-    total_respondido = respostas_queryset.count()
-    itens_aplicaveis = total_respondido - qtd_na
+    # 2. Cálculos para Perguntas de Pontuação
+    respostas_porcentagem = instancia.respostas.filter(
+        opcao_porcentagem__isnull=False)
+    if respostas_porcentagem.exists():
+        total_pontos = sum(
+            r.opcao_porcentagem.peso for r in respostas_porcentagem if r.opcao_porcentagem)
+        total_respostas_validas = respostas_porcentagem.count()
 
-    if itens_aplicaveis > 0:
-        # A nota é: (Aplicáveis - Não Conformidades) / Aplicáveis
-        taxa_conformidade = (
-            (itens_aplicaveis - qtd_nc) / itens_aplicaveis) * 100
-    else:
-        taxa_conformidade = 0.0
-    # -----------------------------------------------
+        pontuacao_final = (
+            total_pontos / total_respostas_validas) if total_respostas_validas > 0 else 0.0
 
+    # 3. Resumo da Auditoria (mantém o foco em conformidade)
     summary_stats = {
-        'total_itens': total_perguntas,
-        'nao_conformidade_maior': respostas_queryset.filter(grau_nc='NC MAIOR').count(),
-        'nao_conformidade_menor': respostas_queryset.filter(grau_nc='NC MENOR').count(),
-        'desvios_solucionados': respostas_queryset.filter(desvio_solucionado=True).count(),
-        'oportunidades_melhoria': respostas_queryset.filter(oportunidade_melhoria=True).count(),
-        'nao_aplicaveis': qtd_na,
+        'total_itens': instancia.respostas.count(),
+        'nao_conformidade_maior': respostas_conformidade.filter(grau_nc='NC MAIOR').count(),
+        'nao_conformidade_menor': respostas_conformidade.filter(grau_nc='NC MENOR').count(),
+        'desvios_solucionados': respostas_conformidade.filter(desvio_solucionado=True).count(),
+        'oportunidades_melhoria': respostas_conformidade.filter(oportunidade_melhoria=True).count(),
+        'nao_aplicaveis': respostas_conformidade.filter(opcao_resposta__status='NA').count(),
     }
 
     context = {
@@ -2703,8 +2809,11 @@ def detalhes_historico_auditoria(request, pk):
         'respostas_map': respostas_map,
         'tempo_execucao': tempo_execucao_str,
         'summary_stats': summary_stats,
-        # Passamos a nova variável para o template
+
+        # --- NOVAS VARIÁVEIS DE CONTEXTO ---
         'taxa_conformidade': taxa_conformidade,
+        'pontuacao_final': pontuacao_final,
+        # --- FIM DAS NOVAS VARIÁVEIS ---
     }
     return render(request, 'auditorias/detalhes_historico.html', context)
 
@@ -2832,6 +2941,7 @@ def lista_planos_de_acao(request):
         'usuarios_ativos': usuarios_ativos,
         'categorias': categorias,
         'subsetores': subsetores,
+        'tem_permissao_criar': request.user.has_perm('auditorias.add_planodeacao')
     }
     return render(request, 'auditorias/planos_de_acao/lista.html', context)
 
@@ -3657,3 +3767,45 @@ def lista_quarentena(request):
         'title': 'Auditorias em Quarentena'
     }
     return render(request, 'auditorias/lista_quarentena.html', context)
+
+
+class AuditoriasQuarentenaAPIView(ListAPIView):
+    """
+    Endpoint da API que retorna a lista de instâncias de auditoria
+    que estão em quarentena.
+    """
+    serializer_class = AuditoriaInstanciaListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        hoje = timezone.now().date()
+
+        # Busca dados básicos das atrasadas
+        candidatos = AuditoriaInstancia.objects.filter(
+            executada=False,
+            responsavel=user,
+            data_execucao__lt=hoje
+        ).values(
+            'id',
+            'data_execucao',
+            'auditoria_agendada__modelos__categoria__dias_para_quarentena'
+        )
+
+        ids_em_quarentena = set()
+
+        for item in candidatos:
+            data_exec = item['data_execucao']
+            limite = item['auditoria_agendada__modelos__categoria__dias_para_quarentena'] or 7
+            dias_atraso = (hoje - data_exec).days
+
+            if dias_atraso > limite:
+                ids_em_quarentena.add(item['id'])
+
+        # Retorna os objetos completos baseados nos IDs filtrados
+        return AuditoriaInstancia.objects.filter(
+            id__in=ids_em_quarentena
+        ).select_related(
+            'auditoria_agendada__ferramenta',
+            'local_execucao'
+        ).order_by('data_execucao')

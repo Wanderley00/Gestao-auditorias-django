@@ -67,12 +67,14 @@
                             <td class="text-danger font-weight-bold">+{{ item.dias_na_quarentena }}</td>
 
                             <td class="text-center">
+                                {% if perms.auditorias.delete_auditoria %}
                                 <button type="button" 
                                         class="btn btn-sm btn-danger" 
                                         title="Excluir esta execução"
                                         onclick="confirmDelete('{% url 'auditorias:deletar_execucao' item.pk %}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
